@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<!-- saved from url=(0058)file:///C:/Users/81803/Downloads/btc-signal-dashboard.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC先物 シグナル</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700;900&display=swap');
+
+:root {
+  --bg: #07090d;
+  --bg2: #0d1117;
+  --bg3: #131920;
+  --border: #1e2d3d;
+  --green: #00ff88;
+  --red: #ff2d55;
+  --yellow: #ffd60a;
+  --accent: #00d4ff;
+  --accent2: #ff6b35;
+  --dim: #4a6a7a;
+  --text: #d0e8f8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  min-height: 100vh;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+  pointer-events: none; z-index: 9999;
+}
+
+/* ─── TOP BAR ─── */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 24px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.logo { font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: var(--accent); letter-spacing: 0.12em; }
+.topbar-right { display: flex; gap: 20px; align-items: center; font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; }
+.pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 6px; animation: pulse 1.5s infinite; box-shadow: 0 0 8px var(--green); }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+
+/* ─── BIG SIGNAL ─── */
+.big-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 36px 24px 20px;
+}
+.big-label {
+  font-size: 0.6rem; letter-spacing: 0.35em; text-transform: uppercase;
+  color: var(--dim); font-family: 'Share Tech Mono', monospace; margin-bottom: 10px;
+}
+.big-signal {
+  font-size: clamp(5rem, 20vw, 9rem);
+  font-weight: 900; line-height: 1; letter-spacing: -0.02em;
+  transition: all 0.5s ease; text-align: center;
+}
+.big-signal.LONG  { color: var(--green); text-shadow: 0 0 80px rgba(0,255,136,.5), 0 0 160px rgba(0,255,136,.15); }
+.big-signal.SHORT { color: var(--red);   text-shadow: 0 0 80px rgba(255,45,85,.5),  0 0 160px rgba(255,45,85,.15); }
+.big-signal.WAIT  { color: var(--yellow);text-shadow: 0 0 50px rgba(255,214,10,.4); }
+.big-sub {
+  margin-top: 10px; font-size: clamp(0.75rem, 2vw, 0.95rem);
+  color: var(--dim); text-align: center; letter-spacing: 0.04em;
+}
+
+/* ─── GAUGE ─── */
+.gauge-wrap { display: flex; justify-content: center; margin: 16px 0 8px; }
+
+/* ─── ALERT BANNER ─── */
+.alert-banner {
+  display: none;
+  background: rgba(255,45,85,.1); border: 1px solid rgba(255,45,85,.4);
+  border-radius: 6px; margin: 0 24px 16px;
+  padding: 12px 16px; font-size: 0.77rem; line-height: 1.6;
+  animation: slideIn .4s ease;
+}
+.alert-banner.show { display: block; }
+.alert-banner-title { font-weight: 700; color: var(--red); margin-bottom: 4px; }
+@keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 0 24px 16px; }
+
+/* ─── CARDS ─── */
+.section-title {
+  font-size: 0.58rem; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--dim); font-family: 'Share Tech Mono', monospace;
+  padding: 0 24px 10px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px; padding: 0 24px 24px;
+}
+.card {
+  background: var(--bg2); border-radius: 8px;
+  padding: 14px; border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  transition: border-color .3s;
+}
+.card::before { content: ''; position: absolute; top:0;left:0;right:0; height:3px; border-radius:8px 8px 0 0; }
+.card.bull::before { background: var(--green); }
+.card.bear::before { background: var(--red); }
+.card.neut::before { background: var(--yellow); }
+.card.bull { border-color: rgba(0,255,136,.25); }
+.card.bear { border-color: rgba(255,45,85,.25); }
+.card.neut { border-color: rgba(255,214,10,.2); }
+
+.card-name  { font-size:.6rem; text-transform:uppercase; letter-spacing:.15em; color:var(--dim); font-family:'Share Tech Mono',monospace; margin-bottom:6px; }
+.card-value { font-family:'Share Tech Mono',monospace; font-size:1.15rem; font-weight:bold; margin-bottom:6px; }
+.card-badge {
+  font-size:.65rem; font-weight:700; padding:2px 8px; border-radius:3px;
+  display:inline-block; width:fit-content; margin-bottom:5px;
+}
+.badge-bull { background:rgba(0,255,136,.1); color:var(--green); }
+.badge-bear { background:rgba(255,45,85,.1); color:var(--red); }
+.badge-neut { background:rgba(255,214,10,.1); color:var(--yellow); }
+.card-reason { font-size:.63rem; color:var(--dim); line-height:1.4; }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.45} }
+.extreme { animation: blink .75s infinite; }
+
+/* ─── BOTTOM ─── */
+.bottom {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 24px; background:var(--bg2); border-top:1px solid var(--border);
+  flex-wrap:wrap; gap:8px;
+  font-family:'Share Tech Mono',monospace; font-size:.68rem; color:var(--dim);
+}
+.btc-big { font-size:1.05rem; color:white; }
+
+@media(max-width:600px) {
+  .cards { grid-template-columns: repeat(2,1fr); }
+  .big-signal { font-size: 5.5rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="logo">⬡ BTC / FUTURES SIGNAL DASHBOARD</div>
+  <div class="topbar-right">
+    <span><span class="pulse"></span>LIVE SIM</span>
+    <span id="clock">17:05:00</span>
+    <span style="color:var(--green)">JST</span>
+  </div>
+</div>
+
+<!-- Big Signal -->
+<div class="big-wrap">
+  <div class="big-label">総合シグナル（BTC先物）</div>
+  <div class="big-signal WAIT" id="bigSig">WAIT</div>
+  <div class="big-sub" id="bigSub">シグナル拮抗中 — エントリー見送りが安全</div>
+</div>
+
+<!-- Gauge SVG -->
+<div class="gauge-wrap">
+  <svg width="220" height="120" viewBox="0 0 220 120">
+    <defs>
+      <lineargradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#ff2d55"></stop>
+        <stop offset="50%" stop-color="#ffd60a"></stop>
+        <stop offset="100%" stop-color="#00ff88"></stop>
+      </lineargradient>
+    </defs>
+    <!-- track -->
+    <path d="M24,108 A86,86 0 0,1 196,108" fill="none" stroke="#1e2d3d" stroke-width="16" stroke-linecap="round"></path>
+    <!-- fill -->
+    <path d="M24,108 A86,86 0 0,1 196,108" fill="none" stroke="url(#g)" stroke-width="16" stroke-linecap="round" stroke-dasharray="269.9" id="arcFill" stroke-dashoffset="153.84300000000002"></path>
+    <!-- needle -->
+    <line id="needle" x1="110" y1="108" x2="110" y2="30" stroke="white" stroke-width="3" stroke-linecap="round" transform="rotate(77.4,110,108)" style="transition:transform 1s ease;"></line>
+    <circle cx="110" cy="108" r="6" fill="white"></circle>
+    <!-- labels -->
+    <text x="15" y="126" fill="#ff2d55" font-size="11" font-family="&#39;Share Tech Mono&#39;,monospace" text-anchor="middle">売</text>
+    <text x="110" y="20" fill="#ffd60a" font-size="11" font-family="&#39;Share Tech Mono&#39;,monospace" text-anchor="middle">様子見</text>
+    <text x="206" y="126" fill="#00ff88" font-size="11" font-family="&#39;Share Tech Mono&#39;,monospace" text-anchor="middle">買</text>
+    <!-- score -->
+    <text id="arcScore" x="110" y="96" fill="#ffd60a" font-size="26" font-weight="bold" font-family="&#39;Share Tech Mono&#39;,monospace" text-anchor="middle">43</text>
+    <text x="110" y="112" fill="#4a6a7a" font-size="9" font-family="&#39;Share Tech Mono&#39;,monospace" text-anchor="middle">/100</text>
+  </svg>
+</div>
+
+<!-- Alert banner -->
+<div class="alert-banner" id="alertBanner">
+  <div class="alert-banner-title">🔴 異常値アラート検知</div>
+  <div id="alertText"></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- Cards -->
+<div class="section-title">指標別シグナル内訳</div>
+<div class="cards" id="cards">
+
+  <div class="card bear" id="c-fr">
+    <div class="card-name">Funding Rate</div>
+    <div class="card-value" id="v-fr" style="color:var(--red)">+0.0315%</div>
+    <div class="card-badge badge-bear" id="b-fr">▼ 売りシグナル</div>
+    <div class="card-reason" id="r-fr">ロング過多。逆張りショート有利</div>
+  </div>
+
+  <div class="card bear" id="c-ls">
+    <div class="card-name">ロング/ショート比</div>
+    <div class="card-value" id="v-ls" style="color:var(--red)">58 / 42</div>
+    <div class="card-badge badge-bear" id="b-ls">▼ 売りシグナル</div>
+    <div class="card-reason" id="r-ls">ロングやや過多 → 反転圧力あり</div>
+  </div>
+
+  <div class="card neut" id="c-oi">
+    <div class="card-name">OI 変化（1h）</div>
+    <div class="card-value" id="v-oi" style="color:var(--accent2)">+4.5%</div>
+    <div class="card-badge badge-neut" id="b-oi">△ 注意</div>
+    <div class="card-reason" id="r-oi">OI増加 — 価格方向と照合要</div>
+  </div>
+
+  <div class="card bull" id="c-liq">
+    <div class="card-name">上方清算ゾーン</div>
+    <div class="card-value" id="v-liq" style="color:var(--green)">↑$89,200</div>
+    <div class="card-badge badge-bull" id="b-liq">▲ 買いシグナル</div>
+    <div class="card-reason" id="r-liq">SHORT清算帯が磁石効果。上方引力</div>
+  </div>
+
+  <div class="card bear" id="c-cme">
+    <div class="card-name">CME Gap</div>
+    <div class="card-value" id="v-cme" style="color:var(--yellow)">↓$86,150</div>
+    <div class="card-badge badge-bear" id="b-cme">▼ 下方ギャップ</div>
+    <div class="card-reason" id="r-cme">週末ギャップ埋めの可能性</div>
+  </div>
+
+  <div class="card bull" id="c-tr">
+    <div class="card-name">トレンド（4H）</div>
+    <div class="card-value" id="v-tr" style="color:var(--green)">上昇中</div>
+    <div class="card-badge badge-bull" id="b-tr">▲ 買いシグナル</div>
+    <div class="card-reason" id="r-tr">4H MA200 を上方推移中</div>
+  </div>
+
+  <div class="card neut" id="c-bb">
+    <div class="card-name">BBスクイーズ</div>
+    <div class="card-value" id="v-bb" style="color:var(--dim)">非収縮</div>
+    <div class="card-badge badge-neut" id="b-bb">— 中立</div>
+    <div class="card-reason" id="r-bb">ブレイクアウト待機状態でない</div>
+  </div>
+
+  <div class="card bull" id="c-bs">
+    <div class="card-name">ベーシス（年率）</div>
+    <div class="card-value" id="v-bs" style="color:var(--green)">+9.8%</div>
+    <div class="card-badge badge-bull" id="b-bs">▲ C&amp;C 有利</div>
+    <div class="card-reason" id="r-bs">現物+先物ヘッジ戦略が機能中</div>
+  </div>
+
+</div>
+
+<!-- Bottom bar -->
+<div class="bottom">
+  <div>
+    <span>BTC/USDT&nbsp;&nbsp;</span>
+    <span class="btc-big" id="btcPrice">$87,273</span>
+    <span id="pChange" style="color: var(--red); margin-left: 10px;">▼ -0.17%</span>
+  </div>
+  <div style="display:flex;gap:18px;flex-wrap:wrap;">
+    <span>FR: <span id="frB" style="color:var(--red)">+0.0315%</span></span>
+    <span>OI: <span style="color:var(--accent)">$18.4B</span></span>
+    <span style="color:rgba(255,45,85,.6)">※ 先物専用指標 — 現物取引には非適用</span>
+    <span style="color:var(--dim)" id="clk2">17:05:00</span>
+  </div>
+</div>
+
+<script>
+// Clock
+const tick = () => {
+  const t = new Date().toLocaleTimeString('ja-JP',{hour12:false});
+  document.getElementById('clock').textContent = t;
+  document.getElementById('clk2').textContent = t;
+};
+setInterval(tick,1000); tick();
+
+// State
+let price=87420, fr=0.031, oi=3.8, ls=58;
+
+function setArc(score){
+  // full arc = 269.9px, score 0→full offset, 100→0
+  const offset = 269.9*(1-score/100);
+  document.getElementById('arcFill').setAttribute('stroke-dashoffset', offset);
+  document.getElementById('arcScore').textContent = score;
+  // needle: score 0 → rotate(-90), score 100 → rotate(+90) relative to base
+  const deg = (score/100)*180 - 90;
+  document.getElementById('needle').setAttribute('transform',`rotate(${deg+90},110,108)`);
+  document.getElementById('arcScore').setAttribute('fill',
+    score>=65?'#00ff88': score<=35?'#ff2d55':'#ffd60a');
+}
+
+function setCard(id, cls, val, valColor, badge, badgeCls, reason){
+  document.getElementById('c-'+id).className = 'card '+cls;
+  const vEl = document.getElementById('v-'+id);
+  vEl.textContent = val; vEl.style.color = valColor;
+  const bEl = document.getElementById('b-'+id);
+  bEl.textContent = badge; bEl.className = 'card-badge badge-'+badgeCls;
+  document.getElementById('r-'+id).textContent = reason;
+}
+
+function update(){
+  let bull=0, bear=0;
+  const alerts=[];
+
+  // FR
+  if(fr>0.06){
+    setCard('fr','bear extreme',`+${fr.toFixed(4)}%`,'var(--red)','▼▼ 極端な売りシグナル','bear','FR異常高 — ロング清算リスク大');
+    bear+=3; alerts.push(`⚡ FR +${(fr*100).toFixed(3)}% — 極端高水準。強制的なロング解消が近い可能性。`);
+  } else if(fr>0.02){
+    setCard('fr','bear',`+${fr.toFixed(4)}%`,'var(--red)','▼ 売りシグナル','bear','ロング過多。逆張りショート有利');
+    bear+=2;
+  } else if(fr<-0.04){
+    setCard('fr','bull extreme',`${fr.toFixed(4)}%`,'var(--green)','▲▲ 極端な買いシグナル','bull','FR異常低 — ショート清算リスク大');
+    bull+=3; alerts.push(`⚡ FR ${(fr*100).toFixed(3)}% — 極端低水準。強制的なショート解消が近い可能性。`);
+  } else if(fr<-0.005){
+    setCard('fr','bull',`${fr.toFixed(4)}%`,'var(--green)','▲ 買いシグナル','bull','ショート過多。ロング逆張り有利');
+    bull+=2;
+  } else {
+    setCard('fr','neut',`+${fr.toFixed(4)}%`,'var(--yellow)','— 中立','neut','FRが均衡 — 方向性なし');
+  }
+  document.getElementById('frB').textContent = (fr>=0?'+':'')+fr.toFixed(4)+'%';
+  document.getElementById('frB').style.color = fr>0.03?'var(--red)':fr<-0.01?'var(--green)':'var(--yellow)';
+
+  // L/S
+  ls = Math.max(35,Math.min(68,ls));
+  if(ls>63){
+    setCard('ls','bear',`${Math.round(ls)} / ${100-Math.round(ls)}`,'var(--red)','▼▼ 強い売りシグナル','bear','ロング大幅偏り → 強い反転圧力');
+    bear+=2; if(ls>66) alerts.push(`⚡ L/S比率 ${Math.round(ls)}% — ロング極端過多。逆張り環境。`);
+  } else if(ls>55){
+    setCard('ls','bear',`${Math.round(ls)} / ${100-Math.round(ls)}`,'var(--red)','▼ 売りシグナル','bear','ロングやや過多 → 反転圧力あり');
+    bear+=1;
+  } else if(ls<37){
+    setCard('ls','bull',`${Math.round(ls)} / ${100-Math.round(ls)}`,'var(--green)','▲▲ 強い買いシグナル','bull','ショート大幅偏り → 踏み上げ候補');
+    bull+=2;
+  } else if(ls<45){
+    setCard('ls','bull',`${Math.round(ls)} / ${100-Math.round(ls)}`,'var(--green)','▲ 買いシグナル','bull','ショートやや過多 → 反発候補');
+    bull+=1;
+  } else {
+    setCard('ls','neut',`${Math.round(ls)} / ${100-Math.round(ls)}`,'var(--yellow)','— 中立','neut','L/S均衡 — 方向性なし');
+  }
+
+  // OI
+  oi = Math.max(-7,Math.min(10,oi));
+  if(oi>6){
+    setCard('oi','bear',`+${oi.toFixed(1)}%`,'var(--red)','▼ 過熱注意','bear','OI急増 → 過熱・転換リスク高');
+    bear+=2; alerts.push(`⚡ OI 1h変化 +${oi.toFixed(1)}% — 急激なポジション増加。転換注意。`);
+  } else if(oi>2.5){
+    setCard('oi','neut',`+${oi.toFixed(1)}%`,'var(--accent2)','△ 注意','neut','OI増加 — 価格方向と照合要');
+  } else if(oi<-4){
+    setCard('oi','bull',`${oi.toFixed(1)}%`,'var(--green)','▲ 底打ち候補','bull','OI急減 — 売り疲れ・転換候補');
+    bull+=1;
+  } else {
+    setCard('oi','neut',`+${oi.toFixed(1)}%`,'var(--yellow)','— 中立','neut','OI変化量は正常範囲内');
+  }
+
+  // Liquidation (fixed bull context)
+  bull+=1;
+  // CME gap (fixed bear)
+  bear+=1;
+  // Trend (fixed bull)
+  bull+=2;
+
+  const total = bull+bear || 1;
+  const score = Math.round((bull/total)*100);
+  setArc(score);
+
+  // Big signal
+  const big = document.getElementById('bigSig');
+  const sub = document.getElementById('bigSub');
+  if(score>=70){
+    big.className='big-signal LONG'; big.textContent='LONG';
+    sub.textContent='ロング優位 — 押し目エントリーを検討';
+  } else if(score<=30){
+    big.className='big-signal SHORT'; big.textContent='SHORT';
+    sub.textContent='ショート優位 — 戻り売りエントリーを検討';
+  } else if(score>=58){
+    big.className='big-signal LONG'; big.textContent='やや買い';
+    sub.textContent='強気指標優勢 — 確認シグナル待ち推奨';
+  } else if(score<=42){
+    big.className='big-signal SHORT'; big.textContent='やや売り';
+    sub.textContent='弱気指標優勢 — 過信は禁物';
+  } else {
+    big.className='big-signal WAIT'; big.textContent='WAIT';
+    sub.textContent='シグナル拮抗中 — エントリー見送りが安全';
+  }
+
+  // Alert
+  const banner = document.getElementById('alertBanner');
+  if(alerts.length>0){
+    banner.classList.add('show');
+    document.getElementById('alertText').innerHTML = alerts.join('<br>');
+  } else {
+    banner.classList.remove('show');
+  }
+
+  // Price
+  document.getElementById('btcPrice').textContent = '$'+Math.round(price).toLocaleString();
+  const pct = ((price-87420)/87420*100);
+  const pEl = document.getElementById('pChange');
+  pEl.textContent = (pct>=0?'▲ +':'▼ ')+pct.toFixed(2)+'%';
+  pEl.style.color = pct>=0?'var(--green)':'var(--red)';
+}
+
+function sim(){
+  price  += (Math.random()-.48)*100;
+  fr     += (Math.random()-.5)*.0025;
+  fr      = Math.max(-.07, Math.min(.13, fr));
+  oi     += (Math.random()-.5)*.5;
+  ls     += (Math.random()-.5)*.9;
+  update();
+}
+
+update();
+setInterval(sim, 3000);
+</script>
+
+
+</body></html>

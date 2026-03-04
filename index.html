@@ -945,9 +945,9 @@ function setLoad(pct, msg){
 // ═══════════════════════════════════════════════
 const PROXY = 'https://corsproxy.io/?'; // free CORS proxy for Futures endpoints
 
-async function safeFetch(url, useProxy=false) {
+async function safeFetch(url, useProxy=false, timeout=4000) {
   const target = useProxy ? PROXY + encodeURIComponent(url) : url;
-  const r = await fetch(target, {signal: AbortSignal.timeout(8000)});
+  const r = await fetch(target, {signal: AbortSignal.timeout(timeout)});
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
@@ -1451,24 +1451,27 @@ function startTimer(){
 
 async function init(){
   try{
-  setLoad(10,'BTC価格 取得中 (Binance)...');
-  await fetchPrice().catch(()=>{});
-  setLoad(25,'Funding Rate 取得中...');
-  await fetchFR().catch(()=>{});
-  setLoad(35,'L/S 比率 取得中...');
-  await fetchLS().catch(()=>{});
-  setLoad(45,'Open Interest 取得中...');
-  await fetchOI().catch(()=>{});
-  setLoad(55,'USD/JPY 取得中...');
-  await fetchFX().catch(()=>{setDot('ds-fx','warn');});
+  // Phase 1: Fetch price (needed first) + supplementary data in parallel
+  setLoad(10,'データ取得中...');
+  await Promise.allSettled([
+    fetchPrice(),
+    fetchFR(),
+    fetchLS(),
+    fetchOI(),
+    fetchFX().catch(()=>{setDot('ds-fx','warn');}),
+    fetchFG().catch(()=>{setDot('ds-fg','warn');}),
+  ]);
   setDot('ds-fx','ok');
-  setLoad(65,'Fear & Greed 取得中...');
-  await fetchFG().catch(()=>{setDot('ds-fg','warn');});
   setDot('ds-fg','ok');
-  setLoad(78,'Klines 5m・15m 取得中...');
-  await Promise.allSettled([fetchKlines('5m',100).then(d=>S.k5=d), fetchKlines('15m',100).then(d=>S.k15=d)]);
-  setLoad(90,'Klines 1h・4h・1d 取得中...');
-  await Promise.allSettled([fetchKlines('1h',100).then(d=>S.k1h=d), fetchKlines('4h',100).then(d=>S.k4h=d), fetchKlines('1d',60).then(d=>S.k1d=d)]);
+  // Phase 2: Fetch all klines in parallel
+  setLoad(60,'ローソク足 取得中...');
+  await Promise.allSettled([
+    fetchKlines('5m',100).then(d=>S.k5=d),
+    fetchKlines('15m',100).then(d=>S.k15=d),
+    fetchKlines('1h',100).then(d=>S.k1h=d),
+    fetchKlines('4h',100).then(d=>S.k4h=d),
+    fetchKlines('1d',60).then(d=>S.k1d=d),
+  ]);
   setLoad(100,'完了！');
   try{ renderAll(); }catch(e){ console.error('renderAll error:', e); }
   }finally{

@@ -14,7 +14,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;}
-body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.05) 3px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:9998;}
+@media(min-width:681px){body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.05) 3px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:9998;}}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
@@ -24,7 +24,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ticker-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--accent);padding:0 14px;flex-shrink:0;border-right:1px solid var(--border);height:100%;display:flex;align-items:center;gap:5px;background:var(--bg2);z-index:2;letter-spacing:.1em;}
 .ticker-label .dot{width:5px;height:5px;background:var(--accent);box-shadow:0 0 5px var(--accent);}
 .ticker-scroll-wrap{flex:1;overflow:hidden;height:100%;position:relative;}
-.ticker-scroll{display:flex;align-items:center;gap:0;height:100%;white-space:nowrap;animation:tickerMove 60s linear infinite;}
+.ticker-scroll{display:flex;align-items:center;gap:0;height:100%;white-space:nowrap;animation:tickerMove 60s linear infinite;will-change:transform;-webkit-transform:translateZ(0);transform:translateZ(0);}
 .ticker-scroll:hover{animation-play-state:paused;}
 @keyframes tickerMove{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .ticker-item{display:inline-flex;align-items:center;gap:8px;padding:0 24px;font-size:.68rem;color:var(--text);border-right:1px solid rgba(30,45,61,.6);height:100%;}
@@ -308,10 +308,124 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
 .blink{animation:blink .8s infinite;}
 
+/* NEWS CARDS (mobile vertical layout) */
+.news-cards{display:none;padding:10px 12px;background:var(--bg2);border-bottom:1px solid var(--border);}
+.news-cards .nc-title{font-family:'Share Tech Mono',monospace;font-size:.56rem;text-transform:uppercase;letter-spacing:.25em;color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.news-cards .nc-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.news-card{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg3);border-radius:6px;margin-bottom:6px;border-left:3px solid var(--border);min-height:44px;}
+.news-card.nc-up{border-left-color:var(--green);}
+.news-card.nc-down{border-left-color:var(--red);}
+.news-card.nc-neut{border-left-color:var(--yellow);}
+.news-card.nc-info{border-left-color:var(--accent);}
+.news-card .nc-badge{font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;flex-shrink:0;white-space:nowrap;}
+.news-card .nc-text{font-size:.72rem;color:var(--text);line-height:1.5;word-break:break-word;white-space:normal;}
+
+/* ── ENTRY TIMING PANEL ── */
+.entry-timing{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px;position:relative;overflow:hidden;transition:all .4s;}
+.entry-timing::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transition:background .4s;}
+.entry-timing.et-now::before{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.entry-timing.et-now{border-color:rgba(0,255,136,.4);box-shadow:0 0 30px rgba(0,255,136,.08);}
+.entry-timing.et-soon::before{background:linear-gradient(90deg,transparent,var(--yellow),transparent);}
+.entry-timing.et-soon{border-color:rgba(255,214,10,.3);}
+.entry-timing.et-early::before{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.entry-timing.et-early{border-color:rgba(255,45,85,.25);}
+@keyframes pulse-entry{0%,100%{box-shadow:0 0 20px rgba(0,255,136,.1)}50%{box-shadow:0 0 45px rgba(0,255,136,.3)}}
+.entry-timing.et-now.et-pulse{animation:pulse-entry 1.5s infinite;}
+
+.et-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.et-title{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.et-badge{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:3px 10px;border-radius:4px;font-weight:700;letter-spacing:.05em;}
+.et-badge.badge-now{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.35);}
+.et-badge.badge-soon{background:rgba(255,214,10,.12);color:var(--yellow);border:1px solid rgba(255,214,10,.3);}
+.et-badge.badge-early{background:rgba(255,45,85,.1);color:var(--red);border:1px solid rgba(255,45,85,.25);}
+.et-badge.badge-none{background:rgba(74,106,122,.1);color:var(--dim);border:1px solid var(--border);}
+
+.et-main{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;margin-bottom:12px;}
+.et-score-circle{width:72px;height:72px;position:relative;}
+.et-score-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:1.3rem;font-weight:bold;}
+.et-msg{font-size:.78rem;line-height:1.5;font-weight:700;}
+
+.et-indicators{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-bottom:10px;}
+.et-ind{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px 10px;text-align:center;}
+.et-ind-label{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.et-ind-val{font-family:'Share Tech Mono',monospace;font-size:.85rem;font-weight:bold;}
+
+.et-reasons{display:flex;flex-wrap:wrap;gap:5px;}
+.et-reason{font-size:.58rem;padding:2px 8px;border-radius:3px;font-family:'Share Tech Mono',monospace;background:var(--bg3);border:1px solid var(--border);color:var(--text);}
+.et-reason.positive{background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.2);color:var(--green);}
+.et-reason.negative{background:rgba(255,45,85,.08);border-color:rgba(255,45,85,.2);color:var(--red);}
+.et-reason.neutral{background:rgba(255,214,10,.08);border-color:rgba(255,214,10,.2);color:var(--yellow);}
+
+/* PRICE FLASH */
+@keyframes priceFlashGreen{0%{background:rgba(0,255,136,.2)}100%{background:transparent}}
+@keyframes priceFlashRed{0%{background:rgba(255,45,85,.2)}100%{background:transparent}}
+.price-flash-up{animation:priceFlashGreen .5s ease-out;}
+.price-flash-down{animation:priceFlashRed .5s ease-out;}
+
+/* WS STATUS */
+.ws-badge{font-family:'Share Tech Mono',monospace;font-size:.5rem;padding:1px 5px;border-radius:2px;letter-spacing:.08em;}
+.ws-badge.ws-live{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.25);}
+.ws-badge.ws-poll{background:rgba(255,214,10,.1);color:var(--yellow);border:1px solid rgba(255,214,10,.2);}
+
+/* MATRIX SCROLL WRAPPER */
+.mt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+/* REDUCED MOTION */
+@media(prefers-reduced-motion:reduce){
+  .ticker-scroll{animation:none !important;}
+  .dot{animation:none !important;}
+  .blink{animation:none !important;}
+  .ind.hot{animation:none !important;}
+  .big-signal-wrap.extreme-short,.big-signal-wrap.extreme-long{animation:none !important;}
+  .strength-fill,.sf-fill,.bar-f{transition:none !important;}
+}
+
+/* MOBILE 680px */
 @media(max-width:680px){
   .scalp-duo{grid-template-columns:1fr;}
   .tf-row{grid-template-columns:repeat(3,1fr);}
   .cgrid{grid-template-columns:1fr;}
+  .news-ticker{display:none;}
+  .news-cards{display:block;}
+  .sec{padding:10px 12px;}
+  .phero{padding:10px 12px;flex-direction:column;align-items:flex-start;gap:8px;}
+  .pills{margin-left:0;width:100%;display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+  .pill{min-width:0;}
+  .p-main{font-size:1.5rem;}
+  .topbar{padding:8px 12px;}
+  .api-status-bar{display:none;}
+  .inds{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;}
+  .funda-grid{grid-template-columns:1fr;}
+  .sg-grid{grid-template-columns:1fr;}
+  .funda-ai{padding:10px 12px;}
+  .chart-container{height:300px;}
+  #tradingview_btc{height:280px !important;}
+  .tradingview-widget-container{height:300px !important;}
+  .sc{padding:12px;min-height:44px;}
+  .bottom{padding:8px 12px;flex-direction:column;gap:4px;}
+  .fai-card{padding:10px 12px;flex-direction:column;gap:6px;}
+  .fai-rank{width:auto;}
+  .ev{flex-direction:column;gap:6px;}
+  .ev-cd{text-align:left;}
+  .bsig-row{grid-template-columns:1fr;gap:12px;}
+  .bsig-right{display:flex;align-items:center;gap:12px;justify-content:flex-start;}
+  .et-main{grid-template-columns:1fr;gap:10px;text-align:center;}
+  .et-score-circle{margin:0 auto;}
+  .et-indicators{grid-template-columns:repeat(2,1fr);}
+  .level-pills{grid-template-columns:repeat(5,1fr);font-size:.46rem;}
+  .mov{backdrop-filter:none;-webkit-backdrop-filter:none;}
+}
+
+/* SMALL PHONE 480px */
+@media(max-width:480px){
+  .tf-row{grid-template-columns:repeat(2,1fr);}
+  .inds{grid-template-columns:repeat(2,1fr);}
+  .pills{grid-template-columns:1fr;}
+  .level-pills{grid-template-columns:repeat(3,1fr);}
+  .lp:nth-child(4),.lp:nth-child(5){grid-column:span 1;}
+  .p-main{font-size:1.3rem;}
+  .logo{font-size:.65rem;}
+  .logo span{display:none;}
 }
 </style>
 </head>
@@ -329,6 +443,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="logo">⬡ BTC先物 スキャルシグナル <span style="color:var(--dim);font-size:.62rem;">— スキャルピング特化</span></div>
   <div class="topbar-r">
     <span><span class="dot" id="apiDot"></span><span id="apiSt">LIVE</span></span>
+    <span class="ws-badge ws-poll" id="wsBadge">WS: --</span>
     <span id="clk">18:59:06</span>
     <span class="green">JST</span>
     <span class="dim">更新: <span id="nxtUpd">20s</span></span>
@@ -382,6 +497,12 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <span>月末リバランス接近 — 機関の売り圧力が出やすい時期</span>
     </div></div>
   </div>
+</div>
+
+<!-- NEWS CARDS (mobile) -->
+<div class="news-cards" id="newsCards">
+  <div class="nc-title">BTC NEWS <span class="live-b">LIVE</span></div>
+  <div id="newsCardsList"></div>
 </div>
 
 <!-- API STATUS BAR -->
@@ -483,6 +604,49 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <div class="sf-sub" id="ssub-15m">拮抗中 — 上位足確認後にエントリー</div>
     </div>
   </div>
+
+  <!-- ENTRY TIMING PANEL -->
+  <div class="entry-timing et-early" id="entryTimingPanel">
+    <div class="et-header">
+      <div class="et-title">1分足エントリータイミング <span style="font-size:.5rem;color:var(--accent);">15秒更新</span></div>
+      <div class="et-badge badge-early" id="etBadge">WAIT</div>
+    </div>
+    <div class="et-main">
+      <div class="et-score-circle">
+        <svg viewBox="0 0 72 72" width="72" height="72">
+          <circle cx="36" cy="36" r="30" fill="none" stroke="var(--border)" stroke-width="5"/>
+          <circle cx="36" cy="36" r="30" fill="none" stroke="var(--dim)" stroke-width="5"
+            stroke-dasharray="188.5" stroke-dashoffset="188.5" stroke-linecap="round"
+            transform="rotate(-90,36,36)" id="etArc"/>
+        </svg>
+        <div class="et-score-num" id="etScoreNum">--</div>
+      </div>
+      <div>
+        <div class="et-msg" id="etMsg">データ取得中...</div>
+        <div style="font-size:.65rem;color:var(--dim);margin-top:4px;" id="etSub">5分足シグナルと1分足タイミングを照合</div>
+      </div>
+    </div>
+    <div class="et-indicators">
+      <div class="et-ind">
+        <div class="et-ind-label">RSI 1m</div>
+        <div class="et-ind-val" id="etRsi1m">--</div>
+      </div>
+      <div class="et-ind">
+        <div class="et-ind-label">モメンタム</div>
+        <div class="et-ind-val" id="etMom">--</div>
+      </div>
+      <div class="et-ind">
+        <div class="et-ind-label">出来高</div>
+        <div class="et-ind-val" id="etVol">通常</div>
+      </div>
+      <div class="et-ind">
+        <div class="et-ind-label">勢い</div>
+        <div class="et-ind-val" id="etDecel">--</div>
+      </div>
+    </div>
+    <div class="et-reasons" id="etReasons"></div>
+  </div>
+
   <div class="tf-row" id="tfRow"><div class="tfm LONG"><div class="tm-l">5分</div><div class="tm-s LONG">LONG</div><div class="tm-n">100/100</div></div><div class="tfm WAIT"><div class="tm-l">15分</div><div class="tm-s WAIT">WAIT</div><div class="tm-n">38/100</div></div><div class="tfm WAIT"><div class="tm-l">1時間</div><div class="tm-s WAIT">WAIT</div><div class="tm-n">44/100</div></div><div class="tfm LONG"><div class="tm-l">4時間</div><div class="tm-s LONG">LONG</div><div class="tm-n">100/100</div></div><div class="tfm LONG"><div class="tm-l">日足</div><div class="tm-s LONG">LONG</div><div class="tm-n">100/100</div></div></div>
   <div class="conflict"><div class="conflict-t">⚡ 時間軸間の整合性</div><div id="conflictTxt">ロング優勢。<span class="yellow">上位足（1H・4H）がLONGなら5m押し目ロング優先。下位足の逆行は一時的と判断。</span></div></div>
 </div>
@@ -554,35 +718,42 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="sec-t">リアルタイムチャート (TradingView) — 5分足</div>
   <div class="chart-wrap">
     <!-- TradingView Widget BEGIN -->
-    <div class="tradingview-widget-container" style="height:460px;width:100%;">
-      <div id="tradingview_btc" style="height:440px;width:100%;"><div id="tradingview_b7b6e-wrapper" style="position: relative; box-sizing: content-box; font-family: -apple-system, BlinkMacSystemFont, &quot;Trebuchet MS&quot;, Roboto, Ubuntu, sans-serif; margin: 0px auto !important; padding: 0px !important; width: 100%; height: calc(408px);"><iframe title="advanced chart TradingView widget" lang="en" id="tradingview_b7b6e" frameborder="0" allowtransparency="true" scrolling="no" allowfullscreen="true" src="./BTC先物 スキャルシグナル20260304_files/saved_resource.html" style="width: 100%; height: 100%; margin: 0px !important; padding: 0px !important;"></iframe></div></div>
-      <div class="tradingview-widget-copyright" style="font-size: 0.55rem; color: var(--dim); padding: 2px 4px; width: 100%;">
-        <a href="https://www.tradingview.com/?utm_source=&amp;utm_medium=widget_new&amp;utm_campaign=chart&amp;utm_term=BINANCE%3ABTCUSDT" style="color:var(--dim);">BTC/USDT チャート by TradingView</a>
+    <div class="tradingview-widget-container chart-container" style="width:100%;">
+      <div id="tradingview_btc" style="width:100%;"></div>
+      <div class="tradingview-widget-copyright" style="font-size:0.55rem;color:var(--dim);padding:2px 4px;width:100%;">
+        <a href="https://www.tradingview.com/" style="color:var(--dim);">BTC/USDT by TradingView</a>
       </div>
     </div>
-    <script type="text/javascript" src="./BTC先物 スキャルシグナル20260304_files/tv.js.ダウンロード"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script type="text/javascript">
-    new TradingView.widget({
-      "width": "100%",
-      "height": 440,
-      "symbol": "BINANCE:BTCUSDT",
-      "interval": "5",
-      "timezone": "Asia/Tokyo",
-      "theme": "dark",
-      "style": "1",
-      "locale": "ja",
-      "toolbar_bg": "#0d1117",
-      "enable_publishing": false,
-      "hide_top_toolbar": false,
-      "hide_legend": false,
-      "save_image": false,
-      "container_id": "tradingview_btc",
-      "studies": ["RSI@tv-basicstudies","MACD@tv-basicstudies","BB@tv-basicstudies"]
-    });
+    function initTVChart(){
+      if(typeof TradingView==='undefined'){setTimeout(initTVChart,500);return;}
+      var h=window.innerWidth<=680?280:440;
+      document.getElementById('tradingview_btc').style.height=h+'px';
+      new TradingView.widget({
+        "width":"100%",
+        "height":h,
+        "symbol":"BINANCE:BTCUSDT",
+        "interval":"5",
+        "timezone":"Asia/Tokyo",
+        "theme":"dark",
+        "style":"1",
+        "locale":"ja",
+        "toolbar_bg":"#0d1117",
+        "enable_publishing":false,
+        "hide_top_toolbar":window.innerWidth<=680,
+        "hide_legend":false,
+        "save_image":false,
+        "container_id":"tradingview_btc",
+        "autosize":false,
+        "studies":window.innerWidth>680?["RSI@tv-basicstudies","MACD@tv-basicstudies","BB@tv-basicstudies"]:["RSI@tv-basicstudies"]
+      });
+    }
+    initTVChart();
     </script>
     <!-- TradingView Widget END -->
   </div>
-</div><style>.tradingview-widget-copyright {font-size: 13px !important; line-height: 32px !important; text-align: center !important; vertical-align: middle !important; font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif !important; color: #B2B5BE !important;} .tradingview-widget-copyright .blue-text {color: #2962FF !important;} .tradingview-widget-copyright a {text-decoration: none !important; color: #B2B5BE !important;} .tradingview-widget-copyright a:visited {color: #B2B5BE !important;} .tradingview-widget-copyright a:hover .blue-text {color: #1E53E5 !important;} .tradingview-widget-copyright a:active .blue-text {color: #1848CC !important;} .tradingview-widget-copyright a:visited .blue-text {color: #2962FF !important;}</style>
+</div>
 
 <!-- FUNDA -->
 <div class="sec">
@@ -731,7 +902,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <!-- MATRIX -->
 <div class="sec">
   <div class="sec-t">複合シグナルマトリクス <span class="live-b">LIVE</span></div>
-  <table class="mt">
+  <div class="mt-wrap"><table class="mt">
     <thead><tr><th>指標</th><th>現在値</th><th>しきい値</th><th>状態</th><th>示唆</th><th>ソース</th></tr></thead>
     <tbody id="matrixBody">
       <tr><td>BTC価格</td><td class="dim" id="mx-p">$71,481</td><td>—</td><td><span class="dim">---</span></td><td class="dim">基準値</td><td class="dim" style="font-size:.56rem;">Binance REST</td></tr>
@@ -743,7 +914,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <tr><td>清算ゾーン↑</td><td class="dim" id="mx-liq">$73,268</td><td>—</td><td><span class="dim">推定値</span></td><td class="dim">SHORT磁石</td><td class="dim" style="font-size:.56rem;">価格×1.025</td></tr>
       <tr><td>ETFフロー週計</td><td class="green">+$407M</td><td>—</td><td><span class="green">✓ 純流入</span></td><td class="dim">機関が買い越し</td><td class="dim" style="font-size:.56rem;">手動更新</td></tr>
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 <!-- STRATEGY -->
@@ -914,9 +1085,10 @@ const S = {
   price:0, p24h:0,
   fr:0, ls:50, oiVal:0, oiPrev:0,
   usdJpy:150, fg:50,
-  k5:[], k15:[], k1h:[], k4h:[], k1d:[],
+  k1m:[], k5:[], k15:[], k1h:[], k4h:[], k1d:[],
   tfSig:{}, tfScore:{}, tfInds:{},
-  rsi5:50, rsi15:50,
+  rsi1:50, rsi5:50, rsi15:50,
+  entryTiming: {phase:'WAIT', score:50, rsi1m:50, momentum:'neutral', volSpike:false, decel:false, msg:''},
 };
 
 const TFCFG = {
@@ -926,7 +1098,7 @@ const TFCFG = {
   '4h': {label:'4時間',frW:.7,  trW:1.0, fast:false},
   '1d': {label:'日足', frW:.35, trW:1.0, fast:false},
 };
-const KL = {'5m':()=>S.k5,'15m':()=>S.k15,'1h':()=>S.k1h,'4h':()=>S.k4h,'1d':()=>S.k1d};
+const KL = {'1m':()=>S.k1m,'5m':()=>S.k5,'15m':()=>S.k15,'1h':()=>S.k1h,'4h':()=>S.k4h,'1d':()=>S.k1d};
 
 // ═══════════════════════════════════════════════
 // CLOCK
@@ -1088,6 +1260,158 @@ function computeTF(tf){
 }
 
 // ═══════════════════════════════════════════════
+// ENTRY TIMING — 1m foot analysis for precise entries
+// ═══════════════════════════════════════════════
+function calcEMA(arr, period){
+  if(arr.length===0) return 0;
+  const k=2/(period+1);
+  let ema=arr[0];
+  for(let i=1;i<arr.length;i++) ema=arr[i]*k+ema*(1-k);
+  return ema;
+}
+
+function computeEntryTiming(){
+  const kl=S.k1m;
+  if(!kl||kl.length<30){S.entryTiming={phase:'NO_DATA',score:50,rsi1m:50,momentum:'neutral',volSpike:false,decel:false,msg:'1分足データ不足'};return;}
+
+  const cl=kl.map(k=>parseFloat(k[4]));
+  const hi=kl.map(k=>parseFloat(k[2]));
+  const lo=kl.map(k=>parseFloat(k[3]));
+  const vol=kl.map(k=>parseFloat(k[5]));
+  const op=kl.map(k=>parseFloat(k[1]));
+
+  // 5m signal direction
+  const sig5m=S.tfSig['5m']||'WAIT';
+  const isLongBias=sig5m==='LONG';
+  const isShortBias=sig5m==='SHORT';
+
+  // 1) RSI 1m (period 9)
+  const rsi1m=calcRSI(cl,9);
+  S.rsi1=rsi1m;
+
+  // 2) Momentum: compare last 5 candles vs previous 5
+  const recent5=cl.slice(-5);
+  const prev5=cl.slice(-10,-5);
+  const recentAvg=recent5.reduce((a,b)=>a+b,0)/5;
+  const prevAvg=prev5.reduce((a,b)=>a+b,0)/5;
+  const momPct=((recentAvg-prevAvg)/prevAvg)*100;
+
+  // 3) Deceleration: are candle bodies getting smaller? (exhaustion signal)
+  const bodies=cl.slice(-8).map((c,i,a)=>i>0?Math.abs(c-a[i-1]):0).slice(1);
+  const firstHalf=(bodies[0]+bodies[1]+bodies[2])/3;
+  const secondHalf=(bodies[4]+bodies[5]+bodies[6])/3;
+  const decel=firstHalf>0&&secondHalf<firstHalf*0.6;
+
+  // 4) Volume spike: last 3 candles vs average of previous 20
+  const volRecent=(vol.slice(-3).reduce((a,b)=>a+b,0))/3;
+  const volAvg=(vol.slice(-23,-3).reduce((a,b)=>a+b,0))/20;
+  const volSpike=volAvg>0&&volRecent>volAvg*2.0;
+
+  // 5) Wick ratio: long lower wicks = bottom forming (for LONG), long upper wicks = top forming (for SHORT)
+  const lastCandles=kl.slice(-5);
+  let wickSignal=0;
+  lastCandles.forEach(k=>{
+    const o=parseFloat(k[1]),h=parseFloat(k[2]),l=parseFloat(k[3]),c=parseFloat(k[4]);
+    const body=Math.abs(c-o);
+    const totalRange=h-l;
+    if(totalRange<0.001)return;
+    const lowerWick=Math.min(o,c)-l;
+    const upperWick=h-Math.max(o,c);
+    if(isLongBias&&lowerWick>body*1.5&&lowerWick/totalRange>0.5) wickSignal++;
+    if(isShortBias&&upperWick>body*1.5&&upperWick/totalRange>0.5) wickSignal++;
+  });
+
+  // 6) RSI divergence: price making lower low but RSI not (bullish divergence for LONG)
+  let divergence=false;
+  if(cl.length>=20){
+    const priceLow1=Math.min(...cl.slice(-20,-10));
+    const priceLow2=Math.min(...cl.slice(-10));
+    const rsiArr=[];
+    for(let i=10;i<=cl.length;i++){
+      rsiArr.push(calcRSI(cl.slice(0,i),9));
+    }
+    if(rsiArr.length>=20){
+      const rsiLow1=Math.min(...rsiArr.slice(-20,-10));
+      const rsiLow2=Math.min(...rsiArr.slice(-10));
+      if(isLongBias&&priceLow2<priceLow1&&rsiLow2>rsiLow1) divergence=true;
+      if(isShortBias&&priceLow2>priceLow1&&rsiLow2<rsiLow1) divergence=true;
+    }
+  }
+
+  // Scoring for entry timing
+  let readyScore=0; // 0-100: 0=way too early, 100=perfect entry
+  let reasons=[];
+
+  if(sig5m==='WAIT'){
+    S.entryTiming={phase:'NO_SIGNAL',score:50,rsi1m,momentum:'neutral',volSpike,decel,msg:'5分足シグナルなし — エントリー対象外'};
+    return;
+  }
+
+  // RSI extreme on 1m in the direction of entry
+  if(isLongBias){
+    if(rsi1m<15){readyScore+=30;reasons.push('1m RSI極度売られすぎ');}
+    else if(rsi1m<25){readyScore+=22;reasons.push('1m RSI売られすぎ');}
+    else if(rsi1m<35){readyScore+=12;reasons.push('1m RSIやや低め');}
+    else if(rsi1m>60){readyScore-=15;reasons.push('1m RSIまだ高い — 下げ余地あり');}
+    // RSI turning up from oversold
+    if(rsi1m<35&&cl[cl.length-1]>cl[cl.length-2]){readyScore+=10;reasons.push('1m RSI反転の兆し');}
+  } else {
+    if(rsi1m>85){readyScore+=30;reasons.push('1m RSI極度買われすぎ');}
+    else if(rsi1m>75){readyScore+=22;reasons.push('1m RSI買われすぎ');}
+    else if(rsi1m>65){readyScore+=12;reasons.push('1m RSIやや高め');}
+    else if(rsi1m<40){readyScore-=15;reasons.push('1m RSIまだ低い — 上げ余地あり');}
+    if(rsi1m>65&&cl[cl.length-1]<cl[cl.length-2]){readyScore+=10;reasons.push('1m RSI反転の兆し');}
+  }
+
+  // Momentum alignment
+  if(isLongBias){
+    if(momPct<-0.15){readyScore-=10;reasons.push('1mまだ強い下落中');}
+    else if(momPct<-0.03){readyScore+=5;reasons.push('1m下落減速中');}
+    else if(momPct>0.02){readyScore+=15;reasons.push('1m反転開始');}
+  } else {
+    if(momPct>0.15){readyScore-=10;reasons.push('1mまだ強い上昇中');}
+    else if(momPct>0.03){readyScore+=5;reasons.push('1m上昇減速中');}
+    else if(momPct<-0.02){readyScore+=15;reasons.push('1m反転開始');}
+  }
+
+  // Deceleration
+  if(decel){readyScore+=12;reasons.push('ローソク足の動きが縮小（勢い減退）');}
+
+  // Volume spike (climax = near bottom/top)
+  if(volSpike){readyScore+=10;reasons.push('出来高急増（セリクラの可能性）');}
+
+  // Wick signal
+  if(wickSignal>=2){readyScore+=12;reasons.push('長いヒゲ出現（反転シグナル）');}
+  else if(wickSignal>=1){readyScore+=5;reasons.push('ヒゲの兆し');}
+
+  // Divergence
+  if(divergence){readyScore+=15;reasons.push('RSIダイバージェンス検出');}
+
+  // Clamp to 0-100
+  readyScore=Math.max(0,Math.min(100,readyScore));
+
+  // Determine phase
+  let phase,msg;
+  if(readyScore>=60){
+    phase='NOW';
+    msg=isLongBias?'底打ちの兆し — エントリー検討！':'天井の兆し — エントリー検討！';
+  } else if(readyScore>=35){
+    phase='SOON';
+    msg=isLongBias?'底に近づいている — もう少し待機':'天井に近づいている — もう少し待機';
+  } else {
+    phase='EARLY';
+    msg=isLongBias?'まだ下落圧力が強い — 底打ち待ち':'まだ上昇圧力が強い — 天井待ち';
+  }
+
+  // Momentum label
+  const momLabel=isLongBias
+    ?(momPct<-0.1?'強い下落中':momPct<-0.02?'下落減速':momPct>0.02?'反転上昇中':'横ばい')
+    :(momPct>0.1?'強い上昇中':momPct>0.02?'上昇減速':momPct<-0.02?'反転下落中':'横ばい');
+
+  S.entryTiming={phase,score:readyScore,rsi1m,momentum:momLabel,volSpike,decel,msg,reasons,momPct,divergence,wickSignal};
+}
+
+// ═══════════════════════════════════════════════
 // RENDER
 // ═══════════════════════════════════════════════
 function renderAll(){
@@ -1099,6 +1423,8 @@ function renderAll(){
   });
   renderPrice();
   renderScalpHero();
+  computeEntryTiming();
+  renderEntryTiming();
   renderTfRow();
   renderConflict();
   renderInds();
@@ -1228,6 +1554,76 @@ function renderScalpHero(){
       const cls=['active-short','active-short-w','active-wait','active-long-w','active-long'][i];
       el.className='lp '+cls;
     }
+  }
+}
+
+function renderEntryTiming(){
+  const et=S.entryTiming;
+  const panel=document.getElementById('entryTimingPanel');
+  const badge=document.getElementById('etBadge');
+  const arc=document.getElementById('etArc');
+  const scoreNum=document.getElementById('etScoreNum');
+  const msg=document.getElementById('etMsg');
+  const sub=document.getElementById('etSub');
+
+  // Phase class
+  let phaseCls='et-early', badgeCls='badge-early', badgeText='まだ早い', arcColor='var(--red)';
+  if(et.phase==='NOW'){phaseCls='et-now et-pulse';badgeCls='badge-now';badgeText='今！エントリー検討';arcColor='var(--green)';}
+  else if(et.phase==='SOON'){phaseCls='et-soon';badgeCls='badge-soon';badgeText='そろそろ';arcColor='var(--yellow)';}
+  else if(et.phase==='NO_SIGNAL'||et.phase==='NO_DATA'){phaseCls='';badgeCls='badge-none';badgeText='対象外';arcColor='var(--dim)';}
+
+  panel.className='entry-timing '+phaseCls;
+  badge.className='et-badge '+badgeCls;
+  badge.textContent=badgeText;
+
+  // Score arc (188.5 = full circumference)
+  const offset=188.5*(1-et.score/100);
+  arc.setAttribute('stroke-dashoffset',offset.toFixed(1));
+  arc.setAttribute('stroke',arcColor);
+  scoreNum.textContent=et.score;
+  scoreNum.style.color=arcColor;
+
+  msg.textContent=et.msg;
+  msg.style.color=et.phase==='NOW'?'var(--green)':et.phase==='SOON'?'var(--yellow)':et.phase==='EARLY'?'var(--red)':'var(--dim)';
+
+  const sig5m=S.tfSig['5m']||'WAIT';
+  sub.textContent=sig5m!=='WAIT'
+    ?`5分足 ${sig5m} の最適エントリーポイントを1分足で探索中`
+    :'5分足シグナル待ち — シグナル発生後にタイミング分析開始';
+
+  // Indicators
+  const rsiEl=document.getElementById('etRsi1m');
+  rsiEl.textContent=et.rsi1m.toFixed(0);
+  rsiEl.style.color=et.rsi1m>70?'var(--red)':et.rsi1m<30?'var(--green)':'var(--dim)';
+
+  const momEl=document.getElementById('etMom');
+  momEl.textContent=et.momentum;
+  const isLong=sig5m==='LONG';
+  if(et.momPct!==undefined){
+    if(isLong) momEl.style.color=et.momPct>0.02?'var(--green)':et.momPct<-0.1?'var(--red)':'var(--yellow)';
+    else momEl.style.color=et.momPct<-0.02?'var(--green)':et.momPct>0.1?'var(--red)':'var(--yellow)';
+  }
+
+  document.getElementById('etVol').textContent=et.volSpike?'急増！':'通常';
+  document.getElementById('etVol').style.color=et.volSpike?'var(--orange)':'var(--dim)';
+
+  document.getElementById('etDecel').textContent=et.decel?'減退中':'持続';
+  document.getElementById('etDecel').style.color=et.decel?'var(--green)':'var(--dim)';
+
+  // Reasons
+  const reasonsEl=document.getElementById('etReasons');
+  reasonsEl.innerHTML='';
+  if(et.reasons&&et.reasons.length>0){
+    et.reasons.forEach(r=>{
+      const span=document.createElement('span');
+      // classify positive/negative/neutral
+      let cls='neutral';
+      if(r.includes('反転')||r.includes('売られすぎ')||r.includes('買われすぎ')||r.includes('ダイバージェンス')||r.includes('ヒゲ')||r.includes('セリクラ')||r.includes('減退')||r.includes('反転開始')) cls='positive';
+      if(r.includes('まだ')||r.includes('下落中')||r.includes('上昇中')||r.includes('余地')) cls='negative';
+      span.className='et-reason '+cls;
+      span.textContent=r;
+      reasonsEl.appendChild(span);
+    });
   }
 }
 
@@ -1405,14 +1801,15 @@ async function fullFetch(){
     await fetchPrice(); setDot('ds-price','ok');
     await Promise.allSettled([fetchFR(), fetchLS(), fetchOI()]);
     const results=await Promise.allSettled([
-      fetchKlines('5m',100),fetchKlines('15m',100),
+      fetchKlines('1m',100),fetchKlines('5m',100),fetchKlines('15m',100),
       fetchKlines('1h',100),fetchKlines('4h',100),fetchKlines('1d',60)
     ]);
-    if(results[0].status==='fulfilled'){S.k5=results[0].value;setDot('ds-klines','ok');}
-    if(results[1].status==='fulfilled')S.k15=results[1].value;
-    if(results[2].status==='fulfilled')S.k1h=results[2].value;
-    if(results[3].status==='fulfilled')S.k4h=results[3].value;
-    if(results[4].status==='fulfilled')S.k1d=results[4].value;
+    if(results[0].status==='fulfilled'){S.k1m=results[0].value;setDot('ds-klines','ok');}
+    if(results[1].status==='fulfilled'){S.k5=results[1].value;setDot('ds-klines','ok');}
+    if(results[2].status==='fulfilled')S.k15=results[2].value;
+    if(results[3].status==='fulfilled')S.k1h=results[3].value;
+    if(results[4].status==='fulfilled')S.k4h=results[4].value;
+    if(results[5].status==='fulfilled')S.k1d=results[5].value;
 
     renderAll();
     document.getElementById('apiDot').className='dot';
@@ -1425,13 +1822,91 @@ async function fullFetch(){
 
 function startTimer(){
   if(timerInt)clearInterval(timerInt);
-  nxtTimer=30;
+  nxtTimer=60;
   timerInt=setInterval(()=>{
     nxtTimer--;
-    document.getElementById('nxtUpd').textContent=nxtTimer+'s';
-    if(nxtTimer<=0){fullFetch();nxtTimer=30;}
+    if(!wsConnected) document.getElementById('nxtUpd').textContent=nxtTimer+'s';
+    if(nxtTimer<=0){fullFetch();nxtTimer=60;}
   },1000);
+  // 1m klines fast refresh every 15s for entry timing precision
+  setInterval(async()=>{
+    try{
+      const d=await fetchKlines('1m',100);
+      if(d)S.k1m=d;
+      computeEntryTiming();
+      renderEntryTiming();
+    }catch(_){}
+  },15000);
 }
+
+// ═══════════════════════════════════════════════
+// WEBSOCKET — real-time price from Binance
+// ═══════════════════════════════════════════════
+let ws=null, wsConnected=false, wsRetries=0;
+const WS_MAX_RETRIES=10;
+
+function connectWS(){
+  if(ws && (ws.readyState===WebSocket.OPEN||ws.readyState===WebSocket.CONNECTING))return;
+  try{
+    ws=new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker');
+  }catch(e){scheduleReconnect();return;}
+
+  ws.onopen=function(){
+    wsConnected=true; wsRetries=0;
+    var b=document.getElementById('wsBadge');
+    if(b){b.textContent='WS: LIVE';b.className='ws-badge ws-live';}
+    document.getElementById('nxtUpd').textContent='LIVE';
+  };
+
+  ws.onmessage=function(evt){
+    try{
+      var d=JSON.parse(evt.data);
+      var newPrice=parseFloat(d.c);
+      var oldPrice=S.price;
+      if(newPrice>0 && newPrice!==oldPrice){
+        S.price=newPrice;
+        S.p24h=newPrice/(1+parseFloat(d.P)/100);
+        // Update price display
+        renderPrice();
+        // Flash effect
+        var pEl=document.getElementById('priceUsd');
+        if(pEl){
+          pEl.classList.remove('price-flash-up','price-flash-down');
+          void pEl.offsetWidth; // force reflow
+          pEl.classList.add(newPrice>oldPrice?'price-flash-up':'price-flash-down');
+        }
+      }
+    }catch(e){}
+  };
+
+  ws.onclose=function(){
+    wsConnected=false;
+    var b=document.getElementById('wsBadge');
+    if(b){b.textContent='WS: OFF';b.className='ws-badge ws-poll';}
+    scheduleReconnect();
+  };
+
+  ws.onerror=function(){
+    wsConnected=false;
+    ws.close();
+  };
+}
+
+function scheduleReconnect(){
+  if(wsRetries>=WS_MAX_RETRIES)return;
+  wsRetries++;
+  var delay=Math.min(2000*Math.pow(2,wsRetries-1),30000);
+  setTimeout(connectWS,delay);
+}
+
+// Visibility change: reconnect when tab becomes visible
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){
+    if(!wsConnected)connectWS();
+    // Also do a full fetch when returning to tab
+    fullFetch();
+  }
+});
 
 async function init(){
   setLoad(10,'BTC価格 取得中 (Binance)...');
@@ -1448,8 +1923,8 @@ async function init(){
   setLoad(65,'Fear & Greed 取得中...');
   await fetchFG().catch(()=>{setDot('ds-fg','warn');});
   setDot('ds-fg','ok');
-  setLoad(78,'Klines 5m・15m 取得中...');
-  await Promise.allSettled([fetchKlines('5m',100).then(d=>S.k5=d), fetchKlines('15m',100).then(d=>S.k15=d)]);
+  setLoad(75,'Klines 1m・5m・15m 取得中...');
+  await Promise.allSettled([fetchKlines('1m',100).then(d=>S.k1m=d), fetchKlines('5m',100).then(d=>S.k5=d), fetchKlines('15m',100).then(d=>S.k15=d)]);
   setLoad(90,'Klines 1h・4h・1d 取得中...');
   await Promise.allSettled([fetchKlines('1h',100).then(d=>S.k1h=d), fetchKlines('4h',100).then(d=>S.k4h=d), fetchKlines('1d',60).then(d=>S.k1d=d)]);
   setLoad(100,'完了！');
@@ -1461,12 +1936,27 @@ async function init(){
   },500);
   setInterval(fullFetch, 5*60*1000);
   startTimer();
+  // Start WebSocket for real-time price
+  connectWS();
 }
 init();
 
 // ═══════════════════════════════════════════════
 // NEWS TICKER — RSS via rss2json (free, no key needed)
 // ═══════════════════════════════════════════════
+
+// Store news items for mobile card rendering
+let lastNewsItems = [];
+
+function renderNewsCards(items) {
+  const list = document.getElementById('newsCardsList');
+  if (!list) return;
+  list.innerHTML = items.map(it => `
+    <div class="news-card nc-${it.cls}">
+      <span class="nc-badge ticker-badge ${it.cls}">${it.badge}</span>
+      <span class="nc-text">${it.text}</span>
+    </div>`).join('');
+}
 
 // Impact classifier based on keywords in title
 function classifyImpact(title) {
@@ -1517,6 +2007,9 @@ async function loadNewsTicker() {
     ];
   }
 
+  // Save items for mobile cards
+  lastNewsItems = items;
+
   // Build ticker (double for seamless loop)
   const makeItems = (arr) => arr.map(it => `
     <div class="ticker-item">
@@ -1529,6 +2022,9 @@ async function loadNewsTicker() {
   document.getElementById('newsLoadMsg').style.display = 'none';
   scroll.style.display = 'flex';
   scroll.style.animationDuration = (items.length * 18 + 20) + 's';
+
+  // Also render mobile cards
+  renderNewsCards(items);
 }
 
 // ═══════════════════════════════════════════════

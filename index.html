@@ -476,6 +476,12 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .line-test-btn:hover{background:rgba(0,212,255,.2);}
 .line-del-btn{background:rgba(255,45,85,.08);color:var(--red);border:1px solid rgba(255,45,85,.2);border-radius:4px;padding:4px 8px;font-size:.64rem;cursor:pointer;transition:background .2s;}
 .line-del-btn:hover{background:rgba(255,45,85,.18);}
+
+/* ── COIN SWITCHER ── */
+.coin-switcher{display:flex;gap:4px;align-items:center;}
+.coin-btn{font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:4px 11px;border-radius:4px;background:rgba(255,255,255,.04);color:var(--dim);border:1px solid var(--border);cursor:pointer;transition:all .2s;letter-spacing:.06em;}
+.coin-btn.active{background:rgba(0,212,255,.15);color:var(--accent);border-color:rgba(0,212,255,.4);box-shadow:0 0 6px rgba(0,212,255,.15);}
+.coin-btn:hover:not(.active){background:rgba(255,255,255,.08);color:var(--text);}
 </style>
 
 </head>
@@ -484,7 +490,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <!-- LOADING -->
 
 <div id="loadOv">
-  <div class="load-logo">⬡ BTC SIGNAL LOADING</div>
+  <div class="load-logo">⬡ <span data-coin-name>BTC</span> SIGNAL LOADING</div>
   <div class="load-track"><div class="load-fill" id="loadFill"></div></div>
   <div class="load-msg" id="loadMsg">初期化中...</div>
 </div>
@@ -492,7 +498,13 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <!-- TOPBAR -->
 
 <div class="topbar">
-  <div class="logo">⬡ BTC先物 スキャルシグナル <span style="color:var(--dim);font-size:.62rem;">— スキャルピング特化</span></div>
+  <div class="logo">⬡ <span data-coin-name>BTC</span>先物 スキャルシグナル <span style="color:var(--dim);font-size:.62rem;">— スキャルピング特化</span></div>
+  <div class="coin-switcher">
+    <button class="coin-btn active" data-coin="BTC" onclick="switchCoin('BTC')">BTC</button>
+    <button class="coin-btn" data-coin="ETH" onclick="switchCoin('ETH')">ETH</button>
+    <button class="coin-btn" data-coin="XRP" onclick="switchCoin('XRP')">XRP</button>
+    <button class="coin-btn" data-coin="SOL" onclick="switchCoin('SOL')">SOL</button>
+  </div>
   <div class="topbar-r">
     <span><span class="dot" id="apiDot"></span><span id="apiSt">接続中...</span></span>
     <span id="clk">--:--:--</span>
@@ -519,7 +531,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 <div class="api-status-bar">
   <span>データソース:</span>
-  <div class="api-item"><div class="api-dot ok" id="ds-price"></div><span>BTC価格 (Binance)</span></div>
+  <div class="api-item"><div class="api-dot ok" id="ds-price"></div><span><span data-coin-name>BTC</span>価格 (Binance)</span></div>
   <div class="api-item"><div class="api-dot ok" id="ds-klines"></div><span>Klines (Binance)</span></div>
   <div class="api-item"><div class="api-dot warn" id="ds-fr"></div><span>FR/OI/LS (Binance Futures)</span></div>
   <div class="api-item"><div class="api-dot ok" id="ds-fg"></div><span>F&G (alternative.me)</span></div>
@@ -532,7 +544,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 <div class="phero">
   <div>
-    <div style="font-size:.54rem;color:var(--dim);letter-spacing:.14em;margin-bottom:2px;">BTC / USDT PERPETUAL <span class="src-badge ok">Binance Live</span></div>
+    <div style="font-size:.54rem;color:var(--dim);letter-spacing:.14em;margin-bottom:2px;"><span data-coin-name>BTC</span> / USDT PERPETUAL <span class="src-badge ok">Binance Live</span></div>
     <div id="priceUsd" class="p-main">---</div>
     <div id="priceJpy" class="p-jpy">≈ ¥---</div>
   </div>
@@ -964,6 +976,50 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 <script>
 // ═══════════════════════════════════════════════
+// COIN CONFIG
+// ═══════════════════════════════════════════════
+const COINS = {
+  BTC: { name:'BTC', pair:'BTCUSDT', tv:'BINANCE:BTCUSDT' },
+  ETH: { name:'ETH', pair:'ETHUSDT', tv:'BINANCE:ETHUSDT' },
+  XRP: { name:'XRP', pair:'XRPUSDT', tv:'BINANCE:XRPUSDT' },
+  SOL: { name:'SOL', pair:'SOLUSDT', tv:'BINANCE:SOLUSDT' },
+};
+let currentCoin = localStorage.getItem('selectedCoin') || 'BTC';
+
+async function switchCoin(key){
+  if(!COINS[key] || key===currentCoin) return;
+  currentCoin = key;
+  localStorage.setItem('selectedCoin', key);
+
+  // ボタンactive更新
+  document.querySelectorAll('.coin-btn').forEach(b=>
+    b.classList.toggle('active', b.dataset.coin===key));
+
+  // data-coin-name スパン一括更新
+  document.querySelectorAll('[data-coin-name]')
+    .forEach(el=>el.textContent=COINS[key].name);
+  document.title = COINS[key].name+'先物 スキャルシグナル';
+
+  // Stateリセット
+  S.price=0; S.p24h=0; S.fr=0; S.ls=50; S.oiVal=0; S.oiPrev=0;
+  S.k5=[]; S.k15=[]; S.k1h=[]; S.k4h=[]; S.k1d=[];
+  S.tfSig={}; S.tfScore={}; S.tfInds={};
+  lineNotifState='none';
+
+  // ETFフローセクション: BTC/ETHのみ表示
+  const etfEl = document.querySelector('.etf-section');
+  if(etfEl) etfEl.style.display=(key==='BTC'||key==='ETH')?'':'none';
+
+  // TradingViewチャート再初期化
+  const activeTf = document.querySelector('.chart-tf-btn.active');
+  const tfVal = activeTf ? ({'1分':'1','5分':'5','15分':'15','1時間':'60','4時間':'240','日足':'D','週足':'W','月足':'M'}[activeTf.textContent]||'5') : '5';
+  initChart(tfVal);
+
+  // データ再取得
+  await fullFetch();
+}
+
+// ═══════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════
 const S = {
@@ -1016,10 +1072,11 @@ function checkLineNotifications(sig5m, sig15m, sig1h, sig4h, et1mVerdict){
   if(newState===lineNotifState) return;
   lineNotifState = newState;
   const price = Math.round(S.price).toLocaleString();
-  if     (newState==='waiting_long')  notifyAllUsers('\n⏳ 5分〜4時間足 全てロング一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ロング！\nBTC: $'+price);
-  else if(newState==='waiting_short') notifyAllUsers('\n⏳ 5分〜4時間足 全てショート一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ショート！\nBTC: $'+price);
-  else if(newState==='go_long')       notifyAllUsers('\n🔥🟢🟢 鉄板ロング！今すぐエントリー！\nBTC: $'+price+'\n5分〜4時間足ロング一致＋1分足GO！');
-  else if(newState==='go_short')      notifyAllUsers('\n🔥🔴🔴 鉄板ショート！今すぐエントリー！\nBTC: $'+price+'\n5分〜4時間足ショート一致＋1分足GO！');
+  const cn = COINS[currentCoin].name;
+  if     (newState==='waiting_long')  notifyAllUsers(`\n⏳ 5分〜4時間足 全てロング一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ロング！\n${cn}: $${price}`);
+  else if(newState==='waiting_short') notifyAllUsers(`\n⏳ 5分〜4時間足 全てショート一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ショート！\n${cn}: $${price}`);
+  else if(newState==='go_long')       notifyAllUsers(`\n🔥🟢🟢 鉄板ロング！今すぐエントリー！\n${cn}: $${price}\n5分〜4時間足ロング一致＋1分足GO！`);
+  else if(newState==='go_short')      notifyAllUsers(`\n🔥🔴🔴 鉄板ショート！今すぐエントリー！\n${cn}: $${price}\n5分〜4時間足ショート一致＋1分足GO！`);
 }
 
 function updateLineStateUI(state){
@@ -1094,7 +1151,7 @@ async function testLineToken(idx){
   const t=lineTokens[idx];
   const btn=document.getElementById('lineTestBtn'+idx);
   if(btn){btn.textContent='送信中...';btn.disabled=true;}
-  const ok=await sendLineNotify(t.token,'\n✅ BTCスキャルシグナル — テスト通知\n接続成功！シグナル通知が有効です。');
+  const ok=await sendLineNotify(t.token,`\n✅ ${COINS[currentCoin].name}スキャルシグナル — テスト通知\n接続成功！シグナル通知が有効です。`);
   if(btn){btn.textContent='テスト';btn.disabled=false;}
   alert(ok?'✅ LINE送信成功！':'❌ 送信失敗。トークンを確認してください。');
 }
@@ -1121,6 +1178,15 @@ function renderLineTokenList(){
 // Initialize LINE UI
 renderLineTokenList();
 renderLineStatus();
+
+// Apply saved coin on load (if not BTC)
+if(currentCoin !== 'BTC'){
+  document.querySelectorAll('.coin-btn').forEach(b=>
+    b.classList.toggle('active', b.dataset.coin===currentCoin));
+  document.querySelectorAll('[data-coin-name]')
+    .forEach(el=>el.textContent=COINS[currentCoin].name);
+  document.title = COINS[currentCoin].name+'先物 スキャルシグナル';
+}
 
 const TFCFG = {
   '5m': {label:'5分',  frW:.25, trW:.4,  fast:true},
@@ -1161,7 +1227,7 @@ async function safeFetch(url, useProxy=false, timeout=4000) {
 }
 
 async function fetchPrice(){
-  const d = await safeFetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+  const d = await safeFetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${COINS[currentCoin].pair}`);
   S.price = parseFloat(d.lastPrice);
   S.p24h  = S.price / (1 + parseFloat(d.priceChangePercent)/100);
 }
@@ -1169,11 +1235,11 @@ async function fetchPrice(){
 async function fetchFR(){
   // Try direct first, fallback to proxy
   try {
-    const d = await safeFetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1');
+    const d = await safeFetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${COINS[currentCoin].pair}&limit=1`);
     if (d && d[0]) { S.fr = parseFloat(d[0].fundingRate); setDot('ds-fr','ok'); return; }
   } catch(_){}
   try {
-    const d = await safeFetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1', true);
+    const d = await safeFetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${COINS[currentCoin].pair}&limit=1`, true);
     if (d && d[0]) { S.fr = parseFloat(d[0].fundingRate); setDot('ds-fr','ok'); }
   } catch(e){
     // Estimate from mark vs spot (if unavailable)
@@ -1184,28 +1250,28 @@ async function fetchFR(){
 
 async function fetchLS(){
   try {
-    const d = await safeFetch('https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=5m&limit=1');
+    const d = await safeFetch(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${COINS[currentCoin].pair}&period=5m&limit=1`);
     if (d && d[0]) { const r=parseFloat(d[0].longShortRatio); S.ls=(r/(1+r))*100; return; }
   } catch(_){}
   try {
-    const d = await safeFetch('https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=5m&limit=1', true);
+    const d = await safeFetch(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${COINS[currentCoin].pair}&period=5m&limit=1`, true);
     if (d && d[0]) { const r=parseFloat(d[0].longShortRatio); S.ls=(r/(1+r))*100; }
   } catch(e){ S.ls=50; }
 }
 
 async function fetchOI(){
   try {
-    const d = await safeFetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT');
+    const d = await safeFetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${COINS[currentCoin].pair}`);
     const v=parseFloat(d.openInterest); if(S.oiVal>0)S.oiPrev=S.oiVal; S.oiVal=v; return;
   } catch(_){}
   try {
-    const d = await safeFetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT', true);
+    const d = await safeFetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${COINS[currentCoin].pair}`, true);
     const v=parseFloat(d.openInterest); if(S.oiVal>0)S.oiPrev=S.oiVal; S.oiVal=v;
   } catch(e){}
 }
 
 async function fetchKlines(interval, limit=100){
-  return safeFetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`);
+  return safeFetch(`https://api.binance.com/api/v3/klines?symbol=${COINS[currentCoin].pair}&interval=${interval}&limit=${limit}`);
 }
 
 async function fetchFG(){
@@ -1709,7 +1775,7 @@ function initChart(interval='5'){
   document.getElementById('tradingview_btc').innerHTML='';
   tvWidget = new TradingView.widget({
     width:'100%', height:440,
-    symbol:'BINANCE:BTCUSDT',
+    symbol: COINS[currentCoin].tv,
     interval: interval,
     timezone:'Asia/Tokyo', theme:'dark', style:'1', locale:'ja',
     toolbar_bg:'#0d1117', enable_publishing:false,
@@ -1926,7 +1992,7 @@ function calcPosition(){
     const margin = posJpy / t.lev;
     // Margin ratio (margin / capital)
     const marginRatio = (margin/capital*100);
-    // Position in BTC
+    // Position in coin units
     const posBtc = posJpy / (btcPrice * (S.usdJpy||150));
 
     return `<div class="pos-tier ${t.id}">
@@ -1935,7 +2001,7 @@ function calcPosition(){
       <div class="pos-tier-row">証拠金 <span>¥${Math.round(margin).toLocaleString('ja')}</span></div>
       <div class="pos-tier-row">資金比率 <span>${marginRatio.toFixed(1)}%</span></div>
       <div class="pos-tier-row">最大損失 <span style="color:var(--red)">¥${Math.round(maxLoss).toLocaleString('ja')}</span></div>
-      <div class="pos-tier-row">ポジション <span>≈ ${posBtc.toFixed(4)} BTC</span></div>
+      <div class="pos-tier-row">ポジション <span>≈ ${posBtc.toFixed(4)} ${COINS[currentCoin].name}</span></div>
       <div class="pos-tier-row" style="font-size:.52rem;color:var(--dim);margin-top:4px;">${t.desc}</div>
     </div>`;
   }).join('');

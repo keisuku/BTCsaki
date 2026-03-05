@@ -450,6 +450,18 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .day-gauge-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
 .day-gauge-pct{font-family:'Share Tech Mono',monospace;font-size:1.05rem;font-weight:bold;line-height:1;}
 .day-gauge-lbl{font-family:'Share Tech Mono',monospace;font-size:.46rem;color:var(--dim);margin-top:2px;white-space:nowrap;}
+
+/* ── NOTIFICATION PANEL ── */
+.notif-panel{display:none;position:fixed;top:46px;right:8px;width:320px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;z-index:9000;box-shadow:0 8px 32px rgba(0,0,0,.6);}
+.notif-panel.show{display:block;}
+.notif-panel-head{font-size:.78rem;font-weight:700;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.notif-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(42,63,85,.3);}
+.notif-toggle{min-width:52px;padding:4px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);font-size:.7rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.notif-toggle.on{background:rgba(0,212,255,.15);color:var(--accent);border-color:var(--accent);}
+.notif-info{flex:1;}
+.notif-name{display:block;font-size:.72rem;font-weight:700;color:var(--text);}
+.notif-desc{display:block;font-size:.58rem;color:var(--dim);margin-top:2px;}
+.notif-night{font-size:.6rem;color:var(--yellow);margin-top:8px;padding-top:6px;border-top:1px solid var(--border);}
 </style>
 
 </head>
@@ -478,8 +490,26 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <span id="clk">--:--:--</span>
     <span class="green">JST</span>
     <span class="dim">更新: <span id="nxtUpd">--s</span></span>
-    <button id="notifBtn" onclick="toggleNotifications()" style="background:var(--bg3);border:1px solid var(--border);color:var(--dim);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:.75rem;" title="プッシュ通知">🔔 OFF</button>
+    <button id="notifPanelToggle" onclick="document.getElementById('notifPanel').classList.toggle('show')" style="background:var(--bg3);border:1px solid var(--border);color:var(--dim);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:.75rem;" title="通知設定">🔔</button>
   </div>
+</div>
+
+<!-- NOTIFICATION PANEL -->
+<div id="notifPanel" class="notif-panel">
+  <div class="notif-panel-head">🔔 プッシュ通知設定<span id="nightIndicator" style="margin-left:8px;font-size:.6rem;color:var(--dim)"></span></div>
+  <div class="notif-row">
+    <button class="notif-toggle" id="nt1" onclick="toggleNotifType(1)">OFF</button>
+    <div class="notif-info"><span class="notif-name">鉄板（1時間）</span><span class="notif-desc">方向一致 + 鉄板チャンス時。最大1時間に1回</span></div>
+  </div>
+  <div class="notif-row">
+    <button class="notif-toggle" id="nt2" onclick="toggleNotifType(2)">OFF</button>
+    <div class="notif-info"><span class="notif-name">エントリー（10分）</span><span class="notif-desc">鉄板 + エントリー好機到来時。最大10分に1回</span></div>
+  </div>
+  <div class="notif-row">
+    <button class="notif-toggle" id="nt3" onclick="toggleNotifType(3)">OFF</button>
+    <div class="notif-info"><span class="notif-name">連続通知（30秒）</span><span class="notif-desc">エントリー好機中は30秒ごとに通知</span></div>
+  </div>
+  <div class="notif-night">🌙 ナイトモード（22:00〜07:00）は自動で通知停止</div>
 </div>
 
 <!-- UPDATE SPEED CONTROL -->
@@ -2331,103 +2361,184 @@ function closeMOv(e){if(e.target===document.getElementById('mOv'))closeMD();}
 function closeMD(){document.getElementById('mOv').classList.remove('show');}
 
 // ═══════════════════════════════════════════════
-// PWA — Service Worker + Push Notifications
+// PWA — Service Worker + 3-Tier Push Notifications
 // ═══════════════════════════════════════════════
 let swReg = null;
-let notifEnabled = localStorage.getItem('notifEnabled') === 'true';
-let prevSignals = {}; // track previous signals per coin to detect changes
+
+// 3 independent notification types, persisted in localStorage
+const NOTIF_KEYS = ['notif1','notif2','notif3'];
+const NOTIF_LABELS = ['鉄板（1時間）','エントリー（10分）','連続通知（30秒）'];
+let notifState = {
+  notif1: localStorage.getItem('notif1') === 'true',
+  notif2: localStorage.getItem('notif2') === 'true',
+  notif3: localStorage.getItem('notif3') === 'true',
+};
+
+// Throttle timestamps (ms) — last notification sent time per type per coin
+let lastNotifTime = { notif1:{}, notif2:{}, notif3:{} };
+const THROTTLE_MS = {
+  notif1: 60 * 60 * 1000,  // 1 hour
+  notif2: 10 * 60 * 1000,  // 10 minutes
+  notif3: 30 * 1000,        // 30 seconds
+};
 
 // Register SW
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').then(reg => {
     swReg = reg;
     console.log('[PWA] SW registered');
-    updateNotifBtn();
+    updateNotifUI();
   }).catch(err => console.warn('[PWA] SW registration failed:', err));
 }
 
-function updateNotifBtn() {
-  const btn = document.getElementById('notifBtn');
-  if (!btn) return;
-  if (notifEnabled && Notification.permission === 'granted') {
-    btn.textContent = '🔔 ON';
-    btn.style.color = 'var(--accent)';
-    btn.style.borderColor = 'var(--accent)';
-  } else {
-    btn.textContent = '🔔 OFF';
-    btn.style.color = 'var(--dim)';
-    btn.style.borderColor = 'var(--border)';
-  }
+// ── Night Mode Detection (22:00–07:00 JST) ──
+function isNightMode() {
+  const h = new Date().getHours(); // uses device local time (JST on user's iPhone)
+  return h >= 22 || h < 7;
 }
 
-async function toggleNotifications() {
+// ── UI updates ──
+function updateNotifUI() {
+  for (let i = 1; i <= 3; i++) {
+    const btn = document.getElementById('nt' + i);
+    if (!btn) continue;
+    const on = notifState['notif' + i];
+    btn.textContent = on ? 'ON' : 'OFF';
+    btn.className = 'notif-toggle' + (on ? ' on' : '');
+  }
+  // Bell icon color in topbar
+  const bell = document.getElementById('notifPanelToggle');
+  if (bell) {
+    const anyOn = notifState.notif1 || notifState.notif2 || notifState.notif3;
+    bell.style.color = anyOn ? 'var(--accent)' : 'var(--dim)';
+    bell.style.borderColor = anyOn ? 'var(--accent)' : 'var(--border)';
+  }
+  // Night mode indicator
+  const ni = document.getElementById('nightIndicator');
+  if (ni) ni.textContent = isNightMode() ? '🌙 ナイト中（通知停止）' : '';
+}
+
+async function toggleNotifType(n) {
+  const key = 'notif' + n;
+  if (notifState[key]) {
+    // Turn off
+    notifState[key] = false;
+    localStorage.setItem(key, 'false');
+    updateNotifUI();
+    return;
+  }
+  // Need notification permission
   if (!('Notification' in window)) {
     alert('このブラウザは通知に対応していません');
     return;
   }
-  if (notifEnabled) {
-    // Turn off
-    notifEnabled = false;
-    localStorage.setItem('notifEnabled', 'false');
-    updateNotifBtn();
-    return;
-  }
-  // Request permission
-  const perm = await Notification.requestPermission();
-  if (perm === 'granted') {
-    notifEnabled = true;
-    localStorage.setItem('notifEnabled', 'true');
-    // Send test notification
-    if (swReg) {
-      swReg.showNotification('BTCシグナル 通知ON', {
-        body: 'シグナル変化時に通知します',
-        icon: 'icon-192.png',
-        tag: 'test',
-      });
+  if (Notification.permission !== 'granted') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      alert('通知の許可が必要です。設定から許可してください。');
+      return;
     }
-  } else {
-    alert('通知の許可が必要です。設定から許可してください。');
   }
-  updateNotifBtn();
-}
-
-// Check signal changes and send local push notification
-function checkSignalChange() {
-  if (!notifEnabled || !swReg || Notification.permission !== 'granted') return;
-  const coin = currentCoin;
-  const key5 = coin + '_5m';
-  const key15 = coin + '_15m';
-  const sig5 = S.tfSig['5m'] || 'WAIT';
-  const sig15 = S.tfSig['15m'] || 'WAIT';
-
-  let messages = [];
-
-  if (prevSignals[key5] && prevSignals[key5] !== sig5 && sig5 !== 'WAIT') {
-    messages.push(`5m: ${prevSignals[key5]} → ${sig5}`);
-  }
-  if (prevSignals[key15] && prevSignals[key15] !== sig15 && sig15 !== 'WAIT') {
-    messages.push(`15m: ${prevSignals[key15]} → ${sig15}`);
-  }
-
-  prevSignals[key5] = sig5;
-  prevSignals[key15] = sig15;
-
-  if (messages.length > 0) {
-    const scoreInfo = `(5m:${S.tfScore['5m']||'-'} 15m:${S.tfScore['15m']||'-'})`;
-    swReg.showNotification(`${coin} シグナル変化`, {
-      body: messages.join(' / ') + ' ' + scoreInfo,
+  notifState[key] = true;
+  localStorage.setItem(key, 'true');
+  updateNotifUI();
+  // Test notification
+  if (swReg) {
+    swReg.showNotification(`${NOTIF_LABELS[n-1]} ON`, {
+      body: 'この通知タイプが有効になりました',
       icon: 'icon-192.png',
-      tag: 'signal-' + coin,
-      renotify: true,
+      tag: 'test-' + n,
     });
   }
 }
 
-// Patch renderAll to also check signal changes
+// ── Notification send helper with throttle ──
+function sendNotif(type, title, body, tag) {
+  if (!swReg || Notification.permission !== 'granted') return;
+  const coin = currentCoin;
+  const now = Date.now();
+  const lastTime = lastNotifTime[type][coin] || 0;
+  if (now - lastTime < THROTTLE_MS[type]) return; // throttled
+  lastNotifTime[type][coin] = now;
+  swReg.showNotification(title, {
+    body,
+    icon: 'icon-192.png',
+    tag: tag || type + '-' + coin,
+    renotify: true,
+  });
+}
+
+// ── Core notification check (called on every renderAll) ──
+function checkNotifications() {
+  // Skip if night mode
+  if (isNightMode()) return;
+  if (!notifState.notif1 && !notifState.notif2 && !notifState.notif3) return;
+
+  const coin = currentCoin;
+
+  // Determine "鉄板チャンス" — composite score bucket 0 (extreme SHORT) or 4 (extreme LONG)
+  const scores = Object.values(S.tfScore);
+  if (scores.length < 3) return;
+  const longCount = Object.values(S.tfSig).filter(s => s === 'LONG').length;
+  const shortCount = Object.values(S.tfSig).filter(s => s === 'SHORT').length;
+  const totalTf = Object.keys(S.tfSig).length;
+
+  // Composite score (same logic as renderScalpHero)
+  const composite = Math.round(Object.values(S.tfScore).reduce((a,b)=>a+b,0) / totalTf);
+  const isTeppan = composite >= 80 || composite <= 20; // 鉄板ゾーン
+  const direction = composite >= 80 ? 'LONG' : composite <= 20 ? 'SHORT' : 'WAIT';
+
+  // Determine entry timing score (from ET section)
+  const etScoreEl = document.getElementById('etScore');
+  const etScore = etScoreEl ? parseInt(etScoreEl.textContent) || 0 : 0;
+  const isEntryGo = etScore >= 70 && direction !== 'WAIT';
+
+  // ── Type 1: 鉄板（1時間）──
+  if (notifState.notif1 && isTeppan) {
+    const sigList = Object.entries(S.tfSig).map(([tf,s]) => `${tf}:${s}`).join(' ');
+    sendNotif('notif1',
+      `${coin} 鉄板チャンス！ ${direction}`,
+      `総合スコア ${composite}/100 | ${sigList}`,
+      'teppan-' + coin
+    );
+  }
+
+  // ── Type 2: エントリー（10分）──
+  if (notifState.notif2 && isTeppan && isEntryGo) {
+    sendNotif('notif2',
+      `${coin} エントリー好機！ ${direction}`,
+      `総合 ${composite} / ET ${etScore} | $${S.price.toLocaleString('en',{maximumFractionDigits:0})}`,
+      'entry-' + coin
+    );
+  }
+
+  // ── Type 3: 連続通知（30秒）──
+  if (notifState.notif3 && isTeppan && isEntryGo) {
+    sendNotif('notif3',
+      `${coin} ${direction} エントリー中！`,
+      `ET ${etScore} | $${S.price.toLocaleString('en',{maximumFractionDigits:0})} | 5m:${S.tfScore['5m']||'-'} 15m:${S.tfScore['15m']||'-'}`,
+      'continuous-' + coin
+    );
+  }
+}
+
+// Update night indicator every minute
+setInterval(updateNotifUI, 60000);
+
+// Close panel when clicking outside
+document.addEventListener('click', e => {
+  const panel = document.getElementById('notifPanel');
+  const toggle = document.getElementById('notifPanelToggle');
+  if (panel && panel.classList.contains('show') && !panel.contains(e.target) && e.target !== toggle) {
+    panel.classList.remove('show');
+  }
+});
+
+// Patch renderAll to check notifications
 const _origRenderAll = renderAll;
 renderAll = function() {
   _origRenderAll();
-  checkSignalChange();
+  checkNotifications();
 };
 </script>
 

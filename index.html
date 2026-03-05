@@ -417,66 +417,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .news-sec{margin:8px 10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
 .news-sec-t{font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--dim);text-transform:uppercase;letter-spacing:.15em;padding:6px 14px;background:var(--bg2);border-bottom:1px solid var(--border);}
 
-/* ── LINE NOTIFY ── */
-.line-nav-btn{font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:3px 9px;border-radius:4px;background:rgba(0,195,80,.1);color:#06c755;border:1px solid rgba(0,195,80,.3);cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .2s;}
-.line-nav-btn:hover{background:rgba(0,195,80,.2);}
-.line-nav-dot{width:6px;height:6px;border-radius:50%;background:#06c755;animation:dp 1.5s infinite;box-shadow:0 0 5px #06c755;}
-.line-nav-dot.off{background:var(--dim);box-shadow:none;animation:none;}
-.line-nav-dot.warn{background:var(--yellow);box-shadow:0 0 5px var(--yellow);}
-.line-section{margin:0;padding:20px;border-top:2px solid rgba(0,195,80,.2);background:linear-gradient(180deg,var(--bg2) 0%,var(--bg) 100%);}
-.line-sec-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
-.line-sec-title{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:#06c755;letter-spacing:.15em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
-.line-sec-title::before{content:'';width:3px;height:14px;background:#06c755;border-radius:2px;}
-.line-status-pill{font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:5px;}
-.line-status-pill.on{background:rgba(0,195,80,.12);color:#06c755;border:1px solid rgba(0,195,80,.3);}
-.line-status-pill.off{background:rgba(90,122,138,.1);color:var(--dim);border:1px solid var(--border);}
-.line-status-pill.warn{background:rgba(255,214,10,.1);color:var(--yellow);border:1px solid rgba(255,214,10,.3);}
-.line-sdot{width:6px;height:6px;border-radius:50%;}
-.line-status-pill.on .line-sdot{background:#06c755;animation:dp 1.5s infinite;}
-.line-status-pill.warn .line-sdot{background:var(--yellow);}
-.line-status-pill.off .line-sdot{background:var(--dim);}
-.line-current-state{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.line-state-label{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;flex-shrink:0;}
-.line-state-text{font-size:.78rem;font-weight:700;color:var(--dim);}
-.line-state-text.line-state-wait{color:var(--yellow);}
-.line-state-text.line-state-go{color:var(--green);text-shadow:0 0 8px rgba(0,255,136,.4);}
-.line-toggle-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
-.line-toggle-label{font-size:.76rem;font-weight:700;color:var(--text);}
-.line-toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;}
-.line-toggle input{opacity:0;width:0;height:0;}
-.line-toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--bg3);border-radius:24px;border:1px solid var(--border);transition:.3s;}
-.line-toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:2px;bottom:2px;background:var(--dim);border-radius:50%;transition:.3s;}
-.line-toggle input:checked + .line-toggle-slider{background:rgba(0,195,80,.2);border-color:#06c755;}
-.line-toggle input:checked + .line-toggle-slider::before{transform:translateX(20px);background:#06c755;}
-.line-toggle-desc{font-size:.68rem;color:var(--dim);}
-.line-form{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
-.line-form-title{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;}
-.line-form-desc{font-size:.68rem;color:var(--dim);margin-bottom:12px;line-height:1.6;}
-.line-link{color:var(--accent);text-decoration:underline;}
-.line-inputs{display:flex;gap:8px;flex-wrap:wrap;}
-.line-input{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-size:.74rem;font-family:'Noto Sans JP',sans-serif;outline:none;flex:1;min-width:140px;}
-.line-input:focus{border-color:var(--accent);}
-.line-add-btn{background:rgba(0,195,80,.15);color:#06c755;border:1px solid rgba(0,195,80,.35);border-radius:6px;padding:7px 16px;font-size:.74rem;cursor:pointer;white-space:nowrap;font-family:'Share Tech Mono',monospace;transition:background .2s;}
-.line-add-btn:hover{background:rgba(0,195,80,.25);}
-.line-tokens{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
-.line-tokens-title{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.line-token-count{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:1px 7px;font-size:.55rem;}
-.line-empty{font-size:.7rem;color:var(--dim);padding:8px 0;text-align:center;}
-.line-token-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(42,63,85,.5);flex-wrap:wrap;}
-.line-token-item:last-child{border-bottom:none;}
-.line-tok-toggle{position:relative;display:inline-block;width:34px;height:18px;flex-shrink:0;}
-.line-tok-toggle input{opacity:0;width:0;height:0;}
-.line-tok-slider{position:absolute;cursor:pointer;inset:0;background:var(--bg2);border-radius:18px;border:1px solid var(--border);transition:.2s;}
-.line-tok-slider::before{content:'';position:absolute;width:12px;height:12px;left:2px;bottom:2px;background:var(--dim);border-radius:50%;transition:.2s;}
-.line-tok-toggle input:checked + .line-tok-slider{background:rgba(0,195,80,.15);border-color:#06c755;}
-.line-tok-toggle input:checked + .line-tok-slider::before{transform:translateX(16px);background:#06c755;}
-.line-tok-label{font-size:.76rem;font-weight:700;color:var(--text);min-width:60px;}
-.line-tok-token{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.line-test-btn{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.25);border-radius:4px;padding:4px 10px;font-size:.64rem;cursor:pointer;font-family:'Share Tech Mono',monospace;transition:background .2s;}
-.line-test-btn:hover{background:rgba(0,212,255,.2);}
-.line-del-btn{background:rgba(255,45,85,.08);color:var(--red);border:1px solid rgba(255,45,85,.2);border-radius:4px;padding:4px 8px;font-size:.64rem;cursor:pointer;transition:background .2s;}
-.line-del-btn:hover{background:rgba(255,45,85,.18);}
-
 /* ── COIN SWITCHER ── */
 .coin-switcher{display:flex;gap:4px;align-items:center;}
 .coin-btn{font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:4px 11px;border-radius:4px;background:rgba(255,255,255,.04);color:var(--dim);border:1px solid var(--border);cursor:pointer;transition:all .2s;letter-spacing:.06em;}
@@ -1053,8 +993,6 @@ async function switchCoin(key){
   S.price=0; S.p24h=0; S.fr=0; S.ls=50; S.oiVal=0; S.oiPrev=0;
   S.k5=[]; S.k15=[]; S.k1h=[]; S.k4h=[]; S.k1d=[];
   S.tfSig={}; S.tfScore={}; S.tfInds={};
-  lineNotifState='none';
-
   // ETFフローセクション: BTC/ETHのみ表示
   const etfEl = document.querySelector('.etf-section');
   if(etfEl) etfEl.style.display=(key==='BTC'||key==='ETH')?'':'none';
@@ -1079,130 +1017,6 @@ const S = {
   tfSig:{}, tfScore:{}, tfInds:{},
   rsi5:50, rsi15:50,
 };
-
-// ═══════════════════════════════════════════════
-// LINE MESSAGING API (Broadcast)
-// LINE Notify は2025年3月末でサービス終了。Messaging API に移行。
-// ═══════════════════════════════════════════════
-let lineChannelToken = localStorage.getItem('lineChannelToken') || '';
-let lineNotifyEnabled = localStorage.getItem('lineNotifyEnabled') !== 'false';
-let lineNotifState = 'none'; // 'none'|'waiting_long'|'waiting_short'|'go_long'|'go_short'
-
-async function sendLineBroadcast(message){
-  if(!lineChannelToken) return false;
-  try{
-    const url = 'https://api.line.me/v2/bot/message/broadcast';
-    const proxy = 'https://corsproxy.io/?url='+encodeURIComponent(url);
-    const res = await fetch(proxy,{
-      method:'POST',
-      headers:{
-        'Authorization':'Bearer '+lineChannelToken,
-        'Content-Type':'application/json',
-      },
-      body: JSON.stringify({messages:[{type:'text',text:message}]})
-    });
-    return res.ok || res.status===200;
-  }catch(e){ console.warn('LINE Broadcast error:',e); return false; }
-}
-
-function notifyAllUsers(message){
-  if(!lineNotifyEnabled || !lineChannelToken) return;
-  sendLineBroadcast(message);
-}
-
-function checkLineNotifications(sig5m, sig15m, sig1h, sig4h, et1mVerdict){
-  if(!lineNotifyEnabled || !lineChannelToken) return;
-  const allLong  = sig5m==='LONG'  && sig15m==='LONG'  && sig1h==='LONG'  && sig4h==='LONG';
-  const allShort = sig5m==='SHORT' && sig15m==='SHORT' && sig1h==='SHORT' && sig4h==='SHORT';
-  const is1mGo = et1mVerdict==='GO';
-  let newState = 'none';
-  if      (allLong  && is1mGo) newState='go_long';
-  else if (allShort && is1mGo) newState='go_short';
-  else if (allLong)            newState='waiting_long';
-  else if (allShort)           newState='waiting_short';
-  updateLineStateUI(newState);
-  if(newState===lineNotifState) return;
-  lineNotifState = newState;
-  const price = Math.round(S.price).toLocaleString();
-  const cn = COINS[currentCoin].name;
-  if     (newState==='waiting_long')  notifyAllUsers(`⏳ 5分〜4時間足 全てロング一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ロング！\n${cn}: $${price}`);
-  else if(newState==='waiting_short') notifyAllUsers(`⏳ 5分〜4時間足 全てショート一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ショート！\n${cn}: $${price}`);
-  else if(newState==='go_long')       notifyAllUsers(`🔥🟢🟢 鉄板ロング！今すぐエントリー！\n${cn}: $${price}\n5分〜4時間足ロング一致＋1分足GO！`);
-  else if(newState==='go_short')      notifyAllUsers(`🔥🔴🔴 鉄板ショート！今すぐエントリー！\n${cn}: $${price}\n5分〜4時間足ショート一致＋1分足GO！`);
-}
-
-function updateLineStateUI(state){
-  const el=document.getElementById('lineStateText');
-  if(!el) return;
-  const map={
-    'none':          '— 監視中（時間足未一致）',
-    'waiting_long':  '⏳ 5〜4H全LONG一致 — 1分足GO！待ち',
-    'waiting_short': '⏳ 5〜4H全SHORT一致 — 1分足GO！待ち',
-    'go_long':       '🔥 鉄板ロング！エントリーチャンス！',
-    'go_short':      '🔥 鉄板ショート！エントリーチャンス！',
-  };
-  el.textContent = map[state]||'— 監視中';
-  el.className = 'line-state-text'+(state.includes('go')?' line-state-go':state.includes('waiting')?' line-state-wait':'');
-}
-
-function renderLineStatus(){
-  const pill=document.getElementById('lineStatusPill');
-  const txt=document.getElementById('lineStatusText');
-  const chk=document.getElementById('lineEnableChk');
-  const navDot=document.getElementById('lineNavDot');
-  if(chk) chk.checked=lineNotifyEnabled;
-  if(lineNotifyEnabled && lineChannelToken){
-    if(pill){pill.className='line-status-pill on';}
-    if(txt) txt.textContent='有効';
-    if(navDot){navDot.className='line-nav-dot';}
-  } else if(lineNotifyEnabled && !lineChannelToken){
-    if(pill){pill.className='line-status-pill warn';}
-    if(txt) txt.textContent='トークン未設定';
-    if(navDot){navDot.className='line-nav-dot warn';}
-  } else {
-    if(pill){pill.className='line-status-pill off';}
-    if(txt) txt.textContent='無効';
-    if(navDot){navDot.className='line-nav-dot off';}
-  }
-  // Update token input display
-  const inp=document.getElementById('lineTokenInput');
-  if(inp && inp.value==='' && lineChannelToken) inp.placeholder=lineChannelToken.substring(0,12)+'...（設定済み）';
-}
-
-function toggleLineNotify(val){
-  lineNotifyEnabled=val;
-  localStorage.setItem('lineNotifyEnabled', val?'true':'false');
-  renderLineStatus();
-}
-
-function saveLineToken(){
-  const val=document.getElementById('lineTokenInput').value.trim();
-  if(!val){alert('チャネルアクセストークンを入力してください');return;}
-  lineChannelToken=val;
-  localStorage.setItem('lineChannelToken', val);
-  document.getElementById('lineTokenInput').value='';
-  renderLineStatus();
-  alert('✅ トークンを保存しました');
-}
-
-function clearLineToken(){
-  if(!confirm('チャネルアクセストークンを削除しますか？'))return;
-  lineChannelToken='';
-  localStorage.removeItem('lineChannelToken');
-  renderLineStatus();
-}
-
-async function testLineBroadcast(){
-  if(!lineChannelToken){alert('先にチャネルアクセストークンを設定してください');return;}
-  const btn=document.getElementById('lineBroadcastTestBtn');
-  if(btn){btn.textContent='送信中...';btn.disabled=true;}
-  const ok=await sendLineBroadcast(`✅ ${COINS[currentCoin].name}スキャルシグナル — テスト通知\n接続成功！シグナル通知が有効です。\n友達追加済みの全ユーザーに届いています。`);
-  if(btn){btn.textContent='テスト送信';btn.disabled=false;}
-  alert(ok?'✅ LINE送信成功！友達全員に届きました':'❌ 送信失敗。トークンまたはネットワークを確認してください。');
-}
-
-// Initialize LINE UI
-renderLineStatus();
 
 // Apply saved coin on load (if not BTC)
 if(currentCoin !== 'BTC'){
@@ -2051,10 +1865,6 @@ function renderEntryTiming(){
   document.getElementById('etForce').textContent=force;
   document.getElementById('etForce').style.color=force==='上昇'?'var(--green)':force==='下降'?'var(--red)':'var(--dim)';
 
-  // ── LINE通知チェック ──
-  checkLineNotifications(
-    S.tfSig['5m']||'WAIT', S.tfSig['15m']||'WAIT', sig1h, sig4h, verdictCls
-  );
 }
 
 // 1m fetch loop (separate from main loop)
@@ -2514,70 +2324,6 @@ function closeMOv(e){if(e.target===document.getElementById('mOv'))closeMD();}
 function closeMD(){document.getElementById('mOv').classList.remove('show');}
 </script>
 
-<!-- ── LINE通知設定セクション（ページ最下部）── -->
-<div class="line-section" id="lineSection">
-  <div class="line-sec-header">
-    <div class="line-sec-title">📲 LINE通知設定 <span style="font-size:.54rem;color:var(--dim);letter-spacing:.05em;">Messaging API</span></div>
-    <div class="line-status-pill off" id="lineStatusPill">
-      <span class="line-sdot"></span>
-      <span id="lineStatusText">無効</span>
-    </div>
-  </div>
-
-  <!-- 現在の通知状態 -->
-  <div class="line-current-state">
-    <span class="line-state-label">通知状態</span>
-    <span class="line-state-text" id="lineStateText">— 監視中...</span>
-  </div>
-
-  <!-- ON/OFFトグル -->
-  <div class="line-toggle-row">
-    <span class="line-toggle-label">LINE通知</span>
-    <label class="line-toggle">
-      <input type="checkbox" id="lineEnableChk" onchange="toggleLineNotify(this.checked)">
-      <span class="line-toggle-slider"></span>
-    </label>
-    <span class="line-toggle-desc">5〜4時間足一致 / 鉄板エントリー時に自動送信</span>
-  </div>
-
-  <!-- 仕組みの説明 -->
-  <div class="line-form" style="margin-bottom:12px;">
-    <div class="line-form-title">📡 仕組み — ブロードキャスト方式</div>
-    <div class="line-form-desc" style="line-height:1.8;">
-      <b style="color:var(--text);">あなた（管理者）:</b> LINE公式アカウントを作成し、チャネルアクセストークンを以下に入力<br>
-      <b style="color:var(--text);">他のユーザー:</b> LINEアプリであなたの公式アカウントを<b style="color:#06c755;">友達追加するだけ</b>で通知が届く<br>
-      <span style="color:var(--dim);font-size:.66rem;">※ LINE Notifyは2025年3月末でサービス終了。Messaging APIに移行しました。</span>
-    </div>
-  </div>
-
-  <!-- チャネルアクセストークン設定 -->
-  <div class="line-form">
-    <div class="line-form-title">チャネルアクセストークン設定</div>
-    <div class="line-form-desc">
-      ① <a href="https://developers.line.biz/ja/services/messaging-api/" target="_blank" class="line-link">LINE Developers</a> でMessaging APIチャネルを作成<br>
-      ② チャネル設定 →「Messaging API設定」→「チャネルアクセストークン（長期）」を発行<br>
-      ③ 発行されたトークンを以下に貼り付けて保存
-    </div>
-    <div class="line-inputs">
-      <input type="password" id="lineTokenInput" class="line-input" placeholder="チャネルアクセストークンを貼り付け" maxlength="200" style="flex:1;">
-      <button onclick="saveLineToken()" class="line-add-btn">保存</button>
-      <button onclick="clearLineToken()" class="line-del-btn" style="white-space:nowrap;">削除</button>
-    </div>
-  </div>
-
-  <!-- テスト送信 -->
-  <div class="line-tokens">
-    <div class="line-tokens-title">テスト＆確認</div>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;">
-      <button id="lineBroadcastTestBtn" class="line-test-btn" onclick="testLineBroadcast()" style="font-size:.72rem;padding:7px 16px;">テスト送信</button>
-      <span class="line-toggle-desc">友達追加済みの全ユーザーにテストメッセージを送信します</span>
-    </div>
-    <div class="line-empty" style="text-align:left;padding:10px 0;font-size:.68rem;color:var(--dim);line-height:1.8;">
-      💡 <b style="color:var(--text);">他のユーザーへの共有方法:</b><br>
-      LINE Developers → チャネル基本設定 → QRコードを共有、または「@アカウント名」で検索してもらう
-    </div>
-  </div>
-</div>
 
 </body>
 </html>

@@ -1,0 +1,25 @@
+{
+  "name": "BTC先物 スキャルシグナル",
+  "short_name": "BTCシグナル",
+  "description": "BTC/ETH/XRP/SOL 先物スキャルピングシグナル ダッシュボード",
+  "start_url": "/BTCsakimono/",
+  "scope": "/BTCsakimono/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07090d",
+  "theme_color": "#00d4ff",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

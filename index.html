@@ -5,6 +5,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BTC先物 スキャルシグナル</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00d4ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BTCシグナル">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700;900&display=swap');
 :root{
@@ -472,6 +478,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <span id="clk">--:--:--</span>
     <span class="green">JST</span>
     <span class="dim">更新: <span id="nxtUpd">--s</span></span>
+    <button id="notifBtn" onclick="toggleNotifications()" style="background:var(--bg3);border:1px solid var(--border);color:var(--dim);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:.75rem;" title="プッシュ通知">🔔 OFF</button>
   </div>
 </div>
 
@@ -2322,6 +2329,106 @@ function openM(k){
 }
 function closeMOv(e){if(e.target===document.getElementById('mOv'))closeMD();}
 function closeMD(){document.getElementById('mOv').classList.remove('show');}
+
+// ═══════════════════════════════════════════════
+// PWA — Service Worker + Push Notifications
+// ═══════════════════════════════════════════════
+let swReg = null;
+let notifEnabled = localStorage.getItem('notifEnabled') === 'true';
+let prevSignals = {}; // track previous signals per coin to detect changes
+
+// Register SW
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    swReg = reg;
+    console.log('[PWA] SW registered');
+    updateNotifBtn();
+  }).catch(err => console.warn('[PWA] SW registration failed:', err));
+}
+
+function updateNotifBtn() {
+  const btn = document.getElementById('notifBtn');
+  if (!btn) return;
+  if (notifEnabled && Notification.permission === 'granted') {
+    btn.textContent = '🔔 ON';
+    btn.style.color = 'var(--accent)';
+    btn.style.borderColor = 'var(--accent)';
+  } else {
+    btn.textContent = '🔔 OFF';
+    btn.style.color = 'var(--dim)';
+    btn.style.borderColor = 'var(--border)';
+  }
+}
+
+async function toggleNotifications() {
+  if (!('Notification' in window)) {
+    alert('このブラウザは通知に対応していません');
+    return;
+  }
+  if (notifEnabled) {
+    // Turn off
+    notifEnabled = false;
+    localStorage.setItem('notifEnabled', 'false');
+    updateNotifBtn();
+    return;
+  }
+  // Request permission
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    notifEnabled = true;
+    localStorage.setItem('notifEnabled', 'true');
+    // Send test notification
+    if (swReg) {
+      swReg.showNotification('BTCシグナル 通知ON', {
+        body: 'シグナル変化時に通知します',
+        icon: 'icon-192.png',
+        tag: 'test',
+      });
+    }
+  } else {
+    alert('通知の許可が必要です。設定から許可してください。');
+  }
+  updateNotifBtn();
+}
+
+// Check signal changes and send local push notification
+function checkSignalChange() {
+  if (!notifEnabled || !swReg || Notification.permission !== 'granted') return;
+  const coin = currentCoin;
+  const key5 = coin + '_5m';
+  const key15 = coin + '_15m';
+  const sig5 = S.tfSig['5m'] || 'WAIT';
+  const sig15 = S.tfSig['15m'] || 'WAIT';
+
+  let messages = [];
+
+  if (prevSignals[key5] && prevSignals[key5] !== sig5 && sig5 !== 'WAIT') {
+    messages.push(`5m: ${prevSignals[key5]} → ${sig5}`);
+  }
+  if (prevSignals[key15] && prevSignals[key15] !== sig15 && sig15 !== 'WAIT') {
+    messages.push(`15m: ${prevSignals[key15]} → ${sig15}`);
+  }
+
+  prevSignals[key5] = sig5;
+  prevSignals[key15] = sig15;
+
+  if (messages.length > 0) {
+    const scoreInfo = `(5m:${S.tfScore['5m']||'-'} 15m:${S.tfScore['15m']||'-'})`;
+    swReg.showNotification(`${coin} シグナル変化`, {
+      body: messages.join(' / ') + ' ' + scoreInfo,
+      icon: 'icon-192.png',
+      tag: 'signal-' + coin,
+      renotify: true,
+    });
+  }
+}
+
+// Patch renderAll to also check signal changes
+const _origRenderAll = renderAll;
+renderAll = function() {
+  _origRenderAll();
+  checkSignalChange();
+};
 </script>
 
 

@@ -482,6 +482,28 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .coin-btn{font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:4px 11px;border-radius:4px;background:rgba(255,255,255,.04);color:var(--dim);border:1px solid var(--border);cursor:pointer;transition:all .2s;letter-spacing:.06em;}
 .coin-btn.active{background:rgba(0,212,255,.15);color:var(--accent);border-color:rgba(0,212,255,.4);box-shadow:0 0 6px rgba(0,212,255,.15);}
 .coin-btn:hover:not(.active){background:rgba(255,255,255,.08);color:var(--text);}
+
+/* ── SIGNAL NATURE + DAY GAUGE ── */
+.nature-gauge-row{display:flex;gap:14px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin:10px 16px 4px;flex-wrap:wrap;align-items:flex-start;}
+.nature-panel{flex:2;min-width:200px;}
+.day-gauge-panel{flex:1;min-width:110px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.ng-title{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-bottom:7px;}
+.nature-badge{font-size:.77rem;font-weight:700;padding:5px 11px;border-radius:5px;display:inline-block;margin-bottom:8px;line-height:1.3;}
+.nature-badge.reversal{background:rgba(255,214,10,.13);color:var(--yellow);border:1px solid rgba(255,214,10,.35);}
+.nature-badge.momentum{background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.28);}
+.nature-badge.mixed{background:rgba(0,255,136,.08);color:var(--green);border:1px solid rgba(0,255,136,.2);}
+.nature-badge.neut{background:rgba(90,122,138,.08);color:var(--dim);border:1px solid var(--border);}
+.nature-subs{display:flex;flex-direction:column;gap:6px;}
+.nature-sub{display:flex;align-items:center;gap:7px;font-size:.68rem;flex-wrap:wrap;}
+.nsub-check{font-family:'Share Tech Mono',monospace;font-size:.8rem;font-weight:bold;width:14px;flex-shrink:0;text-align:center;transition:color .3s;}
+.nsub-check.on{color:var(--green);}
+.nsub-check.off{color:var(--dim);}
+.nsub-label{font-weight:700;color:var(--text);min-width:90px;flex-shrink:0;}
+.nsub-desc{color:var(--dim);font-size:.61rem;}
+.day-gauge-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
+.day-gauge-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
+.day-gauge-pct{font-family:'Share Tech Mono',monospace;font-size:1.05rem;font-weight:bold;line-height:1;}
+.day-gauge-lbl{font-family:'Share Tech Mono',monospace;font-size:.46rem;color:var(--dim);margin-top:2px;white-space:nowrap;}
 </style>
 
 </head>
@@ -510,7 +532,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <span id="clk">--:--:--</span>
     <span class="green">JST</span>
     <span class="dim">更新: <span id="nxtUpd">--s</span></span>
-    <a href="#lineSection" class="line-nav-btn"><span class="line-nav-dot off" id="lineNavDot"></span>LINE通知</a>
   </div>
 </div>
 
@@ -614,6 +635,34 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
 </div>
 
+  </div>
+
+  <!-- シグナルの性質 + 今日のチャンス度合い -->
+  <div class="nature-gauge-row" id="natureGaugeRow">
+    <div class="nature-panel">
+      <div class="ng-title">シグナルの性質</div>
+      <div id="natureBadge" class="nature-badge neut">— データ読み込み中</div>
+      <div id="natureSubWrap" class="nature-subs" style="display:none;">
+        <div class="nature-sub" id="nSub0"></div>
+        <div class="nature-sub" id="nSub1"></div>
+        <div class="nature-sub" id="nSub2"></div>
+      </div>
+    </div>
+    <div class="day-gauge-panel">
+      <div class="ng-title">今日の強気チャンス</div>
+      <div class="day-gauge-wrap">
+        <svg viewBox="0 0 80 80" width="80" height="80">
+          <circle cx="40" cy="40" r="30" fill="none" stroke="#1e2d3d" stroke-width="9"/>
+          <circle cx="40" cy="40" r="30" fill="none" stroke="var(--yellow)" stroke-width="9"
+            stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="94.3"
+            id="dayGaugeArc" transform="rotate(-90 40 40)"/>
+        </svg>
+        <div class="day-gauge-center">
+          <div class="day-gauge-pct" id="dayGaugePct">--%</div>
+          <div class="day-gauge-lbl" id="dayGaugeLbl">強気</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 5m + 15m pair -->
@@ -1032,34 +1081,37 @@ const S = {
 };
 
 // ═══════════════════════════════════════════════
-// LINE NOTIFY
+// LINE MESSAGING API (Broadcast)
+// LINE Notify は2025年3月末でサービス終了。Messaging API に移行。
 // ═══════════════════════════════════════════════
-let lineTokens = JSON.parse(localStorage.getItem('lineTokens')||'[]');
+let lineChannelToken = localStorage.getItem('lineChannelToken') || '';
 let lineNotifyEnabled = localStorage.getItem('lineNotifyEnabled') !== 'false';
 let lineNotifState = 'none'; // 'none'|'waiting_long'|'waiting_short'|'go_long'|'go_short'
 
-function saveLineTokens(){ localStorage.setItem('lineTokens', JSON.stringify(lineTokens)); }
-
-async function sendLineNotify(token, message){
+async function sendLineBroadcast(message){
+  if(!lineChannelToken) return false;
   try{
-    const url = 'https://notify-api.line.me/api/notify';
+    const url = 'https://api.line.me/v2/bot/message/broadcast';
     const proxy = 'https://corsproxy.io/?url='+encodeURIComponent(url);
     const res = await fetch(proxy,{
       method:'POST',
-      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/x-www-form-urlencoded'},
-      body:'message='+encodeURIComponent(message)
+      headers:{
+        'Authorization':'Bearer '+lineChannelToken,
+        'Content-Type':'application/json',
+      },
+      body: JSON.stringify({messages:[{type:'text',text:message}]})
     });
-    return res.ok;
-  }catch(e){ console.warn('LINE Notify error:',e); return false; }
+    return res.ok || res.status===200;
+  }catch(e){ console.warn('LINE Broadcast error:',e); return false; }
 }
 
 function notifyAllUsers(message){
-  if(!lineNotifyEnabled) return;
-  lineTokens.filter(t=>t.enabled).forEach(t=>sendLineNotify(t.token, message));
+  if(!lineNotifyEnabled || !lineChannelToken) return;
+  sendLineBroadcast(message);
 }
 
 function checkLineNotifications(sig5m, sig15m, sig1h, sig4h, et1mVerdict){
-  if(!lineNotifyEnabled || lineTokens.filter(t=>t.enabled).length===0) return;
+  if(!lineNotifyEnabled || !lineChannelToken) return;
   const allLong  = sig5m==='LONG'  && sig15m==='LONG'  && sig1h==='LONG'  && sig4h==='LONG';
   const allShort = sig5m==='SHORT' && sig15m==='SHORT' && sig1h==='SHORT' && sig4h==='SHORT';
   const is1mGo = et1mVerdict==='GO';
@@ -1073,10 +1125,10 @@ function checkLineNotifications(sig5m, sig15m, sig1h, sig4h, et1mVerdict){
   lineNotifState = newState;
   const price = Math.round(S.price).toLocaleString();
   const cn = COINS[currentCoin].name;
-  if     (newState==='waiting_long')  notifyAllUsers(`\n⏳ 5分〜4時間足 全てロング一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ロング！\n${cn}: $${price}`);
-  else if(newState==='waiting_short') notifyAllUsers(`\n⏳ 5分〜4時間足 全てショート一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ショート！\n${cn}: $${price}`);
-  else if(newState==='go_long')       notifyAllUsers(`\n🔥🟢🟢 鉄板ロング！今すぐエントリー！\n${cn}: $${price}\n5分〜4時間足ロング一致＋1分足GO！`);
-  else if(newState==='go_short')      notifyAllUsers(`\n🔥🔴🔴 鉄板ショート！今すぐエントリー！\n${cn}: $${price}\n5分〜4時間足ショート一致＋1分足GO！`);
+  if     (newState==='waiting_long')  notifyAllUsers(`⏳ 5分〜4時間足 全てロング一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ロング！\n${cn}: $${price}`);
+  else if(newState==='waiting_short') notifyAllUsers(`⏳ 5分〜4時間足 全てショート一致！\nエントリータイミング待機中📊\n1分足でGO！が出たら鉄板ショート！\n${cn}: $${price}`);
+  else if(newState==='go_long')       notifyAllUsers(`🔥🟢🟢 鉄板ロング！今すぐエントリー！\n${cn}: $${price}\n5分〜4時間足ロング一致＋1分足GO！`);
+  else if(newState==='go_short')      notifyAllUsers(`🔥🔴🔴 鉄板ショート！今すぐエントリー！\n${cn}: $${price}\n5分〜4時間足ショート一致＋1分足GO！`);
 }
 
 function updateLineStateUI(state){
@@ -1098,21 +1150,23 @@ function renderLineStatus(){
   const txt=document.getElementById('lineStatusText');
   const chk=document.getElementById('lineEnableChk');
   const navDot=document.getElementById('lineNavDot');
-  const cnt=lineTokens.filter(t=>t.enabled).length;
   if(chk) chk.checked=lineNotifyEnabled;
-  if(lineNotifyEnabled && cnt>0){
+  if(lineNotifyEnabled && lineChannelToken){
     if(pill){pill.className='line-status-pill on';}
-    if(txt) txt.textContent='有効 ('+cnt+'件)';
+    if(txt) txt.textContent='有効';
     if(navDot){navDot.className='line-nav-dot';}
-  } else if(lineNotifyEnabled && cnt===0){
+  } else if(lineNotifyEnabled && !lineChannelToken){
     if(pill){pill.className='line-status-pill warn';}
-    if(txt) txt.textContent='トークン未登録';
+    if(txt) txt.textContent='トークン未設定';
     if(navDot){navDot.className='line-nav-dot warn';}
   } else {
     if(pill){pill.className='line-status-pill off';}
     if(txt) txt.textContent='無効';
     if(navDot){navDot.className='line-nav-dot off';}
   }
+  // Update token input display
+  const inp=document.getElementById('lineTokenInput');
+  if(inp && inp.value==='' && lineChannelToken) inp.placeholder=lineChannelToken.substring(0,12)+'...（設定済み）';
 }
 
 function toggleLineNotify(val){
@@ -1121,62 +1175,33 @@ function toggleLineNotify(val){
   renderLineStatus();
 }
 
-function addLineToken(){
-  const label=(document.getElementById('lineNewLabel').value.trim()||'ユーザー'+(lineTokens.length+1));
-  const token=document.getElementById('lineNewToken').value.trim();
-  if(!token){alert('トークンを入力してください');return;}
-  lineTokens.push({label,token,enabled:true});
-  saveLineTokens();
-  document.getElementById('lineNewLabel').value='';
-  document.getElementById('lineNewToken').value='';
-  renderLineTokenList();
+function saveLineToken(){
+  const val=document.getElementById('lineTokenInput').value.trim();
+  if(!val){alert('チャネルアクセストークンを入力してください');return;}
+  lineChannelToken=val;
+  localStorage.setItem('lineChannelToken', val);
+  document.getElementById('lineTokenInput').value='';
+  renderLineStatus();
+  alert('✅ トークンを保存しました');
+}
+
+function clearLineToken(){
+  if(!confirm('チャネルアクセストークンを削除しますか？'))return;
+  lineChannelToken='';
+  localStorage.removeItem('lineChannelToken');
   renderLineStatus();
 }
 
-function removeLineToken(idx){
-  if(!confirm('「'+lineTokens[idx].label+'」を削除しますか？'))return;
-  lineTokens.splice(idx,1);
-  saveLineTokens();
-  renderLineTokenList();
-  renderLineStatus();
-}
-
-function toggleLineToken(idx,val){
-  lineTokens[idx].enabled=val;
-  saveLineTokens();
-  renderLineStatus();
-}
-
-async function testLineToken(idx){
-  const t=lineTokens[idx];
-  const btn=document.getElementById('lineTestBtn'+idx);
+async function testLineBroadcast(){
+  if(!lineChannelToken){alert('先にチャネルアクセストークンを設定してください');return;}
+  const btn=document.getElementById('lineBroadcastTestBtn');
   if(btn){btn.textContent='送信中...';btn.disabled=true;}
-  const ok=await sendLineNotify(t.token,`\n✅ ${COINS[currentCoin].name}スキャルシグナル — テスト通知\n接続成功！シグナル通知が有効です。`);
-  if(btn){btn.textContent='テスト';btn.disabled=false;}
-  alert(ok?'✅ LINE送信成功！':'❌ 送信失敗。トークンを確認してください。');
-}
-
-function renderLineTokenList(){
-  const list=document.getElementById('lineTokenList');
-  const countEl=document.getElementById('lineTokenCount');
-  if(!list)return;
-  if(countEl) countEl.textContent=lineTokens.length+'件';
-  if(lineTokens.length===0){
-    list.innerHTML='<div class="line-empty">トークンが登録されていません</div>';
-    return;
-  }
-  list.innerHTML=lineTokens.map((t,i)=>`
-    <div class="line-token-item">
-      <label class="line-tok-toggle"><input type="checkbox" ${t.enabled?'checked':''} onchange="toggleLineToken(${i},this.checked)"><span class="line-tok-slider"></span></label>
-      <span class="line-tok-label">${t.label}</span>
-      <span class="line-tok-token">${t.token.substring(0,8)}...</span>
-      <button id="lineTestBtn${i}" class="line-test-btn" onclick="testLineToken(${i})">テスト</button>
-      <button class="line-del-btn" onclick="removeLineToken(${i})">削除</button>
-    </div>`).join('');
+  const ok=await sendLineBroadcast(`✅ ${COINS[currentCoin].name}スキャルシグナル — テスト通知\n接続成功！シグナル通知が有効です。\n友達追加済みの全ユーザーに届いています。`);
+  if(btn){btn.textContent='テスト送信';btn.disabled=false;}
+  alert(ok?'✅ LINE送信成功！友達全員に届きました':'❌ 送信失敗。トークンまたはネットワークを確認してください。');
 }
 
 // Initialize LINE UI
-renderLineTokenList();
 renderLineStatus();
 
 // Apply saved coin on load (if not BTC)
@@ -1523,6 +1548,83 @@ function renderScalpHero(){
       const cls=['active-short','active-short-w','active-wait','active-long-w','active-long'][i];
       el.className='lp '+cls;
     }
+  }
+
+  renderSignalNature(composite, sig);
+}
+
+function renderSignalNature(composite, sig){
+  // ── 今日の強気チャンス（日足スコア） ──
+  const dayScore = S.tfScore['1d'] !== undefined ? S.tfScore['1d'] : composite;
+  const dayArc = document.getElementById('dayGaugeArc');
+  const dayPctEl = document.getElementById('dayGaugePct');
+  const dayLblEl = document.getElementById('dayGaugeLbl');
+  const dayColor = dayScore>=65?'var(--green)':dayScore<=35?'var(--red)':'var(--yellow)';
+  if(dayArc){ dayArc.setAttribute('stroke-dashoffset',(188.5*(1-dayScore/100)).toFixed(1)); dayArc.setAttribute('stroke',dayColor); }
+  if(dayPctEl){ dayPctEl.textContent=dayScore+'%'; dayPctEl.style.color=dayColor; }
+  if(dayLblEl){ dayLblEl.textContent=dayScore>=65?'LONGバイアス日':dayScore<=35?'SHORTバイアス日':'中立日'; }
+
+  // ── シグナルの性質 ──
+  const badge = document.getElementById('natureBadge');
+  const subWrap = document.getElementById('natureSubWrap');
+  if(sig==='WAIT'){
+    if(badge){ badge.textContent='⬛ 判断なし — 方向感なし'; badge.className='nature-badge neut'; }
+    if(subWrap) subWrap.style.display='none';
+    return;
+  }
+  const isLong = sig==='LONG';
+
+  // Sub①: RSI 売られ過ぎ／買われ過ぎ（1H・4H）
+  const rsi1h = S.tfInds['1h']?.rsi;
+  const rsi4h = S.tfInds['4h']?.rsi;
+  const rsiRev = isLong
+    ? ((rsi1h?.badge||'').includes('売られ') || (rsi4h?.badge||'').includes('売られ'))
+    : ((rsi1h?.badge||'').includes('買われ') || (rsi4h?.badge||'').includes('買われ'));
+
+  // Sub②: FR 逆張り（FRが反対方向に極端）
+  const frRev = isLong ? S.fr < -0.015 : S.fr > 0.03;
+  const frPct = (S.fr*100).toFixed(3);
+
+  // Sub③: ボリンジャーバンド 反発（下限付近 for LONG、上限付近 for SHORT）
+  const bb1h = S.tfInds['1h']?.bb;
+  const bb4h = S.tfInds['4h']?.bb;
+  const bbRev = isLong
+    ? (bb1h?.cls==='bull' || bb4h?.cls==='bull')
+    : (bb1h?.cls==='bear' || bb4h?.cls==='bear');
+
+  const revCount = [rsiRev, frRev, bbRev].filter(Boolean).length;
+
+  const subs = [
+    { label:'RSI 売られ過ぎ', active:rsiRev, desc:isLong?'1H/4H RSI が30以下（売られ過ぎ）':'1H/4H RSI が70以上（買われ過ぎ）' },
+    { label:'FR 逆張り',      active:frRev,  desc:isLong?`FR ${frPct}% — ロング側有利（スクイーズ狙い）`:`FR ${frPct}% — ショート側有利` },
+    { label:'ボリバン 反発',  active:bbRev,  desc:isLong?'BB 下限付近 — 平均回帰ロング狙い':'BB 上限付近 — 平均回帰ショート狙い' },
+  ];
+
+  if(revCount>=1){
+    if(badge){
+      badge.textContent = isLong?'🔄 売られ過ぎ反発 — 逆張りロング':'🔄 買われ過ぎ反落 — 逆張りショート';
+      badge.className='nature-badge reversal';
+    }
+    if(subWrap){
+      subWrap.style.display='flex';
+      ['nSub0','nSub1','nSub2'].forEach((id,i)=>{
+        const el=document.getElementById(id);
+        if(el) el.innerHTML=`<span class="nsub-check ${subs[i].active?'on':'off'}">${subs[i].active?'✓':'—'}</span><span class="nsub-label">${subs[i].label}</span><span class="nsub-desc">${subs[i].desc}</span>`;
+      });
+    }
+  } else {
+    // 順張り（モメンタム）チェック
+    const trend4h = S.tfInds['4h']?.trend;
+    const vwap1h  = S.tfInds['1h']?.vwap;
+    const momentumOk = isLong
+      ? (trend4h?.cls==='bull') && (vwap1h?.cls==='bull')
+      : (trend4h?.cls==='bear') && (vwap1h?.cls==='bear');
+    if(momentumOk){
+      if(badge){ badge.textContent=isLong?'📈 勢い順張り — トレンドフォローロング':'📉 勢い順張り — トレンドフォローショート'; badge.className='nature-badge momentum'; }
+    } else {
+      if(badge){ badge.textContent=isLong?'📊 LONGシグナル — 複合要因':'📊 SHORTシグナル — 複合要因'; badge.className='nature-badge mixed'; }
+    }
+    if(subWrap) subWrap.style.display='none';
   }
 }
 
@@ -2415,7 +2517,7 @@ function closeMD(){document.getElementById('mOv').classList.remove('show');}
 <!-- ── LINE通知設定セクション（ページ最下部）── -->
 <div class="line-section" id="lineSection">
   <div class="line-sec-header">
-    <div class="line-sec-title">📲 LINE通知設定</div>
+    <div class="line-sec-title">📲 LINE通知設定 <span style="font-size:.54rem;color:var(--dim);letter-spacing:.05em;">Messaging API</span></div>
     <div class="line-status-pill off" id="lineStatusPill">
       <span class="line-sdot"></span>
       <span id="lineStatusText">無効</span>
@@ -2438,26 +2540,42 @@ function closeMD(){document.getElementById('mOv').classList.remove('show');}
     <span class="line-toggle-desc">5〜4時間足一致 / 鉄板エントリー時に自動送信</span>
   </div>
 
-  <!-- トークン登録フォーム -->
-  <div class="line-form">
-    <div class="line-form-title">トークン追加</div>
-    <div class="line-form-desc">
-      <a href="https://notify.line.me/" target="_blank" class="line-link">LINE Notify (notify.line.me)</a>
-      でトークンを発行し、以下に入力してください。複数ユーザーのトークンを追加することで、それぞれのLINEに通知が届きます。
-    </div>
-    <div class="line-inputs">
-      <input type="text" id="lineNewLabel" class="line-input" placeholder="ラベル（例: 自分、友達A）" maxlength="20">
-      <input type="text" id="lineNewToken" class="line-input" placeholder="LINE Notifyトークン（英数字）" maxlength="80">
-      <button onclick="addLineToken()" class="line-add-btn">＋ 追加</button>
+  <!-- 仕組みの説明 -->
+  <div class="line-form" style="margin-bottom:12px;">
+    <div class="line-form-title">📡 仕組み — ブロードキャスト方式</div>
+    <div class="line-form-desc" style="line-height:1.8;">
+      <b style="color:var(--text);">あなた（管理者）:</b> LINE公式アカウントを作成し、チャネルアクセストークンを以下に入力<br>
+      <b style="color:var(--text);">他のユーザー:</b> LINEアプリであなたの公式アカウントを<b style="color:#06c755;">友達追加するだけ</b>で通知が届く<br>
+      <span style="color:var(--dim);font-size:.66rem;">※ LINE Notifyは2025年3月末でサービス終了。Messaging APIに移行しました。</span>
     </div>
   </div>
 
-  <!-- 登録済みトークン一覧 -->
-  <div class="line-tokens">
-    <div class="line-tokens-title">
-      登録済みトークン <span class="line-token-count" id="lineTokenCount">0件</span>
+  <!-- チャネルアクセストークン設定 -->
+  <div class="line-form">
+    <div class="line-form-title">チャネルアクセストークン設定</div>
+    <div class="line-form-desc">
+      ① <a href="https://developers.line.biz/ja/services/messaging-api/" target="_blank" class="line-link">LINE Developers</a> でMessaging APIチャネルを作成<br>
+      ② チャネル設定 →「Messaging API設定」→「チャネルアクセストークン（長期）」を発行<br>
+      ③ 発行されたトークンを以下に貼り付けて保存
     </div>
-    <div id="lineTokenList"><div class="line-empty">トークンが登録されていません</div></div>
+    <div class="line-inputs">
+      <input type="password" id="lineTokenInput" class="line-input" placeholder="チャネルアクセストークンを貼り付け" maxlength="200" style="flex:1;">
+      <button onclick="saveLineToken()" class="line-add-btn">保存</button>
+      <button onclick="clearLineToken()" class="line-del-btn" style="white-space:nowrap;">削除</button>
+    </div>
+  </div>
+
+  <!-- テスト送信 -->
+  <div class="line-tokens">
+    <div class="line-tokens-title">テスト＆確認</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;">
+      <button id="lineBroadcastTestBtn" class="line-test-btn" onclick="testLineBroadcast()" style="font-size:.72rem;padding:7px 16px;">テスト送信</button>
+      <span class="line-toggle-desc">友達追加済みの全ユーザーにテストメッセージを送信します</span>
+    </div>
+    <div class="line-empty" style="text-align:left;padding:10px 0;font-size:.68rem;color:var(--dim);line-height:1.8;">
+      💡 <b style="color:var(--text);">他のユーザーへの共有方法:</b><br>
+      LINE Developers → チャネル基本設定 → QRコードを共有、または「@アカウント名」で検索してもらう
+    </div>
   </div>
 </div>
 

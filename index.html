@@ -87,6 +87,11 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:6px;}
 .logo{font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent);letter-spacing:.1em;}
 .topbar-r{display:flex;gap:12px;align-items:center;font-family:'Share Tech Mono',monospace;font-size:.66rem;color:var(--dim);flex-wrap:wrap;}
+.session-badge{padding:2px 8px;border-radius:4px;font-size:.58rem;font-weight:700;font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+.session-badge.ny{background:rgba(0,255,136,.15);color:var(--green);border:1px solid var(--green);}
+.session-badge.london{background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid var(--cyan);}
+.session-badge.asia{background:rgba(255,214,10,.1);color:var(--yellow);border:1px solid rgba(255,214,10,.3);}
+.session-badge.offpeak{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--border);}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px;animation:dp 1.5s infinite;box-shadow:0 0 7px var(--green);}
 .dot.y{background:var(--yellow);box-shadow:0 0 7px var(--yellow);}
 .dot.r{background:var(--red);box-shadow:0 0 7px var(--red);}
@@ -475,6 +480,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <button class="coin-btn" data-coin="SOL" onclick="switchCoin('SOL')">SOL</button>
   </div>
   <div class="topbar-r">
+    <span class="session-badge" id="sessionBadge">--</span>
     <span><span class="dot" id="apiDot"></span><span id="apiSt">接続中...</span></span>
     <span id="clk">--:--:--</span>
     <span class="green">JST</span>
@@ -904,6 +910,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <tr><td>RSI 5m</td><td class="dim" id="mx-r5">---</td><td>30/70</td><td id="mx-r5-st"><span class="dim">---</span></td><td class="dim" id="mx-r5-sg">---</td><td class="dim" style="font-size:.56rem;">Binance Klines</td></tr>
       <tr><td>RSI 15m</td><td class="dim" id="mx-r15">---</td><td>30/70</td><td id="mx-r15-st"><span class="dim">---</span></td><td class="dim" id="mx-r15-sg">---</td><td class="dim" style="font-size:.56rem;">Binance Klines</td></tr>
       <tr><td>Fear & Greed</td><td class="dim" id="mx-fg">---</td><td>25/75</td><td id="mx-fg-st"><span class="dim">---</span></td><td class="dim" id="mx-fg-sg">---</td><td class="dim" style="font-size:.56rem;">alternative.me</td></tr>
+      <tr><td>DXY (USD強度)</td><td class="dim" id="mx-dxy">---</td><td>—</td><td id="mx-dxy-st"><span class="dim">---</span></td><td class="dim" id="mx-dxy-sg">---</td><td class="dim" style="font-size:.56rem;">EUR/USD逆算</td></tr>
       <tr><td>清算ゾーン↑</td><td class="dim" id="mx-liq">---</td><td>—</td><td><span class="dim">推定値</span></td><td class="dim">SHORT磁石</td><td class="dim" style="font-size:.56rem;">価格×1.025</td></tr>
       <tr><td>ETFフロー週計</td><td class="green">+$407M</td><td>—</td><td><span class="green">✓ 純流入</span></td><td class="dim">機関が買い越し</td><td class="dim" style="font-size:.56rem;">手動更新</td></tr>
     </tbody>
@@ -948,6 +955,49 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       ⚠️ 上記は参考値です。1トレードの最大損失は総資金の1〜2%を原則とし、最終判断はご自身の責任で行ってください。
       高レバレッジほど利益も損失も拡大します。慣れないうちは「安全」または「一般」から始めてください。
     </div>
+  </div>
+</div>
+
+<!-- TRADE JOURNAL -->
+<div class="sec">
+  <div class="sec-t">トレード日誌 <span class="live-b" style="font-size:.5rem;">localStorage保存</span></div>
+  <div style="padding:12px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div>
+        <label style="font-size:.55rem;color:var(--dim);">方向</label>
+        <select id="tjDir" style="width:100%;padding:5px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:.65rem;">
+          <option value="LONG">LONG</option><option value="SHORT">SHORT</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:.55rem;color:var(--dim);">エントリー価格</label>
+        <input id="tjEntry" type="number" style="width:100%;padding:5px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:.65rem;" placeholder="自動入力">
+      </div>
+      <div>
+        <label style="font-size:.55rem;color:var(--dim);">決済価格</label>
+        <input id="tjExit" type="number" style="width:100%;padding:5px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:.65rem;" placeholder="0">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div>
+        <label style="font-size:.55rem;color:var(--dim);">サイズ (枚)</label>
+        <input id="tjSize" type="number" step="0.001" style="width:100%;padding:5px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:.65rem;" placeholder="0.01">
+      </div>
+      <div>
+        <label style="font-size:.55rem;color:var(--dim);">レバレッジ</label>
+        <input id="tjLev" type="number" style="width:100%;padding:5px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:.65rem;" value="3">
+      </div>
+      <div>
+        <label style="font-size:.55rem;color:var(--dim);">メモ</label>
+        <input id="tjNote" type="text" style="width:100%;padding:5px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:.65rem;" placeholder="任意">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button onclick="saveTrade()" style="flex:1;padding:6px;background:var(--accent);color:#000;border:none;border-radius:4px;font-size:.65rem;font-weight:700;cursor:pointer;">記録する</button>
+      <button onclick="exportTradesCSV()" style="padding:6px 12px;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:4px;font-size:.6rem;cursor:pointer;">CSV出力</button>
+    </div>
+    <div id="tjStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;font-family:'Share Tech Mono',monospace;font-size:.6rem;"></div>
+    <div id="tjTable" style="max-height:200px;overflow-y:auto;font-size:.58rem;"></div>
   </div>
 </div>
 
@@ -1031,7 +1081,7 @@ async function switchCoin(key){
 const S = {
   price:0, p24h:0,
   fr:0, ls:50, oiVal:0, oiPrev:0,
-  usdJpy:150, fg:50,
+  usdJpy:150, fg:50, dxy:0,
   k5:[], k15:[], k1h:[], k4h:[], k1d:[],
   tfSig:{}, tfScore:{}, tfInds:{},
   rsi5:50, rsi15:50,
@@ -1058,11 +1108,21 @@ const KL = {'5m':()=>S.k5,'15m':()=>S.k15,'1h':()=>S.k1h,'4h':()=>S.k4h,'1d':()=
 // ═══════════════════════════════════════════════
 // CLOCK
 // ═══════════════════════════════════════════════
+function updateSession(){
+  const h = new Date().getUTCHours();
+  const el = document.getElementById('sessionBadge');
+  if(h>=13&&h<21){el.textContent='NY';el.className='session-badge ny';}
+  else if(h>=8&&h<13){el.textContent='LONDON';el.className='session-badge london';}
+  else if(h>=0&&h<8){el.textContent='ASIA';el.className='session-badge asia';}
+  else{el.textContent='OFF-PEAK';el.className='session-badge offpeak';}
+}
 setInterval(()=>{
   const t=new Date().toLocaleTimeString('ja-JP',{hour12:false});
   document.getElementById('clk').textContent=t;
   document.getElementById('clkB').textContent=t;
+  updateSession();
 },1000);
+updateSession();
 
 // ═══════════════════════════════════════════════
 // LOADING
@@ -1149,6 +1209,20 @@ async function fetchFX(){
   }
 }
 
+async function fetchDXY(){
+  try{
+    // Use USD/EUR, USD/JPY, USD/GBP to approximate DXY
+    const d=await safeFetch('https://open.er-api.com/v6/latest/USD');
+    if(d.rates){
+      // Simplified DXY approximation: inverse-weighted basket
+      // DXY ≈ 50.14348 × (1/EUR)^0.576 × JPY^0.136 × (1/GBP)^0.119 × ...
+      // Simplified: just track EUR weight (57.6% of DXY)
+      const eur=d.rates.EUR||0.92;
+      S.dxy = Math.round((1/eur)*100*100)/100; // rough proxy
+    }
+  }catch(e){}
+}
+
 function setDot(id, cls){
   const el=document.getElementById(id);
   if(el){ el.className='api-dot '+cls; }
@@ -1176,13 +1250,26 @@ function computeTF(tf){
   const c=TFCFG[tf];
   let bull=0,bear=0; const inds={};
 
-  // RSI
-  const rsi=calcRSI(cl, c.fast?9:14);
+  // RSI with adaptive thresholds based on lookback percentiles
+  const rsiPeriod = c.fast?9:14;
+  const rsi=calcRSI(cl, rsiPeriod);
   if(tf==='5m')S.rsi5=rsi; if(tf==='15m')S.rsi15=rsi;
-  if(rsi>75){inds.rsi={cls:'bear',val:`RSI ${rsi.toFixed(0)}`,badge:'▼ 買われすぎ',bCls:'br',why:'反転注意'};bear+=2;}
-  else if(rsi>60){inds.rsi={cls:'bull',val:`RSI ${rsi.toFixed(0)}`,badge:'▲ 強気',bCls:'bb',why:'上昇モメンタム'};bull+=1;}
-  else if(rsi<25){inds.rsi={cls:'bull',val:`RSI ${rsi.toFixed(0)}`,badge:'▲ 売られすぎ',bCls:'bb',why:'反転候補'};bull+=2;}
-  else if(rsi<40){inds.rsi={cls:'bear',val:`RSI ${rsi.toFixed(0)}`,badge:'▼ 弱気',bCls:'br',why:'下降モメンタム'};bear+=1;}
+  // Compute adaptive thresholds from RSI distribution
+  const rsiAll = calcRSIAll(cl, rsiPeriod);
+  const validRsi = rsiAll.filter(v => v > 0 && v < 100);
+  let rsiOB=75, rsiBull=60, rsiBear=40, rsiOS=25; // defaults
+  if(validRsi.length >= 20){
+    const sorted = validRsi.slice().sort((a,b)=>a-b);
+    const pct = p => sorted[Math.floor(sorted.length * p)];
+    rsiOB = Math.max(65, pct(0.85));   // 85th percentile, min 65
+    rsiBull = Math.max(52, pct(0.65));  // 65th percentile, min 52
+    rsiBear = Math.min(48, pct(0.35));  // 35th percentile, max 48
+    rsiOS = Math.min(35, pct(0.15));    // 15th percentile, max 35
+  }
+  if(rsi>rsiOB){inds.rsi={cls:'bear',val:`RSI ${rsi.toFixed(0)}`,badge:'▼ 買われすぎ',bCls:'br',why:`反転注意 (>${rsiOB.toFixed(0)})`};bear+=2;}
+  else if(rsi>rsiBull){inds.rsi={cls:'bull',val:`RSI ${rsi.toFixed(0)}`,badge:'▲ 強気',bCls:'bb',why:'上昇モメンタム'};bull+=1;}
+  else if(rsi<rsiOS){inds.rsi={cls:'bull',val:`RSI ${rsi.toFixed(0)}`,badge:'▲ 売られすぎ',bCls:'bb',why:`反転候補 (<${rsiOS.toFixed(0)})`};bull+=2;}
+  else if(rsi<rsiBear){inds.rsi={cls:'bear',val:`RSI ${rsi.toFixed(0)}`,badge:'▼ 弱気',bCls:'br',why:'下降モメンタム'};bear+=1;}
   else{inds.rsi={cls:'neut',val:`RSI ${rsi.toFixed(0)}`,badge:'— 中立',bCls:'bn',why:'中立ゾーン'};}
 
   // Trend SMA
@@ -1229,8 +1316,8 @@ function computeTF(tf){
   // Delta (buy/sell pressure)
   if (c.fast) {
     const delta = calcDelta(kl);
-    if (delta > 0.3) { bull += 1.2; inds.delta={cls:'bull',val:`+${(delta*100).toFixed(0)}%`,badge:'▲ 買い圧優位',bCls:'bb',why:'直近10本で買い優勢'}; }
-    else if (delta < -0.3) { bear += 1.2; inds.delta={cls:'bear',val:`${(delta*100).toFixed(0)}%`,badge:'▼ 売り圧優位',bCls:'br',why:'直近10本で売り優勢'}; }
+    if (delta > 0.1) { bull += 1.2; inds.delta={cls:'bull',val:`+${(delta*100).toFixed(0)}%`,badge:'▲ 買い圧優位',bCls:'bb',why:'直近10本で買い優勢'}; }
+    else if (delta < -0.1) { bear += 1.2; inds.delta={cls:'bear',val:`${(delta*100).toFixed(0)}%`,badge:'▼ 売り圧優位',bCls:'br',why:'直近10本で売り優勢'}; }
     else { inds.delta={cls:'neut',val:`${(delta*100).toFixed(0)}%`,badge:'— 均衡',bCls:'bn',why:'買い売り拮抗'}; }
   }
 
@@ -1275,11 +1362,16 @@ function calcSMAAll(closes, n) {
   return out;
 }
 
-// Batch VWAP: cumulative VWAP at every position → returns array[klines.length]
+// Batch VWAP: cumulative VWAP at every position with daily UTC reset → returns array[klines.length]
 function calcVWAPAll(klines) {
   const out = new Array(klines.length).fill(0);
-  let cumTP = 0, cumVol = 0;
+  let cumTP = 0, cumVol = 0, currentDay = -1;
   for (let i = 0; i < klines.length; i++) {
+    const ts = parseInt(klines[i][0]);
+    const day = Math.floor(ts / 86400000); // UTC day number
+    if (day !== currentDay) {
+      cumTP = 0; cumVol = 0; currentDay = day; // reset at session boundary
+    }
     const h = parseFloat(klines[i][2]), l = parseFloat(klines[i][3]);
     const c = parseFloat(klines[i][4]), v = parseFloat(klines[i][5]);
     const tp = (h + l + c) / 3;
@@ -1305,20 +1397,21 @@ function calcBBAll(closes, sma20All, period) {
   return out;
 }
 
-// Batch Delta: at every position, compute delta over last 10 candles
+// Batch Delta: at every position, compute real taker delta over last 10 candles
 function calcDeltaAll(klines) {
   const out = new Array(klines.length).fill(0);
   for (let i = 4; i < klines.length; i++) {
     const start = Math.max(0, i - 9);
-    let delta = 0, cnt = 0;
+    let totalBuy = 0, totalVol = 0;
     for (let j = start; j <= i; j++) {
-      const o = parseFloat(klines[j][1]), c = parseFloat(klines[j][4]);
-      const h = parseFloat(klines[j][2]), l = parseFloat(klines[j][3]);
-      const range = h - l || 1;
-      delta += (c - o) / range;
-      cnt++;
+      const vol = parseFloat(klines[j][5]);
+      const buyVol = parseFloat(klines[j][9]);
+      if (vol > 0 && !isNaN(buyVol)) {
+        totalBuy += buyVol;
+        totalVol += vol;
+      }
     }
-    out[i] = delta / cnt;
+    out[i] = totalVol > 0 ? (totalBuy / totalVol - 0.5) * 2 : 0;
   }
   return out;
 }
@@ -1360,14 +1453,8 @@ function computeHistoricalScores(tf) {
     else if (last < sma20 && sma20 < sma50) bear += 2 * c.trW;
     else if (last < sma20) bear += c.trW;
 
-    // FR (current snapshot, constant for all historical)
-    const fv = S.fr * c.frW;
-    if (fv > 0.025) bear += 2 * c.frW;
-    else if (fv < -0.015) bull += 2 * c.frW;
-
-    // L/S
-    if (S.ls > 62) bear += 1.2;
-    else if (S.ls < 38) bull += 1.2;
+    // FR and L/S excluded from historical scores — these are current-only snapshots
+    // and applying them retroactively would produce misleading history charts
 
     // VWAP
     const vwap = vwapAll[idx];
@@ -1386,8 +1473,8 @@ function computeHistoricalScores(tf) {
     // Delta (fast TFs only)
     if (deltaAll && end >= 10) {
       const delta = deltaAll[idx];
-      if (delta > 0.3) bull += 1.2;
-      else if (delta < -0.3) bear += 1.2;
+      if (delta > 0.1) bull += 1.2;
+      else if (delta < -0.1) bear += 1.2;
     }
 
     const total = bull + bear || 1;
@@ -2031,6 +2118,13 @@ function renderMatrix(){
   set('mx-fg', S.fg, S.fg>75?'var(--red)':S.fg<25?'var(--green)':'var(--yellow)');
   setSt('mx-fg-st', S.fg>75?'⚠ 強欲':S.fg<25?'✓ 恐怖':'— 中立', S.fg>75?'var(--red)':S.fg<25?'var(--green)':'var(--yellow)');
   setSg('mx-fg-sg', S.fg>75?'逆張り意識':S.fg<25?'買い場候補':'中立');
+
+  // DXY
+  if(S.dxy>0){
+    set('mx-dxy', S.dxy.toFixed(1), S.dxy>108?'var(--red)':S.dxy<100?'var(--green)':'var(--yellow)');
+    setSt('mx-dxy-st', S.dxy>108?'⚠ USD強い→BTC逆風':S.dxy<100?'✓ USD弱い→BTC追い風':'— 中立', S.dxy>108?'var(--red)':S.dxy<100?'var(--green)':'var(--yellow)');
+    setSg('mx-dxy-sg', S.dxy>108?'BTC下落圧力':S.dxy<100?'BTC上昇要因':'影響中立');
+  }
 }
 
 function renderFG(){
@@ -2083,7 +2177,7 @@ async function fullFetch(){
   document.getElementById('apiSt').textContent='更新中...';
   try{
     await fetchPrice(); setDot('ds-price','ok');
-    await Promise.allSettled([fetchFR(), fetchLS(), fetchOI()]);
+    await Promise.allSettled([fetchFR(), fetchLS(), fetchOI(), fetchDXY()]);
     const results=await Promise.allSettled([
       fetchKlines('5m',100),fetchKlines('15m',100),
       fetchKlines('1h',100),fetchKlines('4h',100),fetchKlines('1d',60)
@@ -2376,6 +2470,17 @@ function calcPosition(){
     // Position in coin units
     const posBtc = posJpy / (btcPrice * (S.usdJpy||150));
 
+    // Fee & slippage costs
+    const takerFeeRt = 0.0008; // 0.08% round trip (taker)
+    const slippage = 0.0002;   // 0.02% estimated slippage
+    const feeCost = posJpy * takerFeeRt;
+    const slipCost = posJpy * slippage;
+    const totalCost = feeCost + slipCost;
+    // Funding rate cost per 8h
+    const frCost8h = posJpy * Math.abs(S.fr || 0);
+    // Net max loss
+    const netMaxLoss = maxLoss + totalCost;
+
     return `<div class="pos-tier ${t.id}">
       <div class="pos-tier-name">${t.label}</div>
       <div class="pos-tier-lev">${t.lev}x</div>
@@ -2383,6 +2488,12 @@ function calcPosition(){
       <div class="pos-tier-row">資金比率 <span>${marginRatio.toFixed(1)}%</span></div>
       <div class="pos-tier-row">最大損失 <span style="color:var(--red)">¥${Math.round(maxLoss).toLocaleString('ja')}</span></div>
       <div class="pos-tier-row">ポジション <span>≈ ${posBtc.toFixed(4)} ${COINS[currentCoin].name}</span></div>
+      <div class="pos-tier-row" style="font-size:.5rem;color:var(--orange);margin-top:3px;border-top:1px solid var(--border);padding-top:3px;">
+        手数料: ¥${Math.round(feeCost).toLocaleString('ja')} + slip: ¥${Math.round(slipCost).toLocaleString('ja')} = <strong>¥${Math.round(totalCost).toLocaleString('ja')}</strong>
+      </div>
+      <div class="pos-tier-row" style="font-size:.5rem;color:var(--dim);">
+        FR/8h: ¥${Math.round(frCost8h).toLocaleString('ja')} | 実質損失: <span style="color:var(--red)">¥${Math.round(netMaxLoss).toLocaleString('ja')}</span>
+      </div>
       <div class="pos-tier-row" style="font-size:.52rem;color:var(--dim);margin-top:4px;">${t.desc}</div>
     </div>`;
   }).join('');
@@ -2391,6 +2502,94 @@ function calcPosition(){
 }
 // Initial calculation
 setTimeout(calcPosition, 2000); // wait for price to load
+
+// ═══════════════════════════════════════════════
+// TRADE JOURNAL — localStorage
+// ═══════════════════════════════════════════════
+function getTradeKey(){ return 'trades_'+currentCoin; }
+function loadTrades(){ try{ return JSON.parse(localStorage.getItem(getTradeKey()))||[]; }catch(e){ return []; } }
+function saveTrade(){
+  const dir=document.getElementById('tjDir').value;
+  const entry=parseFloat(document.getElementById('tjEntry').value);
+  const exit=parseFloat(document.getElementById('tjExit').value);
+  const size=parseFloat(document.getElementById('tjSize').value)||0.01;
+  const lev=parseInt(document.getElementById('tjLev').value)||3;
+  const note=document.getElementById('tjNote').value;
+  if(!entry||!exit){alert('エントリー価格と決済価格を入力してください');return;}
+  const pnlPct = dir==='LONG'? (exit-entry)/entry*100 : (entry-exit)/entry*100;
+  const pnlAbs = (dir==='LONG'? (exit-entry) : (entry-exit)) * size;
+  const trades=loadTrades();
+  trades.unshift({
+    time:new Date().toISOString(), coin:currentCoin, dir, entry, exit, size, lev,
+    pnlPct: Math.round(pnlPct*1000)/1000,
+    pnlAbs: Math.round(pnlAbs*100)/100,
+    compositeScore: S.tfScore&&Object.keys(S.tfScore).length?
+      Math.round(Object.entries(S.tfScore).reduce((s,[k,v])=>{const w={['5m']:1,['15m']:1.5,['1h']:2,['4h']:2.5,['1d']:2};return s+v*(w[k]||1);},0)/9):50,
+    note
+  });
+  localStorage.setItem(getTradeKey(), JSON.stringify(trades.slice(0,200)));
+  document.getElementById('tjEntry').value='';
+  document.getElementById('tjExit').value='';
+  document.getElementById('tjNote').value='';
+  renderJournal();
+}
+function renderJournal(){
+  const trades=loadTrades();
+  // Stats
+  const wins=trades.filter(t=>t.pnlPct>0).length;
+  const total=trades.length;
+  const winRate=total?Math.round(wins/total*100):0;
+  const totalPnl=trades.reduce((s,t)=>s+t.pnlAbs,0);
+  const avgWin=wins?trades.filter(t=>t.pnlPct>0).reduce((s,t)=>s+t.pnlPct,0)/wins:0;
+  const losses=trades.filter(t=>t.pnlPct<=0);
+  const avgLoss=losses.length?losses.reduce((s,t)=>s+t.pnlPct,0)/losses.length:0;
+  const expectancy=total?(avgWin*(winRate/100)+avgLoss*(1-winRate/100)):0;
+  document.getElementById('tjStats').innerHTML=`
+    <div style="text-align:center;padding:6px;background:var(--bg2);border-radius:4px;">
+      <div style="color:var(--dim);">勝率</div>
+      <div style="font-size:.8rem;color:${winRate>=55?'var(--green)':winRate>=45?'var(--yellow)':'var(--red)'};font-weight:700;">${winRate}%</div>
+      <div style="color:var(--dim);font-size:.5rem;">${wins}W / ${total-wins}L</div>
+    </div>
+    <div style="text-align:center;padding:6px;background:var(--bg2);border-radius:4px;">
+      <div style="color:var(--dim);">累計P&L</div>
+      <div style="font-size:.8rem;color:${totalPnl>=0?'var(--green)':'var(--red)'};font-weight:700;">${totalPnl>=0?'+':''}$${totalPnl.toFixed(2)}</div>
+    </div>
+    <div style="text-align:center;padding:6px;background:var(--bg2);border-radius:4px;">
+      <div style="color:var(--dim);">期待値</div>
+      <div style="font-size:.8rem;color:${expectancy>=0?'var(--green)':'var(--red)'};font-weight:700;">${expectancy>=0?'+':''}${expectancy.toFixed(2)}%</div>
+    </div>
+    <div style="text-align:center;padding:6px;background:var(--bg2);border-radius:4px;">
+      <div style="color:var(--dim);">トレード数</div>
+      <div style="font-size:.8rem;color:var(--text);font-weight:700;">${total}</div>
+    </div>`;
+  // Table
+  if(!total){document.getElementById('tjTable').innerHTML='<div style="text-align:center;color:var(--dim);padding:12px;">トレード記録がありません</div>';return;}
+  document.getElementById('tjTable').innerHTML=`<table style="width:100%;border-collapse:collapse;">
+    <tr style="color:var(--dim);border-bottom:1px solid var(--border);">
+      <th style="padding:3px;text-align:left;">日時</th><th>方向</th><th>Entry</th><th>Exit</th><th>P&L</th><th>スコア</th><th>メモ</th>
+    </tr>
+    ${trades.slice(0,30).map(t=>`<tr style="border-bottom:1px solid var(--bg2);">
+      <td style="padding:3px;">${new Date(t.time).toLocaleString('ja',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+      <td style="color:${t.dir==='LONG'?'var(--green)':'var(--red)'};">${t.dir}</td>
+      <td>$${t.entry?.toLocaleString()}</td>
+      <td>$${t.exit?.toLocaleString()}</td>
+      <td style="color:${t.pnlPct>=0?'var(--green)':'var(--red)'};">${t.pnlPct>=0?'+':''}${t.pnlPct?.toFixed(2)}%</td>
+      <td>${t.compositeScore||'--'}</td>
+      <td style="color:var(--dim);max-width:60px;overflow:hidden;text-overflow:ellipsis;">${t.note||''}</td>
+    </tr>`).join('')}
+  </table>`;
+}
+function exportTradesCSV(){
+  const trades=loadTrades();
+  if(!trades.length){alert('データがありません');return;}
+  const header='日時,通貨,方向,エントリー,決済,サイズ,レバレッジ,P&L%,P&L$,スコア,メモ\n';
+  const rows=trades.map(t=>`${t.time},${t.coin},${t.dir},${t.entry},${t.exit},${t.size},${t.lev},${t.pnlPct},${t.pnlAbs},${t.compositeScore||''},${(t.note||'').replace(/,/g,' ')}`).join('\n');
+  const blob=new Blob([header+rows],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`trades_${currentCoin}_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+// Auto-fill entry price
+setInterval(()=>{const el=document.getElementById('tjEntry');if(el&&!el.value&&S.price)el.placeholder=`現在: $${S.price.toLocaleString()}`;},2000);
+setTimeout(renderJournal, 2500);
 
 // ═══════════════════════════════════════════════
 // NEWS TICKER — RSS via rss2json (free, no key needed)
@@ -2554,16 +2753,27 @@ setInterval(loadNewsTicker, 15 * 60 * 1000);
 
 
 // ═══════════════════════════════════════════════
-// VWAP — Volume Weighted Average Price (session)
+// VWAP — Volume Weighted Average Price (daily session reset at UTC 00:00)
 // ═══════════════════════════════════════════════
 function calcVWAP(klines) {
   if (!klines || klines.length === 0) return 0;
-  // Use all available klines for session VWAP
+  // Find the start of today's UTC session and accumulate from there
+  const nowUTC = new Date();
+  const todayStartUTC = Date.UTC(nowUTC.getUTCFullYear(), nowUTC.getUTCMonth(), nowUTC.getUTCDate());
   let cumTP = 0, cumVol = 0;
   for (const k of klines) {
+    const ts = parseInt(k[0]);
+    if (ts < todayStartUTC) continue; // skip previous session
     const h = parseFloat(k[2]), l = parseFloat(k[3]), c = parseFloat(k[4]), v = parseFloat(k[5]);
     const tp = (h + l + c) / 3;
     cumTP += tp * v; cumVol += v;
+  }
+  // Fallback: if no candles today yet, use all available
+  if (cumVol === 0) {
+    for (const k of klines) {
+      const h = parseFloat(k[2]), l = parseFloat(k[3]), c = parseFloat(k[4]), v = parseFloat(k[5]);
+      cumTP += ((h+l+c)/3) * v; cumVol += v;
+    }
   }
   return cumVol > 0 ? cumTP / cumVol : 0;
 }
@@ -2581,18 +2791,23 @@ function calcBB(closes, period=20, mult=2) {
 }
 
 // ═══════════════════════════════════════════════
-// DELTA — approximate buy/sell pressure
+// DELTA — real taker buy/sell pressure from Binance kline[9]
 // ═══════════════════════════════════════════════
 function calcDelta(klines) {
   if (!klines || klines.length < 5) return 0;
-  let delta = 0;
   const recent = klines.slice(-10);
+  let totalBuy = 0, totalVol = 0;
   for (const k of recent) {
-    const o=parseFloat(k[1]),c=parseFloat(k[4]),h=parseFloat(k[2]),l=parseFloat(k[3]);
-    const range = h - l || 1;
-    delta += (c - o) / range; // +1 = full bullish, -1 = full bearish
+    const vol = parseFloat(k[5]);    // total volume
+    const buyVol = parseFloat(k[9]); // taker buy base asset volume
+    if (vol > 0 && !isNaN(buyVol)) {
+      totalBuy += buyVol;
+      totalVol += vol;
+    }
   }
-  return delta / recent.length; // -1 to +1
+  if (totalVol === 0) return 0;
+  // Returns -1 to +1: (buyRatio - 0.5) * 2 maps 0-1 range to -1 to +1
+  return (totalBuy / totalVol - 0.5) * 2;
 }
 
 // ═══════════════════════════════════════════════

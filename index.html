@@ -95,15 +95,22 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .src-badge.ok{background:rgba(0,255,136,.08);color:var(--green);border-color:rgba(0,255,136,.2);}
 .src-badge.warn{background:rgba(255,214,10,.08);color:var(--yellow);border-color:rgba(255,214,10,.2);}
 
-/* PRICE HERO */
-.phero{display:flex;align-items:center;gap:14px;padding:12px 20px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;}
-.p-main{font-family:'Share Tech Mono',monospace;font-size:1.9rem;color:#fff;font-weight:bold;line-height:1;}
-.p-jpy{font-family:'Share Tech Mono',monospace;font-size:.88rem;color:var(--dim);margin-top:2px;}
-.p-chg{font-family:'Share Tech Mono',monospace;font-size:.8rem;}
-.pills{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap;}
-.pill{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:5px 9px;font-family:'Share Tech Mono',monospace;font-size:.6rem;min-width:78px;}
-.pill-l{color:var(--dim);margin-bottom:1px;font-size:.56rem;}
-.pill-v{font-size:.74rem;}
+/* SCORE HISTORY CHART PANEL */
+.score-history-panel{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px 10px;}
+.shp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.shp-title{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--text);letter-spacing:.1em;display:flex;align-items:center;gap:8px;}
+.shp-tabs{display:flex;gap:4px;}
+.shp-tab{font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:3px 10px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .2s;}
+.shp-tab:hover{border-color:var(--accent);color:var(--text);}
+.shp-tab.active{background:rgba(0,212,255,.12);border-color:var(--accent);color:var(--accent);}
+.shp-charts{display:flex;flex-direction:column;gap:6px;}
+.shp-chart-wrap{position:relative;}
+.shp-chart-label{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);letter-spacing:.1em;margin-bottom:2px;}
+#scoreHistCanvas{width:100%;height:160px;display:block;border-radius:4px;background:var(--bg);}
+#priceMiniCanvas{width:100%;height:120px;display:block;border-radius:4px;background:var(--bg);}
+.shp-legend{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;}
+.shp-leg-item{font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--dim);display:flex;align-items:center;gap:4px;}
+.shp-leg-dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
 
 /* API STATUS BAR */
 .api-status-bar{display:flex;gap:8px;align-items:center;padding:6px 20px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);}
@@ -501,22 +508,34 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div>
 
 
-<!-- PRICE HERO -->
+<!-- SCORE HISTORY CHART -->
 
-<div class="phero">
-  <div>
-    <div style="font-size:.54rem;color:var(--dim);letter-spacing:.14em;margin-bottom:2px;"><span data-coin-name>BTC</span> / USDT PERPETUAL <span class="src-badge ok">Binance Live</span></div>
-    <div id="priceUsd" class="p-main">---</div>
-    <div id="priceJpy" class="p-jpy">≈ ¥---</div>
+<div class="score-history-panel" id="scoreHistPanel">
+  <div class="shp-header">
+    <span class="shp-title">スコア履歴チャート <span class="live-b">LIVE</span></span>
+    <div class="shp-tabs" id="shpTabs">
+      <button class="shp-tab active" data-tf="5m" onclick="switchHistTF('5m')">5分</button>
+      <button class="shp-tab" data-tf="15m" onclick="switchHistTF('15m')">15分</button>
+      <button class="shp-tab" data-tf="1h" onclick="switchHistTF('1h')">1時間</button>
+      <button class="shp-tab" data-tf="4h" onclick="switchHistTF('4h')">4時間</button>
+      <button class="shp-tab" data-tf="1d" onclick="switchHistTF('1d')">日足</button>
+    </div>
   </div>
-  <div id="priceChg" class="p-chg dim">---</div>
-  <div class="pills">
-    <div class="pill"><div class="pill-l">FR (8h) <span class="src-badge warn" id="fr-src-badge">推定</span></div><div class="pill-v" id="frPill">---</div></div>
-    <div class="pill"><div class="pill-l">L/S 比率</div><div class="pill-v" id="lsPill">---</div></div>
-    <div class="pill"><div class="pill-l">OI 変化</div><div class="pill-v" id="oiPill">---</div></div>
-    <div class="pill"><div class="pill-l">清算↑(推定)</div><div class="pill-v green" id="liqPill">---</div></div>
-    <div class="pill"><div class="pill-l">USD/JPY <span class="src-badge ok">Live</span></div><div class="pill-v accent" id="usdjpy">---</div></div>
-    <div class="pill"><div class="pill-l">Fear&Greed <span class="src-badge ok">Live</span></div><div class="pill-v" id="fgPill">---</div></div>
+  <div class="shp-charts">
+    <div class="shp-chart-wrap">
+      <div class="shp-chart-label">強気スコア (0-100)</div>
+      <canvas id="scoreHistCanvas"></canvas>
+    </div>
+    <div class="shp-chart-wrap">
+      <div class="shp-chart-label">価格 + シグナルゾーン</div>
+      <canvas id="priceMiniCanvas"></canvas>
+    </div>
+  </div>
+  <div class="shp-legend">
+    <span class="shp-leg-item"><span class="shp-leg-dot" style="background:var(--green)"></span>LONG (≥65)</span>
+    <span class="shp-leg-item"><span class="shp-leg-dot" style="background:var(--yellow)"></span>WAIT (36-64)</span>
+    <span class="shp-leg-item"><span class="shp-leg-dot" style="background:var(--red)"></span>SHORT (≤35)</span>
+    <span class="shp-leg-item"><span class="shp-leg-dot" style="background:var(--accent)"></span>価格ライン</span>
   </div>
 </div>
 
@@ -1221,6 +1240,297 @@ function computeTF(tf){
 }
 
 // ═══════════════════════════════════════════════
+// SCORE HISTORY CHART
+// ═══════════════════════════════════════════════
+let currentHistTF = '5m';
+const histScoreCache = {};  // tf -> [{time, score, signal}]
+
+function computeHistoricalScores(tf) {
+  const kl = KL[tf]();
+  if (!kl || kl.length < 50) return [];
+  const c = TFCFG[tf];
+  const results = [];
+  const minWin = 50; // minimum candles needed for computation
+
+  for (let end = minWin; end <= kl.length; end++) {
+    const slice = kl.slice(0, end);
+    const cl = slice.map(k => parseFloat(k[4]));
+    let bull = 0, bear = 0;
+
+    // RSI
+    const rsi = calcRSI(cl, c.fast ? 9 : 14);
+    if (rsi > 75) bear += 2;
+    else if (rsi > 60) bull += 1;
+    else if (rsi < 25) bull += 2;
+    else if (rsi < 40) bear += 1;
+
+    // Trend SMA
+    const sma20 = calcSMA(cl, 20);
+    const sma50 = calcSMA(cl, Math.min(50, cl.length));
+    const last = cl[cl.length - 1];
+    if (last > sma20 && sma20 > sma50) bull += 2 * c.trW;
+    else if (last > sma20) bull += c.trW;
+    else if (last < sma20 && sma20 < sma50) bear += 2 * c.trW;
+    else if (last < sma20) bear += c.trW;
+
+    // FR (current snapshot, constant for all historical)
+    const fv = S.fr * c.frW;
+    if (fv > 0.025) bear += 2 * c.frW;
+    else if (fv < -0.015) bull += 2 * c.frW;
+
+    // L/S
+    if (S.ls > 62) bear += 1.2;
+    else if (S.ls < 38) bull += 1.2;
+
+    // VWAP
+    const vwap = calcVWAP(slice);
+    if (vwap > 0) {
+      if (last > vwap * 1.002) bull += 1.5;
+      else if (last < vwap * 0.998) bear += 1.5;
+    }
+
+    // BB
+    const bb = calcBB(cl, 20, 2);
+    if (bb.middle > 0) {
+      if (last > bb.upper) bear += 1.5;
+      else if (last < bb.lower) bull += 1.5;
+    }
+
+    // Delta (fast TFs only)
+    if (c.fast && slice.length >= 10) {
+      const delta = calcDelta(slice);
+      if (delta > 0.3) bull += 1.2;
+      else if (delta < -0.3) bear += 1.2;
+    }
+
+    const total = bull + bear || 1;
+    const score = Math.round((bull / total) * 100);
+    const signal = score >= 65 ? 'LONG' : score <= 35 ? 'SHORT' : 'WAIT';
+    results.push({
+      time: parseInt(kl[end - 1][0]),
+      score,
+      signal,
+      price: parseFloat(kl[end - 1][4])
+    });
+  }
+  return results;
+}
+
+function switchHistTF(tf) {
+  currentHistTF = tf;
+  document.querySelectorAll('.shp-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.tf === tf));
+  renderHistoryCharts();
+}
+
+function renderHistoryCharts() {
+  const tf = currentHistTF;
+  // Compute if not cached or klines updated
+  histScoreCache[tf] = computeHistoricalScores(tf);
+  drawScoreChart('scoreHistCanvas', tf);
+  drawPriceMiniChart('priceMiniCanvas', tf);
+}
+
+function drawScoreChart(canvasId, tf) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const data = histScoreCache[tf] || [];
+  if (data.length < 2) {
+    ctx.fillStyle = '#5a7a8a';
+    ctx.font = '12px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText('データ読み込み中...', W / 2, H / 2);
+    return;
+  }
+
+  const pad = { l: 36, r: 10, t: 8, b: 22 };
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+
+  // Zone backgrounds
+  const zones = [
+    { y0: 0, y1: 35, color: 'rgba(255,45,85,0.08)' },   // SHORT
+    { y0: 35, y1: 65, color: 'rgba(255,214,10,0.05)' },  // WAIT
+    { y0: 65, y1: 100, color: 'rgba(0,255,136,0.08)' },  // LONG
+  ];
+  zones.forEach(z => {
+    const yt = pad.t + ch * (1 - z.y1 / 100);
+    const yb = pad.t + ch * (1 - z.y0 / 100);
+    ctx.fillStyle = z.color;
+    ctx.fillRect(pad.l, yt, cw, yb - yt);
+  });
+
+  // Threshold lines at 35 and 65
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 0.7;
+  [35, 65].forEach(v => {
+    const y = pad.t + ch * (1 - v / 100);
+    ctx.strokeStyle = v === 65 ? 'rgba(0,255,136,0.3)' : 'rgba(255,45,85,0.3)';
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // 50 center line
+  ctx.strokeStyle = 'rgba(90,122,138,0.2)';
+  ctx.lineWidth = 0.5;
+  const y50 = pad.t + ch * 0.5;
+  ctx.beginPath(); ctx.moveTo(pad.l, y50); ctx.lineTo(W - pad.r, y50); ctx.stroke();
+
+  // Score line with gradient coloring
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  for (let i = 1; i < data.length; i++) {
+    const x0 = pad.l + (i - 1) / (data.length - 1) * cw;
+    const x1 = pad.l + i / (data.length - 1) * cw;
+    const y0 = pad.t + ch * (1 - data[i - 1].score / 100);
+    const y1 = pad.t + ch * (1 - data[i].score / 100);
+    const sc = data[i].score;
+    ctx.strokeStyle = sc >= 65 ? '#00ff88' : sc <= 35 ? '#ff2d55' : '#ffd60a';
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  }
+
+  // Current score dot
+  const lastPt = data[data.length - 1];
+  const lx = pad.l + cw;
+  const ly = pad.t + ch * (1 - lastPt.score / 100);
+  ctx.fillStyle = lastPt.score >= 65 ? '#00ff88' : lastPt.score <= 35 ? '#ff2d55' : '#ffd60a';
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(lx, ly, 1.5, 0, Math.PI * 2); ctx.fill();
+
+  // Y-axis labels
+  ctx.fillStyle = '#5a7a8a';
+  ctx.font = '9px "Share Tech Mono"';
+  ctx.textAlign = 'right';
+  [0, 25, 50, 75, 100].forEach(v => {
+    ctx.fillText(v, pad.l - 4, pad.t + ch * (1 - v / 100) + 3);
+  });
+
+  // X-axis time labels (5 evenly spaced)
+  ctx.textAlign = 'center';
+  const labelCount = Math.min(5, data.length);
+  for (let i = 0; i < labelCount; i++) {
+    const idx = Math.round(i / (labelCount - 1) * (data.length - 1));
+    const x = pad.l + idx / (data.length - 1) * cw;
+    const d = new Date(data[idx].time);
+    const lbl = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+    ctx.fillText(lbl, x, H - 4);
+  }
+
+  // Current score text
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 10px "Share Tech Mono"';
+  ctx.textAlign = 'left';
+  ctx.fillText(lastPt.score, lx + 6, ly + 3);
+}
+
+function drawPriceMiniChart(canvasId, tf) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const data = histScoreCache[tf] || [];
+  if (data.length < 2) {
+    ctx.fillStyle = '#5a7a8a';
+    ctx.font = '12px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText('データ読み込み中...', W / 2, H / 2);
+    return;
+  }
+
+  const pad = { l: 56, r: 10, t: 8, b: 22 };
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+  const prices = data.map(d => d.price);
+  const minP = Math.min(...prices), maxP = Math.max(...prices);
+  const range = maxP - minP || 1;
+
+  const priceY = p => pad.t + ch * (1 - (p - minP) / range);
+  const dataX = i => pad.l + i / (data.length - 1) * cw;
+
+  // Signal zone backgrounds on price chart
+  for (let i = 0; i < data.length - 1; i++) {
+    const x0 = dataX(i), x1 = dataX(i + 1);
+    const sig = data[i].signal;
+    if (sig === 'LONG') ctx.fillStyle = 'rgba(0,255,136,0.07)';
+    else if (sig === 'SHORT') ctx.fillStyle = 'rgba(255,45,85,0.07)';
+    else continue;
+    ctx.fillRect(x0, pad.t, x1 - x0, ch);
+  }
+
+  // Price line
+  ctx.strokeStyle = 'var(--accent)';
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = dataX(i), y = priceY(d.price);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Signal change markers (triangles)
+  for (let i = 1; i < data.length; i++) {
+    if (data[i].signal !== data[i - 1].signal && data[i].signal !== 'WAIT') {
+      const x = dataX(i), y = priceY(data[i].price);
+      const isLong = data[i].signal === 'LONG';
+      ctx.fillStyle = isLong ? '#00ff88' : '#ff2d55';
+      ctx.beginPath();
+      if (isLong) {
+        // Up triangle
+        ctx.moveTo(x, y - 10); ctx.lineTo(x - 5, y - 3); ctx.lineTo(x + 5, y - 3);
+      } else {
+        // Down triangle
+        ctx.moveTo(x, y + 10); ctx.lineTo(x - 5, y + 3); ctx.lineTo(x + 5, y + 3);
+      }
+      ctx.fill();
+    }
+  }
+
+  // Y-axis price labels
+  ctx.fillStyle = '#5a7a8a';
+  ctx.font = '9px "Share Tech Mono"';
+  ctx.textAlign = 'right';
+  const pSteps = 4;
+  for (let i = 0; i <= pSteps; i++) {
+    const p = minP + (range * i / pSteps);
+    const y = priceY(p);
+    ctx.fillText('$' + Math.round(p).toLocaleString(), pad.l - 4, y + 3);
+  }
+
+  // X-axis time labels
+  ctx.textAlign = 'center';
+  const labelCount = Math.min(5, data.length);
+  for (let i = 0; i < labelCount; i++) {
+    const idx = Math.round(i / (labelCount - 1) * (data.length - 1));
+    const x = dataX(idx);
+    const d = new Date(data[idx].time);
+    const lbl = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+    ctx.fillText(lbl, x, H - 4);
+  }
+
+  // Current price label
+  const lastD = data[data.length - 1];
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 10px "Share Tech Mono"';
+  ctx.textAlign = 'left';
+  const curY = priceY(lastD.price);
+  ctx.fillText('$' + Math.round(lastD.price).toLocaleString(), dataX(data.length - 1) + 4, curY + 3);
+}
+
+// ═══════════════════════════════════════════════
 // RENDER
 // ═══════════════════════════════════════════════
 function renderAll(){
@@ -1239,32 +1549,31 @@ function renderAll(){
   renderFG();
   document.getElementById('lastUpd').textContent='最終更新: '+new Date().toLocaleTimeString('ja-JP',{hour12:false});
   renderPriceRange();
+  renderHistoryCharts();
 }
 
 function renderPrice(){
   const pct=S.p24h>0?(S.price-S.p24h)/S.p24h*100:0;
-  document.getElementById('priceUsd').textContent='$'+S.price.toLocaleString('en',{maximumFractionDigits:0});
-  document.getElementById('priceJpy').textContent='≈ ¥'+Math.round(S.price*S.usdJpy).toLocaleString('ja');
-  const pEl=document.getElementById('priceChg');
-  pEl.textContent=(pct>=0?'▲ +':'▼ ')+Math.abs(pct).toFixed(2)+'%';
-  pEl.style.color=pct>=0?'var(--green)':'var(--red)';
-  document.getElementById('usdjpy').textContent=S.usdJpy.toFixed(2);
+  const _el=id=>document.getElementById(id);
+  // Price hero elements removed; update only if still present
+  const pu=_el('priceUsd'); if(pu) pu.textContent='$'+S.price.toLocaleString('en',{maximumFractionDigits:0});
+  const pj=_el('priceJpy'); if(pj) pj.textContent='≈ ¥'+Math.round(S.price*S.usdJpy).toLocaleString('ja');
+  const pEl=_el('priceChg');
+  if(pEl){pEl.textContent=(pct>=0?'▲ +':'▼ ')+Math.abs(pct).toFixed(2)+'%';pEl.style.color=pct>=0?'var(--green)':'var(--red)';}
+  const uj=_el('usdjpy'); if(uj) uj.textContent=S.usdJpy.toFixed(2);
   const frPct=S.fr*100;
-  const frEl=document.getElementById('frPill');
-  frEl.textContent=(frPct>=0?'+':'')+frPct.toFixed(4)+'%';
-  frEl.style.color=frPct>0.03?'var(--red)':frPct<-0.01?'var(--green)':'var(--yellow)';
-  document.getElementById('lsPill').textContent=`${S.ls.toFixed(0)}/${(100-S.ls).toFixed(0)}`;
+  const frEl=_el('frPill');
+  if(frEl){frEl.textContent=(frPct>=0?'+':'')+frPct.toFixed(4)+'%';frEl.style.color=frPct>0.03?'var(--red)':frPct<-0.01?'var(--green)':'var(--yellow)';}
+  const lsEl=_el('lsPill'); if(lsEl) lsEl.textContent=`${S.ls.toFixed(0)}/${(100-S.ls).toFixed(0)}`;
   const oiChg=S.oiPrev>0?(S.oiVal-S.oiPrev)/S.oiPrev*100:0;
-  const oiEl=document.getElementById('oiPill');
-  oiEl.textContent=(oiChg>=0?'+':'')+oiChg.toFixed(1)+'%';
-  oiEl.style.color=Math.abs(oiChg)>3?'var(--orange)':'var(--dim)';
+  const oiEl=_el('oiPill');
+  if(oiEl){oiEl.textContent=(oiChg>=0?'+':'')+oiChg.toFixed(1)+'%';oiEl.style.color=Math.abs(oiChg)>3?'var(--orange)':'var(--dim)';}
   const liqEst=Math.round(S.price*1.025);
-  document.getElementById('liqPill').textContent='$'+liqEst.toLocaleString();
-  document.getElementById('mx-p').textContent='$'+S.price.toLocaleString('en',{maximumFractionDigits:0});
-  document.getElementById('mx-liq').textContent='$'+liqEst.toLocaleString();
-  const fgEl=document.getElementById('fgPill');
-  fgEl.textContent=S.fg+(S.fg>=75?' 極強欲':S.fg<=25?' 極恐怖':S.fg>=50?' 強欲':' 恐怖');
-  fgEl.style.color=S.fg>=75?'var(--red)':S.fg<=25?'var(--green)':S.fg>=50?'var(--orange)':'var(--accent)';
+  const lqEl=_el('liqPill'); if(lqEl) lqEl.textContent='$'+liqEst.toLocaleString();
+  const mxp=_el('mx-p'); if(mxp) mxp.textContent='$'+S.price.toLocaleString('en',{maximumFractionDigits:0});
+  const mxl=_el('mx-liq'); if(mxl) mxl.textContent='$'+liqEst.toLocaleString();
+  const fgEl=_el('fgPill');
+  if(fgEl){fgEl.textContent=S.fg+(S.fg>=75?' 極強欲':S.fg<=25?' 極恐怖':S.fg>=50?' 強欲':' 恐怖');fgEl.style.color=S.fg>=75?'var(--red)':S.fg<=25?'var(--green)':S.fg>=50?'var(--orange)':'var(--accent)';}
 }
 
 function renderScalpHero(){

@@ -508,6 +508,25 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div>
 
 
+<!-- CHART (TradingView) -->
+<div class="sec" style="padding-bottom:4px;">
+  <div class="sec-t">リアルタイムチャート (TradingView) <span id="chartTfLabel" class="live-b">5分足</span></div>
+  <div class="chart-tf-bar">
+    <span style="font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--dim);margin-right:4px;">時間軸:</span>
+    <button class="chart-tf-btn" onclick="switchChart('1')">1分</button>
+    <button class="chart-tf-btn active" id="ctf-5" onclick="switchChart('5')">5分</button>
+    <button class="chart-tf-btn" onclick="switchChart('15')">15分</button>
+    <button class="chart-tf-btn" onclick="switchChart('60')">1時間</button>
+    <button class="chart-tf-btn" onclick="switchChart('240')">4時間</button>
+    <button class="chart-tf-btn" onclick="switchChart('D')">日足</button>
+    <button class="chart-tf-btn" onclick="switchChart('W')">週足</button>
+    <button class="chart-tf-btn" onclick="switchChart('M')">月足</button>
+  </div>
+  <div class="chart-wrap">
+    <div id="tradingview_btc" style="height:440px;width:100%;"></div>
+  </div>
+</div>
+
 <!-- SCORE HISTORY CHART -->
 
 <div class="score-history-panel" id="scoreHistPanel">
@@ -692,25 +711,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div>
 
 
-<!-- CHART (moved to top per request) -->
-
-<div class="sec" style="padding-bottom:4px;">
-  <div class="sec-t">リアルタイムチャート (TradingView) <span id="chartTfLabel" class="live-b">5分足</span></div>
-  <div class="chart-tf-bar">
-    <span style="font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--dim);margin-right:4px;">時間軸:</span>
-    <button class="chart-tf-btn" onclick="switchChart('1')">1分</button>
-    <button class="chart-tf-btn active" id="ctf-5" onclick="switchChart('5')">5分</button>
-    <button class="chart-tf-btn" onclick="switchChart('15')">15分</button>
-    <button class="chart-tf-btn" onclick="switchChart('60')">1時間</button>
-    <button class="chart-tf-btn" onclick="switchChart('240')">4時間</button>
-    <button class="chart-tf-btn" onclick="switchChart('D')">日足</button>
-    <button class="chart-tf-btn" onclick="switchChart('W')">週足</button>
-    <button class="chart-tf-btn" onclick="switchChart('M')">月足</button>
-  </div>
-  <div class="chart-wrap">
-    <div id="tradingview_btc" style="height:440px;width:100%;"></div>
-  </div>
-</div>
 
 
 <!-- PRICE RANGE PREDICTION -->
@@ -1430,9 +1430,39 @@ function switchHistTF(tf) {
   currentHistTF = tf;
   document.querySelectorAll('.shp-tab').forEach(b =>
     b.classList.toggle('active', b.dataset.tf === tf));
-  // Clear cache for new TF so it recomputes on next render
-  delete histScoreCacheKey[tf];
-  renderHistoryCharts();
+  if (histScoreCache[tf]) {
+    // Cache hit → draw immediately, no recompute
+    drawScoreChart('scoreHistCanvas', tf);
+    drawPriceMiniChart('priceMiniCanvas', tf);
+  } else {
+    // No cache → show loading, compute async
+    showChartLoading();
+    setTimeout(() => {
+      histScoreCache[tf] = computeHistoricalScores(tf);
+      const kl = KL[tf]();
+      if (kl && kl.length > 0) histScoreCacheKey[tf] = parseInt(kl[kl.length-1][0]);
+      drawScoreChart('scoreHistCanvas', tf);
+      drawPriceMiniChart('priceMiniCanvas', tf);
+    }, 0);
+  }
+}
+
+function showChartLoading() {
+  ['scoreHistCanvas','priceMiniCanvas'].forEach(id => {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const rect = c.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    c.width = rect.width * dpr;
+    c.height = rect.height * dpr;
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    ctx.fillStyle = '#5a7a8a';
+    ctx.font = '12px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText('読み込み中...', rect.width / 2, rect.height / 2);
+  });
 }
 
 function renderHistoryCharts() {

@@ -1243,31 +1243,118 @@ function computeTF(tf){
 // SCORE HISTORY CHART
 // ═══════════════════════════════════════════════
 let currentHistTF = '5m';
-const histScoreCache = {};  // tf -> [{time, score, signal}]
+const histScoreCache = {};  // tf -> [{time, score, signal, price}]
+const histScoreCacheKey = {}; // tf -> last kline timestamp for cache invalidation
+let _histChartTimer = null;
+
+// Batch RSI: compute RSI at every position in one pass → returns array[closes.length]
+function calcRSIAll(closes, period) {
+  const out = new Array(closes.length).fill(50);
+  if (closes.length < period + 1) return out;
+  for (let end = period + 1; end <= closes.length; end++) {
+    let g = 0, l = 0;
+    for (let i = end - period; i < end; i++) {
+      const d = closes[i] - closes[i - 1];
+      if (d > 0) g += d; else l -= d;
+    }
+    out[end - 1] = l === 0 ? 100 : 100 - (100 / (1 + (g / period) / (l / period)));
+  }
+  return out;
+}
+
+// Batch SMA: compute SMA(n) at every position → returns array[closes.length]
+function calcSMAAll(closes, n) {
+  const out = new Array(closes.length).fill(0);
+  let sum = 0;
+  for (let i = 0; i < closes.length; i++) {
+    sum += closes[i];
+    if (i >= n) sum -= closes[i - n];
+    const cnt = Math.min(i + 1, n);
+    out[i] = sum / cnt;
+  }
+  return out;
+}
+
+// Batch VWAP: cumulative VWAP at every position → returns array[klines.length]
+function calcVWAPAll(klines) {
+  const out = new Array(klines.length).fill(0);
+  let cumTP = 0, cumVol = 0;
+  for (let i = 0; i < klines.length; i++) {
+    const h = parseFloat(klines[i][2]), l = parseFloat(klines[i][3]);
+    const c = parseFloat(klines[i][4]), v = parseFloat(klines[i][5]);
+    const tp = (h + l + c) / 3;
+    cumTP += tp * v; cumVol += v;
+    out[i] = cumVol > 0 ? cumTP / cumVol : 0;
+  }
+  return out;
+}
+
+// Batch BB: compute BB at every position (needs SMA array) → returns array of {upper, middle, lower}
+function calcBBAll(closes, sma20All, period) {
+  const out = new Array(closes.length).fill(null);
+  for (let i = period - 1; i < closes.length; i++) {
+    const middle = sma20All[i];
+    let variance = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      variance += (closes[j] - middle) * (closes[j] - middle);
+    }
+    variance /= period;
+    const std = Math.sqrt(variance);
+    out[i] = { upper: middle + 2 * std, middle, lower: middle - 2 * std };
+  }
+  return out;
+}
+
+// Batch Delta: at every position, compute delta over last 10 candles
+function calcDeltaAll(klines) {
+  const out = new Array(klines.length).fill(0);
+  for (let i = 4; i < klines.length; i++) {
+    const start = Math.max(0, i - 9);
+    let delta = 0, cnt = 0;
+    for (let j = start; j <= i; j++) {
+      const o = parseFloat(klines[j][1]), c = parseFloat(klines[j][4]);
+      const h = parseFloat(klines[j][2]), l = parseFloat(klines[j][3]);
+      const range = h - l || 1;
+      delta += (c - o) / range;
+      cnt++;
+    }
+    out[i] = delta / cnt;
+  }
+  return out;
+}
 
 function computeHistoricalScores(tf) {
   const kl = KL[tf]();
   if (!kl || kl.length < 50) return [];
   const c = TFCFG[tf];
+  const cl = kl.map(k => parseFloat(k[4]));
   const results = [];
-  const minWin = 50; // minimum candles needed for computation
+  const minWin = 50;
+
+  // Precompute all indicators in one pass each — O(n) total
+  const rsiPeriod = c.fast ? 9 : 14;
+  const rsiAll = calcRSIAll(cl, rsiPeriod);
+  const sma20All = calcSMAAll(cl, 20);
+  const sma50All = calcSMAAll(cl, Math.min(50, cl.length));
+  const vwapAll = calcVWAPAll(kl);
+  const bbAll = calcBBAll(cl, sma20All, 20);
+  const deltaAll = c.fast ? calcDeltaAll(kl) : null;
 
   for (let end = minWin; end <= kl.length; end++) {
-    const slice = kl.slice(0, end);
-    const cl = slice.map(k => parseFloat(k[4]));
+    const idx = end - 1;
+    const last = cl[idx];
     let bull = 0, bear = 0;
 
     // RSI
-    const rsi = calcRSI(cl, c.fast ? 9 : 14);
+    const rsi = rsiAll[idx];
     if (rsi > 75) bear += 2;
     else if (rsi > 60) bull += 1;
     else if (rsi < 25) bull += 2;
     else if (rsi < 40) bear += 1;
 
     // Trend SMA
-    const sma20 = calcSMA(cl, 20);
-    const sma50 = calcSMA(cl, Math.min(50, cl.length));
-    const last = cl[cl.length - 1];
+    const sma20 = sma20All[idx];
+    const sma50 = sma50All[idx];
     if (last > sma20 && sma20 > sma50) bull += 2 * c.trW;
     else if (last > sma20) bull += c.trW;
     else if (last < sma20 && sma20 < sma50) bear += 2 * c.trW;
@@ -1283,22 +1370,22 @@ function computeHistoricalScores(tf) {
     else if (S.ls < 38) bull += 1.2;
 
     // VWAP
-    const vwap = calcVWAP(slice);
+    const vwap = vwapAll[idx];
     if (vwap > 0) {
       if (last > vwap * 1.002) bull += 1.5;
       else if (last < vwap * 0.998) bear += 1.5;
     }
 
     // BB
-    const bb = calcBB(cl, 20, 2);
-    if (bb.middle > 0) {
+    const bb = bbAll[idx];
+    if (bb && bb.middle > 0) {
       if (last > bb.upper) bear += 1.5;
       else if (last < bb.lower) bull += 1.5;
     }
 
     // Delta (fast TFs only)
-    if (c.fast && slice.length >= 10) {
-      const delta = calcDelta(slice);
+    if (deltaAll && end >= 10) {
+      const delta = deltaAll[idx];
       if (delta > 0.3) bull += 1.2;
       else if (delta < -0.3) bear += 1.2;
     }
@@ -1307,26 +1394,67 @@ function computeHistoricalScores(tf) {
     const score = Math.round((bull / total) * 100);
     const signal = score >= 65 ? 'LONG' : score <= 35 ? 'SHORT' : 'WAIT';
     results.push({
-      time: parseInt(kl[end - 1][0]),
+      time: parseInt(kl[idx][0]),
       score,
       signal,
-      price: parseFloat(kl[end - 1][4])
+      price: parseFloat(kl[idx][4])
     });
   }
   return results;
+}
+
+function updateLastEntry(tf, kl) {
+  const cache = histScoreCache[tf];
+  if (!cache || !cache.length) return;
+  const last = cache[cache.length - 1];
+  last.price = parseFloat(kl[kl.length - 1][4]);
+  // Use already-computed score from renderAll() if available
+  if (S.tfScore[tf] !== undefined) {
+    last.score = S.tfScore[tf];
+    last.signal = S.tfSig[tf];
+  }
+}
+
+function appendNewEntry(tf, kl) {
+  const cache = histScoreCache[tf];
+  if (!cache) return;
+  cache.push({
+    time: parseInt(kl[kl.length - 1][0]),
+    score: S.tfScore[tf] || 50,
+    signal: S.tfSig[tf] || 'WAIT',
+    price: parseFloat(kl[kl.length - 1][4])
+  });
 }
 
 function switchHistTF(tf) {
   currentHistTF = tf;
   document.querySelectorAll('.shp-tab').forEach(b =>
     b.classList.toggle('active', b.dataset.tf === tf));
+  // Clear cache for new TF so it recomputes on next render
+  delete histScoreCacheKey[tf];
   renderHistoryCharts();
 }
 
 function renderHistoryCharts() {
   const tf = currentHistTF;
-  // Compute if not cached or klines updated
-  histScoreCache[tf] = computeHistoricalScores(tf);
+  const kl = KL[tf]();
+  if (!kl || kl.length < 50) return;
+
+  const lastTs = parseInt(kl[kl.length - 1][0]);
+
+  if (histScoreCacheKey[tf] === lastTs && histScoreCache[tf]) {
+    // Same kline set — just update current candle's price/score
+    updateLastEntry(tf, kl);
+  } else if (histScoreCache[tf] && histScoreCacheKey[tf]) {
+    // New kline appended — add one entry (O(1))
+    appendNewEntry(tf, kl);
+    histScoreCacheKey[tf] = lastTs;
+  } else {
+    // First time or TF switch — full compute (O(n), runs once)
+    histScoreCache[tf] = computeHistoricalScores(tf);
+    histScoreCacheKey[tf] = lastTs;
+  }
+
   drawScoreChart('scoreHistCanvas', tf);
   drawPriceMiniChart('priceMiniCanvas', tf);
 }
@@ -1549,7 +1677,9 @@ function renderAll(){
   renderFG();
   document.getElementById('lastUpd').textContent='最終更新: '+new Date().toLocaleTimeString('ja-JP',{hour12:false});
   renderPriceRange();
-  renderHistoryCharts();
+  // Defer chart update to avoid blocking real-time display
+  if (_histChartTimer) clearTimeout(_histChartTimer);
+  _histChartTimer = setTimeout(renderHistoryCharts, 50);
 }
 
 function renderPrice(){

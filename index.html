@@ -441,129 +441,145 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 #botArenaSection{display:none;}
 #botArenaSection.visible{display:block;}
 #mainDashboard.hidden{display:none;}
-.ba-wrap{padding:8px 12px;max-width:1200px;margin:0 auto;}
-.ba-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
-.ba-title{font-size:1rem;font-weight:900;color:#c4b5fd;font-family:'Share Tech Mono',monospace;letter-spacing:.08em;}
-.ba-sub{font-size:.62rem;color:var(--dim);}
-.ba-live{font-size:.5rem;padding:2px 7px;background:rgba(167,139,250,.12);color:#c4b5fd;border:1px solid rgba(167,139,250,.25);border-radius:3px;letter-spacing:.1em;animation:baPulse 2s infinite;}
+.ba-wrap{padding:10px 16px;max-width:1200px;margin:0 auto;}
+.ba-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.ba-title{font-size:1.15rem;font-weight:900;color:#c4b5fd;font-family:'Share Tech Mono',monospace;letter-spacing:.08em;}
+.ba-sub{font-size:.76rem;color:var(--dim);}
+.ba-live{font-size:.64rem;padding:3px 9px;background:rgba(167,139,250,.12);color:#c4b5fd;border:1px solid rgba(167,139,250,.25);border-radius:3px;letter-spacing:.1em;animation:baPulse 2s infinite;}
 @keyframes baPulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* leaderboard */
-.ba-leaders{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.ba-leaders{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
 @media(max-width:700px){.ba-leaders{grid-template-columns:1fr;}}
-.ba-lead-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;overflow:hidden;}
+.ba-lead-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden;}
 .ba-lead-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#a78bfa,#7c3aed);}
-.ba-lc-cat{font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px;}
-.ba-lc-name{font-size:1.05rem;font-weight:900;margin-bottom:4px;}
+.ba-lc-cat{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;}
+.ba-lc-name{font-size:1.2rem;font-weight:900;margin-bottom:6px;}
 .ba-lc-crown{color:#ffd700;margin-right:4px;}
-.ba-lc-stats{display:flex;gap:14px;font-size:.7rem;margin-bottom:4px;}
-.ba-lc-stat{display:flex;flex-direction:column;gap:1px;}
-.ba-lc-stat-lbl{font-size:.5rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;}
+.ba-lc-stats{display:flex;gap:16px;font-size:.82rem;margin-bottom:6px;}
+.ba-lc-stat{display:flex;flex-direction:column;gap:3px;}
+.ba-lc-stat-lbl{font-size:.66rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;}
 .ba-lc-stat-val{font-family:'Share Tech Mono',monospace;font-weight:700;}
 .ba-lc-stat-val.pos{color:var(--green);}
 .ba-lc-stat-val.neg{color:var(--red);}
 .ba-lc-stat-val.neut{color:var(--yellow);}
-.ba-lc-style{font-size:.56rem;color:var(--dim);font-style:italic;margin-top:4px;}
+.ba-lc-style{font-size:.74rem;color:var(--dim);font-style:italic;margin-top:6px;}
 
 /* bot cards */
-.ba-bots{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
-.ba-bot{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .3s;}
+.ba-bots{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.ba-bot{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color .3s;}
 .ba-bot::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;transition:background .3s;}
 .ba-bot.st-holding.dir-long{border-color:rgba(0,255,136,.3);}.ba-bot.st-holding.dir-long::before{background:var(--green);}
 .ba-bot.st-holding.dir-short{border-color:rgba(255,45,85,.3);}.ba-bot.st-holding.dir-short::before{background:var(--red);}
 .ba-bot.st-ready{border-color:rgba(255,214,10,.3);}.ba-bot.st-ready::before{background:var(--yellow);}
 .ba-bot.st-watching::before{background:var(--dim);}
-.ba-bot-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
-.ba-bot-emoji{font-size:1.1rem;}
-.ba-bot-name{font-weight:900;font-size:.9rem;}
-.ba-bot-cat{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);background:var(--bg3);padding:2px 6px;border-radius:3px;}
-.ba-bot-status{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 8px;border-radius:3px;margin-left:auto;}
+.ba-bot-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.ba-bot-emoji{font-size:1.3rem;}
+.ba-bot-name{font-weight:900;font-size:1.1rem;}
+.ba-bot-cat{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);background:var(--bg3);padding:3px 8px;border-radius:3px;}
+.ba-bot-status{font-family:'Share Tech Mono',monospace;font-size:.72rem;padding:4px 10px;border-radius:3px;margin-left:auto;}
 .ba-bot-status.watching{background:rgba(90,122,138,.15);color:var(--dim);border:1px solid rgba(90,122,138,.3);}
 .ba-bot-status.ready{background:rgba(255,214,10,.12);color:var(--yellow);border:1px solid rgba(255,214,10,.3);}
 .ba-bot-status.holding{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.25);}
 .ba-bot-status.holding-short{background:rgba(255,45,85,.1);color:var(--red);border:1px solid rgba(255,45,85,.25);}
-.ba-bot-detail{font-size:.72rem;color:var(--text);line-height:1.5;margin-bottom:6px;}
-.ba-bot-rationale{font-size:.64rem;color:var(--dim);line-height:1.4;padding:6px 8px;background:var(--bg3);border-radius:4px;border-left:2px solid rgba(167,139,250,.3);margin-bottom:6px;}
-.ba-bot-quote{font-size:.68rem;color:#c4b5fd;font-style:italic;margin-top:4px;}
-.ba-bot-mini-stats{display:flex;gap:12px;font-size:.6rem;color:var(--dim);font-family:'Share Tech Mono',monospace;}
+.ba-bot-detail{font-size:.88rem;color:var(--text);line-height:1.55;margin-bottom:8px;}
+.ba-bot-rationale{font-size:.8rem;color:var(--dim);line-height:1.45;padding:8px 12px;background:var(--bg3);border-radius:4px;border-left:2px solid rgba(167,139,250,.3);margin-bottom:8px;}
+.ba-bot-quote{font-size:.82rem;color:#c4b5fd;font-style:italic;margin-top:6px;}
+.ba-bot-mini-stats{display:flex;gap:14px;font-size:.74rem;color:var(--dim);font-family:'Share Tech Mono',monospace;}
 .ba-bot-mini-stats span{display:flex;gap:3px;}
 
 /* trade log */
-.ba-log-title{font-size:.56rem;text-transform:uppercase;letter-spacing:.2em;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.ba-log-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
 .ba-log-title::after{content:'';flex:1;height:1px;background:var(--border);}
-.ba-log{max-height:200px;overflow-y:auto;}
-.ba-log-item{display:flex;align-items:center;gap:8px;font-size:.65rem;padding:3px 0;border-bottom:1px solid rgba(42,63,85,.3);}
-.ba-log-time{font-family:'Share Tech Mono',monospace;color:var(--dim);min-width:50px;}
-.ba-log-name{font-weight:700;min-width:42px;}
-.ba-log-dir{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:1px 5px;border-radius:2px;}
+.ba-log{max-height:240px;overflow-y:auto;}
+.ba-log-item{display:flex;align-items:center;gap:8px;font-size:.8rem;padding:5px 0;border-bottom:1px solid rgba(42,63,85,.3);}
+.ba-log-time{font-family:'Share Tech Mono',monospace;color:var(--dim);min-width:55px;}
+.ba-log-name{font-weight:700;min-width:48px;}
+.ba-log-dir{font-family:'Share Tech Mono',monospace;font-size:.72rem;padding:2px 6px;border-radius:2px;}
 .ba-log-dir.LONG{background:rgba(0,255,136,.12);color:var(--green);}
 .ba-log-dir.SHORT{background:rgba(255,45,85,.1);color:var(--red);}
 .ba-log-pnl{font-family:'Share Tech Mono',monospace;font-weight:700;}
-.ba-log-result{font-size:.54rem;padding:1px 5px;border-radius:2px;font-family:'Share Tech Mono',monospace;}
+.ba-log-result{font-size:.68rem;padding:2px 6px;border-radius:2px;font-family:'Share Tech Mono',monospace;}
 .ba-log-result.win{background:rgba(0,255,136,.12);color:var(--green);}
 .ba-log-result.lose{background:rgba(255,45,85,.1);color:var(--red);}
 
 /* performance bars */
-.ba-perf{margin-top:12px;}
-.ba-perf-row{display:flex;align-items:center;gap:8px;font-size:.62rem;margin-bottom:4px;}
-.ba-perf-name{min-width:50px;font-weight:700;}
-.ba-perf-bar-wrap{flex:1;height:12px;background:var(--bg3);border-radius:6px;overflow:hidden;}
-.ba-perf-bar{height:100%;border-radius:6px;transition:width .5s;background:linear-gradient(90deg,#7c3aed,#a78bfa);}
-.ba-perf-val{font-family:'Share Tech Mono',monospace;min-width:80px;text-align:right;}
+.ba-perf{margin-top:14px;}
+.ba-perf-row{display:flex;align-items:center;gap:10px;font-size:.78rem;margin-bottom:6px;}
+.ba-perf-name{min-width:60px;font-weight:700;}
+.ba-perf-bar-wrap{flex:1;height:14px;background:var(--bg3);border-radius:7px;overflow:hidden;}
+.ba-perf-bar{height:100%;border-radius:7px;transition:width .5s;background:linear-gradient(90deg,#7c3aed,#a78bfa);}
+.ba-perf-val{font-family:'Share Tech Mono',monospace;min-width:90px;text-align:right;}
 
 /* pdca section */
-.ba-pdca{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:12px;}
-.ba-pdca-title{font-size:.56rem;text-transform:uppercase;letter-spacing:.2em;color:#c4b5fd;font-family:'Share Tech Mono',monospace;margin-bottom:6px;}
-.ba-pdca-log{font-size:.64rem;color:var(--dim);line-height:1.5;}
+.ba-pdca{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-top:14px;}
+.ba-pdca-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;color:#c4b5fd;font-family:'Share Tech Mono',monospace;margin-bottom:8px;}
+.ba-pdca-log{font-size:.8rem;color:var(--dim);line-height:1.55;}
 
 /* ══ BOT TRADE REPORT ══ */
-.bot-report{padding:12px;max-width:1200px;margin:0 auto;}
-.br-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
-.br-title{font-size:.9rem;font-weight:900;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:.06em;}
-.br-sub{font-size:.58rem;color:var(--dim);}
-.br-toggle{display:flex;gap:4px;margin-left:auto;}
-.br-toggle-btn{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,.04);color:var(--dim);border:1px solid var(--border);cursor:pointer;}
+.bot-report{padding:12px 16px;max-width:1200px;margin:0 auto;}
+.br-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.br-title{font-size:1.1rem;font-weight:900;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:.06em;}
+.br-sub{font-size:.76rem;color:var(--dim);}
+.br-toggle{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap;}
+.br-toggle-btn{font-family:'Share Tech Mono',monospace;font-size:.72rem;padding:5px 10px;border-radius:3px;background:rgba(255,255,255,.04);color:var(--dim);border:1px solid var(--border);cursor:pointer;}
 .br-toggle-btn.active{background:rgba(0,212,255,.12);color:var(--accent);border-color:rgba(0,212,255,.35);}
 
 /* daily review */
-.br-daily{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;position:relative;overflow:hidden;}
+.br-daily{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:14px;position:relative;overflow:hidden;}
 .br-daily::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),#7c3aed);}
-.br-daily-title{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.br-daily-body{font-size:.72rem;color:var(--text);line-height:1.65;}
-.br-daily-stat{display:inline-flex;align-items:center;gap:4px;background:var(--bg3);padding:2px 7px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:.62rem;margin:2px 3px;}
-.br-daily-trend{margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:6px;border-left:3px solid var(--accent);font-size:.68rem;color:var(--dim);line-height:1.5;}
+.br-daily-title{font-family:'Share Tech Mono',monospace;font-size:.74rem;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.br-daily-body{font-size:.88rem;color:var(--text);line-height:1.7;}
+.br-daily-stat{display:inline-flex;align-items:center;gap:4px;background:var(--bg3);padding:3px 8px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:.76rem;margin:2px 3px;}
+.br-daily-trend{margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:6px;border-left:3px solid var(--accent);font-size:.82rem;color:var(--dim);line-height:1.55;}
 
 /* report entries */
-.br-entries{display:flex;flex-direction:column;gap:6px;}
-.br-entry{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden;transition:border-color .3s;}
+.br-entries{display:flex;flex-direction:column;gap:8px;}
+.br-entry{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .3s;}
 .br-entry::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
 .br-entry.tp::before{background:var(--green);}
 .br-entry.sl::before{background:var(--red);}
 .br-entry.entry::before{background:var(--yellow);}
 .br-entry.ready::before{background:rgba(167,139,250,.6);}
-.br-entry-head{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
-.br-entry-time{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--dim);}
-.br-entry-bot{font-weight:900;font-size:.78rem;}
-.br-entry-action{font-family:'Share Tech Mono',monospace;font-size:.56rem;padding:2px 7px;border-radius:3px;}
+.br-entry-head{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;}
+.br-entry-time{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);}
+.br-entry-bot{font-weight:900;font-size:.95rem;}
+.br-entry-action{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:3px 9px;border-radius:3px;}
 .br-entry-action.entry-long{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.2);}
 .br-entry-action.entry-short{background:rgba(255,45,85,.08);color:var(--red);border:1px solid rgba(255,45,85,.2);}
 .br-entry-action.exit-tp{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.25);}
 .br-entry-action.exit-sl{background:rgba(255,45,85,.1);color:var(--red);border:1px solid rgba(255,45,85,.25);}
 .br-entry-action.thinking{background:rgba(167,139,250,.1);color:#c4b5fd;border:1px solid rgba(167,139,250,.25);}
-.br-entry-confidence{font-family:'Share Tech Mono',monospace;font-size:.54rem;padding:2px 6px;border-radius:3px;margin-left:auto;}
+.br-entry-confidence{font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:3px 8px;border-radius:3px;margin-left:auto;}
 .br-entry-confidence.high{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.2);}
 .br-entry-confidence.mid{background:rgba(255,214,10,.1);color:var(--yellow);border:1px solid rgba(255,214,10,.2);}
 .br-entry-confidence.low{background:rgba(255,45,85,.08);color:var(--red);border:1px solid rgba(255,45,85,.15);}
-.br-entry-thought{font-size:.68rem;color:var(--text);line-height:1.5;margin-bottom:5px;}
-.br-entry-indicators{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;}
-.br-ind-tag{font-family:'Share Tech Mono',monospace;font-size:.52rem;padding:2px 6px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);}
+.br-entry-thought{font-size:.85rem;color:var(--text);line-height:1.55;margin-bottom:7px;}
+.br-entry-indicators{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px;}
+.br-ind-tag{font-family:'Share Tech Mono',monospace;font-size:.66rem;padding:3px 8px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);}
 .br-ind-tag.bull{color:var(--green);border-color:rgba(0,255,136,.2);}
 .br-ind-tag.bear{color:var(--red);border-color:rgba(255,45,85,.2);}
 .br-ind-tag.neut{color:var(--yellow);border-color:rgba(255,214,10,.2);}
-.br-entry-quote{font-size:.64rem;color:#c4b5fd;font-style:italic;margin-top:3px;}
-.br-entry-result{font-family:'Share Tech Mono',monospace;font-size:.62rem;font-weight:700;margin-top:4px;}
-.br-more-btn{display:block;margin:10px auto;font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:5px 16px;border-radius:4px;background:var(--bg3);color:var(--dim);border:1px solid var(--border);cursor:pointer;}
+.br-entry-quote{font-size:.78rem;color:#c4b5fd;font-style:italic;margin-top:5px;}
+.br-entry-result{font-family:'Share Tech Mono',monospace;font-size:.78rem;font-weight:700;margin-top:5px;}
+.br-more-btn{display:block;margin:12px auto;font-family:'Share Tech Mono',monospace;font-size:.76rem;padding:7px 20px;border-radius:4px;background:var(--bg3);color:var(--dim);border:1px solid var(--border);cursor:pointer;}
 .br-more-btn:hover{background:rgba(255,255,255,.06);color:var(--text);}
+
+/* ── ENHANCED DAILY SUMMARY ── */
+.ba-ds-wrap{padding:16px;background:var(--bg2);border-radius:10px;margin-top:16px;border:1px solid var(--border);}
+.ba-ds-title{font-size:1.15rem;font-weight:700;margin-bottom:12px;color:var(--text);}
+.ba-ds-section{margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.04);}
+.ba-ds-section-title{font-size:.88rem;font-weight:600;color:var(--accent);margin-bottom:6px;}
+.ba-ds-body{font-size:.82rem;line-height:1.6;color:var(--text);}
+.ba-ds-highlight{color:var(--green);font-weight:600;}
+.ba-ds-warn{color:var(--red);font-weight:600;}
+.ba-ds-timeline-row{display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.78rem;}
+.ba-ds-hour{font-family:'Share Tech Mono',monospace;font-size:.78rem;min-width:40px;color:var(--dim);}
+.ba-ds-chance{font-size:.78rem;flex:1;}
+.ba-ds-signal-stat{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:.74rem;background:rgba(255,255,255,0.05);margin:2px;}
+.ba-ds-ranking-row{display:flex;gap:8px;align-items:center;padding:3px 0;font-size:.78rem;}
+.ba-ds-rank{min-width:24px;color:var(--dim);font-family:'Share Tech Mono',monospace;}
+.ba-ds-pattern{padding:6px 10px;background:rgba(0,212,255,0.06);border-radius:6px;margin:4px 0;font-size:.78rem;border-left:3px solid var(--accent);}
 
 /* ── SIGNAL NATURE + DAY GAUGE ── */
 .nature-gauge-row{display:flex;gap:14px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin:10px 16px 4px;flex-wrap:wrap;align-items:flex-start;}
@@ -1199,18 +1215,22 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="ba-header">
     <span class="ba-title">🤖 BOT ARENA</span>
     <span class="ba-live">LIVE</span>
-    <span class="ba-sub">AI Trading Bot — BTC ペーパートレードバトル</span>
+    <span class="ba-sub">AI Trading Bot — BTC ペーパートレードバトル（48体稼働中 / カテゴリTop1表示）</span>
   </div>
   <div class="ba-leaders" id="baLeaders"></div>
   <div class="ba-log-title">🔴 ライブトレード状況</div>
   <div class="ba-bots" id="baBots"></div>
   <div class="ba-log-title">📋 本日のトレード履歴</div>
-  <div class="ba-log" id="baLog"><div style="color:var(--dim);font-size:.64rem;">トレード履歴がまだありません...</div></div>
+  <div class="ba-log" id="baLog"><div style="color:var(--dim);font-size:.8rem;">トレード履歴がまだありません...</div></div>
   <div class="ba-log-title">📈 7日間パフォーマンス</div>
   <div class="ba-perf" id="baPerf"></div>
   <div class="ba-pdca" id="baPdca">
     <div class="ba-pdca-title">🔄 PDCA改善ログ</div>
     <div class="ba-pdca-log" id="baPdcaLog">初回PDCA改善は本日23:59 JSTに自動実行されます...</div>
+  </div>
+  <div class="ba-ds-wrap" id="baDailySummary">
+    <div class="ba-ds-title">📊 本日の総括レポート</div>
+    <div id="baDailySummaryContent"><div class="ba-ds-body" style="color:var(--dim);">データ蓄積中... トレードが発生すると総括が生成されます。</div></div>
   </div>
 </div>
 </div>
@@ -1228,11 +1248,13 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <button class="br-toggle-btn" id="brToggleEmma" onclick="setBrFilter('emma')">EMMA</button>
       <button class="br-toggle-btn" id="brToggleAlex" onclick="setBrFilter('alex')">ALEX</button>
       <button class="br-toggle-btn" id="brToggleYuki" onclick="setBrFilter('yuki')">YUKI</button>
+      <button class="br-toggle-btn" id="brToggleDelta" onclick="setBrFilter('delta')">DELTA</button>
+      <button class="br-toggle-btn" id="brToggleAtr" onclick="setBrFilter('atr')">ATR</button>
     </div>
   </div>
   <div id="brDailyReview"></div>
   <div class="br-entries" id="brEntries">
-    <div style="color:var(--dim);font-size:.64rem;padding:12px;">Botが取引を開始すると、ここに思考レポートが蓄積されます...</div>
+    <div style="color:var(--dim);font-size:.82rem;padding:12px;">Botが取引を開始すると、ここに思考レポートが蓄積されます...</div>
   </div>
   <button class="br-more-btn" id="brMoreBtn" onclick="showMoreReports()" style="display:none;">さらに表示 ▼</button>
 </div>
@@ -3705,7 +3727,56 @@ const BOT_DEFS = [
     desc:'1時間足マクロ逆張りトレーダー', philosophy:'恐怖の極致で買い、強欲の極みで売る。大衆の逆を行く。',
     quotes:{ watching:'市場心理の極端化を待つ...', ready:'F&Gが極値に達した。大衆の逆を行く時だ。',
              holding:'大衆と逆のポジション。信念を持て。', tp:'大衆心理の逆張り成功。これがマクロの力。', sl:'市場が更に極端化。一旦退却。' }},
+  { id:'delta', name:'DELTA', emoji:'🔶', tf:'15m', style:'trend',   cat:'15分トレード(順張り)',
+    desc:'15分足デルタ確認トレンドフォロワー', philosophy:'出来高の方向が全てを語る。買い手が勝っている時に乗る。',
+    quotes:{ watching:'デルタの流れを読んでいる...', ready:'出来高の偏りが見えてきた。準備完了。',
+             holding:'デルタの方向に乗っている。信じろ。', tp:'出来高の読みが正解だった。', sl:'デルタが反転した。撤退する。' }},
+  { id:'atr', name:'ATR',     emoji:'🔷', tf:'1h',  style:'counter', cat:'1時間スイング(逆張り)',
+    desc:'1時間足ATR急拡大逆張りトレーダー', philosophy:'ボラティリティの急拡大は反転のサイン。嵐の後の静けさを狙う。',
+    quotes:{ watching:'ATRの変化を監視中...', ready:'ボラ急拡大を検知。反転準備。',
+             holding:'急拡大からの収束に賭ける。', tp:'ボラ急拡大の逆張り成功。', sl:'ボラがさらに拡大。一旦退く。' }},
 ];
+
+// ── Mother bot IDs (for child dormancy mechanism) ──
+const MOTHER_BOT_IDS = BOT_DEFS.map(d=>d.id);
+
+// ── Child variant definitions ──
+const CHILD_VARIANTS = [
+  { suffix:'_agg',  label:'攻撃型',   paramMod:{ scoreEntry:-10, rsiOB:-3, rsiOS:+3, fgExtreme:+5, fgGreed:-5, tpPct:1.5, slPct:1.3 }},
+  { suffix:'_con',  label:'堅実型',   paramMod:{ scoreEntry:+10, rsiOB:+3, rsiOS:-3, fgExtreme:-5, fgGreed:+5, tpPct:0.7, slPct:0.7 }},
+  { suffix:'_fast', label:'高速型',   paramMod:{ timeoutMin:0.5, cooldownMin:0.5 }},
+  { suffix:'_slow', label:'中期型',   paramMod:{ timeoutMin:2.0, cooldownMin:2.0 }},
+  { suffix:'_risk', label:'高リスク', paramMod:{ tpPct:2.0, slPct:1.5 }},
+];
+
+// ── Generate child bots from mother bots ──
+function generateChildBots(){
+  const children = [];
+  BOT_DEFS.filter(d=>MOTHER_BOT_IDS.includes(d.id)).forEach(mother=>{
+    CHILD_VARIANTS.forEach(v=>{
+      children.push({
+        id: mother.id + v.suffix,
+        name: mother.name + v.label,
+        emoji: mother.emoji,
+        tf: mother.tf,
+        style: mother.style,
+        cat: mother.cat,
+        strategy: mother.id,
+        motherId: mother.id,
+        isChild: true,
+        variantLabel: v.label,
+        paramMod: v.paramMod,
+        desc: mother.desc + '(' + v.label + ')',
+        philosophy: mother.philosophy,
+        quotes: mother.quotes,
+      });
+    });
+  });
+  return children;
+}
+const BOT_CHILDREN = generateChildBots();
+// ALL_BOTS = mother (8) + children (8×5=40) = 48 total
+const ALL_BOTS = [...BOT_DEFS, ...BOT_CHILDREN];
 
 // Bot parameters (tunable by PDCA)
 const BOT_DEFAULT_PARAMS = {
@@ -3715,7 +3786,26 @@ const BOT_DEFAULT_PARAMS = {
   emma:  { rsiDiv:true, frThresh:0.03, rsiOB:70, rsiOS:30, tpPct:0.40, slPct:0.20, timeoutMin:30, cooldownMin:5 },
   alex:  { scoreEntry:65, multiTfAlign:true, deltaConfirm:true, tpPct:0.60, slPct:0.30, timeoutMin:60, cooldownMin:10 },
   yuki:  { fgExtreme:25, fgGreed:75, lsThresh:62, bbEntry:true, tpPct:0.70, slPct:0.35, timeoutMin:90, cooldownMin:15 },
+  delta: { scoreEntry:62, deltaConfirm:true, tpPct:0.40, slPct:0.20, timeoutMin:25, cooldownMin:5 },
+  atr:   { atrMultiple:1.5, rsiOB:72, rsiOS:28, tpPct:0.55, slPct:0.30, timeoutMin:60, cooldownMin:10 },
 };
+
+// Generate child bot default params from mother params + variant modifiers
+function generateChildParams(motherId, paramMod){
+  const base = JSON.parse(JSON.stringify(BOT_DEFAULT_PARAMS[motherId]));
+  Object.entries(paramMod).forEach(([key, mod])=>{
+    if(base[key] !== undefined){
+      if(key === 'timeoutMin' || key === 'cooldownMin'){
+        base[key] = Math.max(1, Math.round(base[key] * mod));
+      } else if(key === 'tpPct' || key === 'slPct'){
+        base[key] = +(base[key] * mod).toFixed(3);
+      } else {
+        base[key] = +(base[key] + mod).toFixed(3);
+      }
+    }
+  });
+  return base;
+}
 
 // Bot Arena state
 let botArenaVisible = false;
@@ -3728,15 +3818,23 @@ function initBotArena(){
   if(saved){
     try{ botStates = JSON.parse(saved); }catch(e){ botStates = {}; }
   }
-  BOT_DEFS.forEach(def=>{
+  // Initialize ALL bots (mothers + children)
+  ALL_BOTS.forEach(def=>{
     if(!botStates[def.id]){
       botStates[def.id] = createBotState(def.id);
     }
     // Ensure params exist
     if(!botStates[def.id].params){
-      botStates[def.id].params = JSON.parse(JSON.stringify(BOT_DEFAULT_PARAMS[def.id]));
+      if(def.isChild){
+        botStates[def.id].params = generateChildParams(def.motherId, def.paramMod);
+      } else {
+        botStates[def.id].params = JSON.parse(JSON.stringify(BOT_DEFAULT_PARAMS[def.id]));
+      }
     }
   });
+  // Clean up old bot states that no longer exist in ALL_BOTS
+  const validIds = new Set(ALL_BOTS.map(d=>d.id));
+  Object.keys(botStates).forEach(id=>{ if(!validIds.has(id)) delete botStates[id]; });
   schedulePDCA();
 }
 
@@ -3759,11 +3857,35 @@ function createBotState(id){
 }
 
 function saveBotArena(){
-  // Trim trades to last 200 per bot
-  Object.values(botStates).forEach(bs=>{
-    if(bs.trades.length>200) bs.trades = bs.trades.slice(-200);
-    if(bs.dailyStats.length>30) bs.dailyStats = bs.dailyStats.slice(-30);
-    if(bs.pdcaLog.length>20) bs.pdcaLog = bs.pdcaLog.slice(-20);
+  // Find top 1 per category for generous storage limits
+  const topBots = new Set();
+  const catMap = {};
+  ALL_BOTS.forEach(d=>{
+    const key = `${d.tf}_${d.style}`;
+    if(!catMap[key]) catMap[key] = [];
+    const bs = botStates[d.id];
+    if(bs) catMap[key].push({ id:d.id, pnl:bs.totalPnlPct||0 });
+  });
+  Object.values(catMap).forEach(bots=>{
+    bots.sort((a,b)=>b.pnl-a.pnl);
+    if(bots[0]) topBots.add(bots[0].id);
+  });
+
+  // Trim: mother bots + top1 get generous limits, children get tight limits
+  Object.entries(botStates).forEach(([id, bs])=>{
+    const def = ALL_BOTS.find(d=>d.id===id);
+    const isTop = topBots.has(id);
+    const isMother = def && !def.isChild;
+    if(isMother || isTop){
+      if(bs.trades.length>200) bs.trades = bs.trades.slice(-200);
+      if(bs.dailyStats.length>30) bs.dailyStats = bs.dailyStats.slice(-30);
+      if(bs.pdcaLog.length>20) bs.pdcaLog = bs.pdcaLog.slice(-20);
+    } else {
+      // Child bot (not top): aggressive trimming
+      if(bs.trades.length>20) bs.trades = bs.trades.slice(-20);
+      if(bs.dailyStats.length>14) bs.dailyStats = bs.dailyStats.slice(-14);
+      if(bs.pdcaLog.length>5) bs.pdcaLog = bs.pdcaLog.slice(-5);
+    }
   });
   try{ localStorage.setItem(BA_STORAGE_KEY, JSON.stringify(botStates)); }catch(e){}
 }
@@ -3793,10 +3915,17 @@ switchCoin = async function(key){
 // BOT EVALUATION ENGINE
 // ═══════════════════════════════════════════════
 
+let _tfCache = {};
+let _tfCacheTs = 0;
+
 function botComputeTF(tf){
-  // Reuse the existing computeTF which reads from global S and KL
+  const now = Date.now();
+  if(now - _tfCacheTs > 2500){ _tfCache = {}; _tfCacheTs = now; }
+  if(_tfCache[tf]) return _tfCache[tf];
   const kl = KL[tf](); if(!kl||kl.length<20) return null;
-  return computeTF(tf);
+  const r = computeTF(tf);
+  _tfCache[tf] = r;
+  return r;
 }
 
 function evaluateBot(def, state){
@@ -3832,7 +3961,8 @@ function checkBotEntry(def, state, price, now){
   let reason = '';
   let readyMsg = '';
 
-  switch(def.id){
+  const strategyKey = def.strategy || def.id;
+  switch(strategyKey){
     case 'john': { // 5m trend follow
       if(score >= p.scoreEntry && inds.trend && inds.trend.cls==='bull' && (!inds.rsi || inds.rsi.cls!=='bear')){
         signal = 'LONG';
@@ -3943,6 +4073,45 @@ function checkBotEntry(def, state, price, now){
       }
       break;
     }
+    case 'delta': { // 15m delta-confirmed trend
+      const delta = inds.delta;
+      if(score >= p.scoreEntry && delta && delta.cls==='bull'){
+        signal = 'LONG';
+        reason = `スコア${score} + Delta買い優勢(${delta.badge})`;
+      } else if(score <= (100-p.scoreEntry) && delta && delta.cls==='bear'){
+        signal = 'SHORT';
+        reason = `スコア${score} + Delta売り優勢(${delta.badge})`;
+      } else if(score >= (p.scoreEntry-8) && delta && delta.cls==='bull'){
+        state.status = 'ready';
+        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}+Delta買い優勢で準備中` };
+      } else if(score <= (100-p.scoreEntry+8) && delta && delta.cls==='bear'){
+        state.status = 'ready';
+        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}+Delta売り優勢で準備中` };
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+    case 'atr': { // ATR spike + RSI extreme counter-trend
+      const rsi = r.rsi || 50;
+      const atrInd = inds.atr;
+      const atrSpike = atrInd && atrInd.cls !== 'neutral'; // ATR elevated
+      if(rsi <= p.rsiOS && atrSpike){
+        signal = 'LONG';
+        reason = `RSI${rsi.toFixed(0)}(売られすぎ) + ATR急拡大(${atrInd.badge})`;
+      } else if(rsi >= p.rsiOB && atrSpike){
+        signal = 'SHORT';
+        reason = `RSI${rsi.toFixed(0)}(買われすぎ) + ATR急拡大(${atrInd.badge})`;
+      } else if(atrSpike && (rsi <= p.rsiOS+5 || rsi >= p.rsiOB-5)){
+        state.status = 'ready';
+        state.readyDetail = { dir: rsi<=50?'LONG':'SHORT', target:price, reason:`ATR急拡大+RSI${rsi.toFixed(0)}で極値接近` };
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
   }
 
   // Execute entry if signal found
@@ -4033,15 +4202,31 @@ function addBotTradeLog(def, type, dir, price, reason, pnlPct){
   if(botTradeLogEntries.length > 50) botTradeLogEntries = botTradeLogEntries.slice(0, 50);
 }
 
-// ── Run all bots ──
+// ── Run all bots (mother/child dormancy system) ──
 function botEvalAll(){
   if(!S.price) return;
+  // Stage 1: Evaluate all mother bots
+  const motherSignals = {};
   BOT_DEFS.forEach(def=>{
     const state = botStates[def.id];
     if(state) evaluateBot(def, state);
+    motherSignals[def.id] = state ? state.status : 'watching';
+  });
+  // Stage 2: Evaluate child bots only when their mother has a signal
+  BOT_CHILDREN.forEach(def=>{
+    const state = botStates[def.id];
+    if(!state) return;
+    // Always evaluate if child is holding a position (need exit check)
+    if(state.position){
+      evaluateBot(def, state);
+      return;
+    }
+    // Otherwise, only evaluate if mother is NOT watching (ready or holding)
+    const motherStatus = motherSignals[def.motherId];
+    if(motherStatus === 'watching') return; // child stays dormant
+    evaluateBot(def, state);
   });
   if(botArenaVisible) renderBotArena();
-  // Save periodically (every 30s via caller or manual)
 }
 let _botSaveCounter = 0;
 function botEvalAndSave(){
@@ -4060,36 +4245,49 @@ function renderBotArena(){
   renderTradeLog();
   renderPerfBars();
   renderPDCALog();
+  // Render latest daily summary if available
+  const today = new Date().toISOString().slice(0,10);
+  const todayReview = botDailyReviews.find(r=>r.date===today);
+  if(todayReview) renderEnhancedDailySummary(todayReview.html);
+}
+
+// Helper: get top bot per category from ALL_BOTS
+function getCategoryTopBots(){
+  const catMap = {};
+  ALL_BOTS.forEach(d=>{
+    const key = `${d.tf}_${d.style}`;
+    if(!catMap[key]) catMap[key] = { label:d.cat, bots:[] };
+    const bs = botStates[d.id];
+    if(bs){
+      const total = bs.totalWins + bs.totalLosses;
+      const rate = total > 0 ? bs.totalWins/total : 0;
+      catMap[key].bots.push({ id:d.id, def:d, bs, rate, total });
+    }
+  });
+  // Sort each category by win rate, then P&L
+  Object.values(catMap).forEach(cat=>{
+    cat.bots.sort((a,b)=> b.rate - a.rate || b.bs.totalPnlPct - a.bs.totalPnlPct);
+  });
+  return catMap;
 }
 
 function renderLeaderboard(){
-  const cats = [
-    { label:'5分スキャルピング', ids:['john','mike'] },
-    { label:'15分トレード', ids:['sarah','emma'] },
-    { label:'1時間スイング', ids:['alex','yuki'] },
-  ];
+  const catMap = getCategoryTopBots();
   const el = document.getElementById('baLeaders');
-  el.innerHTML = cats.map(cat=>{
-    // Find top bot in category by win rate
-    let best = null, bestRate = -1;
-    cat.ids.forEach(id=>{
-      const bs = botStates[id];
-      const total = bs.totalWins + bs.totalLosses;
-      const rate = total > 0 ? bs.totalWins/total*100 : 0;
-      if(rate > bestRate || (rate === bestRate && bs.totalPnlPct > (best?botStates[best].totalPnlPct:0))){
-        bestRate = rate; best = id;
-      }
-    });
-    if(!best) best = cat.ids[0];
-    const def = BOT_DEFS.find(d=>d.id===best);
-    const bs = botStates[best];
+  el.innerHTML = Object.values(catMap).map(cat=>{
+    if(cat.bots.length === 0) return '';
+    const top = cat.bots[0];
+    const def = top.def;
+    const bs = top.bs;
     const total = bs.totalWins + bs.totalLosses;
     const rate = total > 0 ? (bs.totalWins/total*100).toFixed(0) : '--';
     const pnlCls = bs.totalPnlPct > 0 ? 'pos' : bs.totalPnlPct < 0 ? 'neg' : 'neut';
     const todayPnl = getTodayPnl(bs);
     const todayCls = todayPnl > 0 ? 'pos' : todayPnl < 0 ? 'neg' : 'neut';
-    return `<div class="ba-lead-card">
-      <div class="ba-lc-cat">${cat.label}</div>
+    const catKey = `${def.tf}_${def.style}`;
+    const botCount = cat.bots.length;
+    return `<div class="ba-lead-card" onclick="toggleCategoryExpand('${catKey}')">
+      <div class="ba-lc-cat">${cat.label} <span style="font-size:.66rem;color:var(--dim);">(${botCount}体中1位)</span></div>
       <div class="ba-lc-name"><span class="ba-lc-crown">👑</span>${def.emoji} ${def.name}</div>
       <div class="ba-lc-stats">
         <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">勝率</span><span class="ba-lc-stat-val ${pnlCls}">${rate}%</span></div>
@@ -4098,8 +4296,45 @@ function renderLeaderboard(){
         <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">本日P&L</span><span class="ba-lc-stat-val ${todayCls}">${todayPnl>=0?'+':''}${todayPnl.toFixed(2)}%</span></div>
       </div>
       <div class="ba-lc-style">${def.philosophy}</div>
+      <div id="catExpand_${catKey}" class="ba-cat-expand" style="display:none;"></div>
     </div>`;
   }).join('');
+}
+
+let _expandedCat = null;
+function toggleCategoryExpand(catKey){
+  const el = document.getElementById('catExpand_'+catKey);
+  if(!el) return;
+  if(_expandedCat === catKey){
+    el.style.display = 'none';
+    _expandedCat = null;
+    return;
+  }
+  // Collapse previous
+  if(_expandedCat){
+    const prev = document.getElementById('catExpand_'+_expandedCat);
+    if(prev) prev.style.display = 'none';
+  }
+  _expandedCat = catKey;
+  // Build ranking for this category
+  const catMap = getCategoryTopBots();
+  const cat = catMap[catKey];
+  if(!cat) return;
+  el.innerHTML = '<div style="font-size:.74rem;font-weight:600;margin:8px 0 4px;color:var(--accent);">カテゴリ内ランキング</div>' +
+    cat.bots.slice(0,10).map((b,i)=>{
+      const total = b.bs.totalWins + b.bs.totalLosses;
+      const rate = total > 0 ? (b.bs.totalWins/total*100).toFixed(0) : '--';
+      const pnlCls = b.bs.totalPnlPct>=0?'var(--green)':'var(--red)';
+      const variant = b.def.isChild ? ` <span style="color:var(--dim)">(${b.def.variantLabel})</span>` : '';
+      return `<div style="display:flex;gap:8px;align-items:center;padding:2px 0;font-size:.74rem;">
+        <span style="min-width:20px;color:var(--dim);">#${i+1}</span>
+        <span>${b.def.emoji}${b.def.name}${variant}</span>
+        <span>勝率${rate}%</span>
+        <span style="color:${pnlCls}">${b.bs.totalPnlPct>=0?'+':''}${b.bs.totalPnlPct.toFixed(2)}%</span>
+        <span style="color:var(--dim)">${total}回</span>
+      </div>`;
+    }).join('');
+  el.style.display = 'block';
 }
 
 function getTodayPnl(bs){
@@ -4118,60 +4353,109 @@ function getTodayStats(bs){
 
 function renderBotCards(){
   const el = document.getElementById('baBots');
-  el.innerHTML = BOT_DEFS.map(def=>{
-    const bs = botStates[def.id];
-    const pos = bs.position;
-    const p = bs.params;
-    const total = bs.totalWins + bs.totalLosses;
-    const rate = total > 0 ? (bs.totalWins/total*100).toFixed(0) : '--';
-    const ts = getTodayStats(bs);
+  // Show: top 1 per category (full card) + any bot with position (compact)
+  const catMap = getCategoryTopBots();
+  const topIds = new Set();
+  Object.values(catMap).forEach(cat=>{ if(cat.bots[0]) topIds.add(cat.bots[0].id); });
 
-    let statusCls = 'watching', statusText = '様子見', dirCls = '';
-    let detail = '', rationale = '', quote = def.quotes.watching;
+  // Bots holding positions that aren't already top
+  const holdingBots = ALL_BOTS.filter(d=>{
+    const bs = botStates[d.id];
+    return bs && bs.position && !topIds.has(d.id);
+  });
 
-    if(pos){
-      statusCls = pos.dir==='SHORT'?'holding-short':'holding';
-      statusText = `${pos.dir} 保有中`;
-      dirCls = pos.dir==='LONG'?'dir-long':'dir-short';
-      const pnlPct = pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : (pos.entry-S.price)/pos.entry*100;
-      const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
-      detail = `${pos.dir} @ $${pos.entry.toLocaleString('en',{maximumFractionDigits:0})} → 含み損益: <span style="color:${pnlCls};font-weight:700;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span><br>利確: $${pos.tp.toLocaleString('en',{maximumFractionDigits:0})} / 損切: $${pos.sl.toLocaleString('en',{maximumFractionDigits:0})}`;
-      rationale = bs.lastMsg || '';
-      quote = def.quotes.holding;
-    } else if(bs.status==='ready' && bs.readyDetail){
-      statusCls = 'ready'; statusText = `${bs.readyDetail.dir} 狙い中`;
-      detail = `${bs.readyDetail.dir}エントリー準備中 @ $${bs.readyDetail.target.toLocaleString('en',{maximumFractionDigits:0})}付近`;
-      rationale = bs.readyDetail.reason;
-      quote = def.quotes.ready;
-    } else {
-      detail = `次のシグナルを待機中... (${def.tf}足監視)`;
-      rationale = `TP: ±${p.tpPct}% / SL: ±${p.slPct}% / タイムアウト: ${p.timeoutMin||15}分`;
-    }
+  let html = '';
 
-    return `<div class="ba-bot st-${bs.status==='holding'?'holding':bs.status} ${dirCls}">
-      <div class="ba-bot-top">
-        <span class="ba-bot-emoji">${def.emoji}</span>
-        <span class="ba-bot-name">${def.name}</span>
-        <span class="ba-bot-cat">${def.cat}</span>
+  // Full cards for top bots
+  topIds.forEach(id=>{
+    const def = ALL_BOTS.find(d=>d.id===id);
+    const bs = botStates[id];
+    if(!def || !bs) return;
+    html += renderSingleBotCard(def, bs, true);
+  });
+
+  // Compact cards for holding bots not in top
+  if(holdingBots.length > 0){
+    html += '<div style="font-size:.76rem;font-weight:600;color:var(--accent);margin:10px 0 4px;padding:0 4px;">📡 ポジション保有中の派生Bot</div>';
+    holdingBots.forEach(def=>{
+      const bs = botStates[def.id];
+      if(!bs) return;
+      html += renderSingleBotCard(def, bs, false);
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+function renderSingleBotCard(def, bs, isFull){
+  const pos = bs.position;
+  const p = bs.params;
+  const total = bs.totalWins + bs.totalLosses;
+  const rate = total > 0 ? (bs.totalWins/total*100).toFixed(0) : '--';
+  const ts = getTodayStats(bs);
+
+  let statusCls = 'watching', statusText = '様子見', dirCls = '';
+  let detail = '', rationale = '', quote = def.quotes ? def.quotes.watching : '';
+
+  if(pos){
+    statusCls = pos.dir==='SHORT'?'holding-short':'holding';
+    statusText = `${pos.dir} 保有中`;
+    dirCls = pos.dir==='LONG'?'dir-long':'dir-short';
+    const pnlPct = pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : (pos.entry-S.price)/pos.entry*100;
+    const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
+    detail = `${pos.dir} @ $${pos.entry.toLocaleString('en',{maximumFractionDigits:0})} → 含み損益: <span style="color:${pnlCls};font-weight:700;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span><br>利確: $${pos.tp.toLocaleString('en',{maximumFractionDigits:0})} / 損切: $${pos.sl.toLocaleString('en',{maximumFractionDigits:0})}`;
+    rationale = bs.lastMsg || '';
+    quote = def.quotes ? def.quotes.holding : '';
+  } else if(bs.status==='ready' && bs.readyDetail){
+    statusCls = 'ready'; statusText = `${bs.readyDetail.dir} 狙い中`;
+    detail = `${bs.readyDetail.dir}エントリー準備中 @ $${bs.readyDetail.target.toLocaleString('en',{maximumFractionDigits:0})}付近`;
+    rationale = bs.readyDetail.reason;
+    quote = def.quotes ? def.quotes.ready : '';
+  } else {
+    detail = `次のシグナルを待機中... (${def.tf}足監視)`;
+    rationale = `TP: ±${p.tpPct}% / SL: ±${p.slPct}% / タイムアウト: ${p.timeoutMin||15}分`;
+  }
+
+  const variant = def.isChild ? ` <span style="font-size:.68rem;color:var(--dim);">${def.variantLabel}</span>` : '';
+
+  if(!isFull){
+    // Compact card for non-top holding bots
+    const pnlPct = pos && pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : pos ? (pos.entry-S.price)/pos.entry*100 : 0;
+    const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
+    return `<div class="ba-bot st-holding ${dirCls}" style="padding:8px 12px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="ba-bot-emoji" style="font-size:1rem;">${def.emoji}</span>
+        <span class="ba-bot-name" style="font-size:.88rem;">${def.name}${variant}</span>
         <span class="ba-bot-status ${statusCls}">${statusText}</span>
-      </div>
-      <div class="ba-bot-detail">${detail}</div>
-      ${rationale?`<div class="ba-bot-rationale">根拠: ${rationale}</div>`:''}
-      <div class="ba-bot-quote">「${quote}」</div>
-      <div class="ba-bot-mini-stats">
-        <span>勝率:${rate}%</span>
-        <span>勝${bs.totalWins}/負${bs.totalLosses}</span>
-        <span>累計:${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</span>
-        <span>本日:${ts.count}回(${ts.pnl>=0?'+':''}${ts.pnl.toFixed(2)}%)</span>
+        <span style="color:${pnlCls};font-weight:700;font-size:.82rem;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span>
+        <span style="color:var(--dim);font-size:.72rem;">${def.cat}</span>
       </div>
     </div>`;
-  }).join('');
+  }
+
+  return `<div class="ba-bot st-${bs.status==='holding'?'holding':bs.status} ${dirCls}">
+    <div class="ba-bot-top">
+      <span class="ba-bot-emoji">${def.emoji}</span>
+      <span class="ba-bot-name">${def.name}${variant}</span>
+      <span class="ba-bot-cat">${def.cat}</span>
+      <span class="ba-bot-status ${statusCls}">${statusText}</span>
+    </div>
+    <div class="ba-bot-detail">${detail}</div>
+    ${rationale?`<div class="ba-bot-rationale">根拠: ${rationale}</div>`:''}
+    ${quote?`<div class="ba-bot-quote">「${quote}」</div>`:''}
+    <div class="ba-bot-mini-stats">
+      <span>勝率:${rate}%</span>
+      <span>勝${bs.totalWins}/負${bs.totalLosses}</span>
+      <span>累計:${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</span>
+      <span>本日:${ts.count}回(${ts.pnl>=0?'+':''}${ts.pnl.toFixed(2)}%)</span>
+    </div>
+  </div>`;
 }
 
 function renderTradeLog(){
   const el = document.getElementById('baLog');
   if(botTradeLogEntries.length === 0){
-    el.innerHTML = '<div style="color:var(--dim);font-size:.64rem;">トレード履歴がまだありません...</div>';
+    el.innerHTML = '<div style="color:var(--dim);font-size:.8rem;">トレード履歴がまだありません...</div>';
     return;
   }
   el.innerHTML = botTradeLogEntries.slice(0,20).map(e=>{
@@ -4181,7 +4465,7 @@ function renderTradeLog(){
         <span class="ba-log-name">${e.emoji}${e.name}</span>
         <span class="ba-log-dir ${e.dir}">${e.dir}</span>
         <span>エントリー @ $${e.price.toLocaleString('en',{maximumFractionDigits:0})}</span>
-        <span style="color:var(--dim);font-size:.58rem;">${e.reason}</span>
+        <span style="color:var(--dim);font-size:.74rem;">${e.reason}</span>
       </div>`;
     } else {
       const pnlCls = (e.pnlPct||0)>=0?'win':'lose';
@@ -4191,7 +4475,7 @@ function renderTradeLog(){
         <span class="ba-log-dir ${e.dir}">${e.dir}</span>
         <span class="ba-log-pnl" style="color:${(e.pnlPct||0)>=0?'var(--green)':'var(--red)'}">${(e.pnlPct||0)>=0?'+':''}${(e.pnlPct||0).toFixed(2)}%</span>
         <span class="ba-log-result ${pnlCls}">${pnlCls==='win'?'WIN':'LOSE'}</span>
-        <span style="color:var(--dim);font-size:.58rem;">${e.reason}</span>
+        <span style="color:var(--dim);font-size:.74rem;">${e.reason}</span>
       </div>`;
     }
   }).join('');
@@ -4199,26 +4483,34 @@ function renderTradeLog(){
 
 function renderPerfBars(){
   const el = document.getElementById('baPerf');
-  el.innerHTML = BOT_DEFS.map(def=>{
-    const bs = botStates[def.id];
-    const total = bs.totalWins + bs.totalLosses;
-    const rate = total > 0 ? bs.totalWins/total*100 : 0;
-    const pnlCls = bs.totalPnlPct>=0?'var(--green)':'var(--red)';
-    return `<div class="ba-perf-row">
-      <span class="ba-perf-name">${def.emoji}${def.name}</span>
-      <div class="ba-perf-bar-wrap"><div class="ba-perf-bar" style="width:${rate}%"></div></div>
-      <span class="ba-perf-val" style="color:${pnlCls}">${rate.toFixed(0)}% (${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(1)}%)</span>
-    </div>`;
-  }).join('');
+  // Show top 3 per category for performance comparison
+  const catMap = getCategoryTopBots();
+  let html = '';
+  Object.values(catMap).forEach(cat=>{
+    html += `<div style="font-size:.72rem;color:var(--accent);margin:6px 0 2px;font-weight:600;">${cat.label}</div>`;
+    cat.bots.slice(0,3).forEach((b,i)=>{
+      const total = b.bs.totalWins + b.bs.totalLosses;
+      const rate = total > 0 ? b.bs.totalWins/total*100 : 0;
+      const pnlCls = b.bs.totalPnlPct>=0?'var(--green)':'var(--red)';
+      const variant = b.def.isChild ? `(${b.def.variantLabel})` : '';
+      const crown = i===0 ? '👑' : '';
+      html += `<div class="ba-perf-row">
+        <span class="ba-perf-name">${crown}${b.def.emoji}${b.def.name}${variant}</span>
+        <div class="ba-perf-bar-wrap"><div class="ba-perf-bar" style="width:${rate}%"></div></div>
+        <span class="ba-perf-val" style="color:${pnlCls}">${rate.toFixed(0)}% (${b.bs.totalPnlPct>=0?'+':''}${b.bs.totalPnlPct.toFixed(1)}%)</span>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
 }
 
 function renderPDCALog(){
   const el = document.getElementById('baPdcaLog');
   // Gather all PDCA logs across bots, sorted by time
   const allLogs = [];
-  BOT_DEFS.forEach(def=>{
+  ALL_BOTS.forEach(def=>{
     const bs = botStates[def.id];
-    (bs.pdcaLog||[]).forEach(log=>allLogs.push({...log, name:def.name, emoji:def.emoji}));
+    if(bs) (bs.pdcaLog||[]).forEach(log=>allLogs.push({...log, name:def.name, emoji:def.emoji}));
   });
   allLogs.sort((a,b)=>(b.time||0)-(a.time||0));
   if(allLogs.length===0){
@@ -4230,6 +4522,52 @@ function renderPDCALog(){
     return `<div>${d} — ${l.emoji}${l.name}: ${l.msg}</div>`;
   }).join('');
 }
+
+// ═══════════════════════════════════════════════
+// HOURLY SIGNAL RECORDING (for daily summary)
+// ═══════════════════════════════════════════════
+
+let hourlySignals = [];
+const HOURLY_STORAGE_KEY = 'hourlySignals_BTC';
+
+function loadHourlySignals(){
+  try{ hourlySignals = JSON.parse(localStorage.getItem(HOURLY_STORAGE_KEY)) || []; }catch(e){ hourlySignals = []; }
+}
+function saveHourlySignals(){
+  if(hourlySignals.length > 48) hourlySignals = hourlySignals.slice(-48);
+  try{ localStorage.setItem(HOURLY_STORAGE_KEY, JSON.stringify(hourlySignals)); }catch(e){}
+}
+
+function recordHourlySnapshot(){
+  if(!S.price) return;
+  const jst = new Date(Date.now() + 9*3600000);
+  const hour = jst.getHours();
+  const today = jst.toISOString().slice(0,10);
+
+  const snapshot = { hour, ts:Date.now(), date:today, price:S.price, scores:{}, fg:S.fg, fr:S.fr, ls:S.ls };
+  ['5m','15m','1h'].forEach(tf=>{
+    const r = botComputeTF(tf);
+    if(r) snapshot.scores[tf] = { score:r.score, signal:r.signal, rsi:r.rsi||50 };
+  });
+
+  // Collect trades that happened in the last hour
+  const hourAgo = Date.now() - 3600000;
+  snapshot.trades = [];
+  ALL_BOTS.forEach(def=>{
+    const bs = botStates[def.id];
+    if(!bs) return;
+    bs.trades.filter(t=>t.exitTime && new Date(t.exitTime).getTime() > hourAgo).forEach(t=>{
+      snapshot.trades.push({ bot:def.id, botName:def.name, emoji:def.emoji, dir:t.dir, win:t.win, pnl:t.pnlPct, reason:t.entryReason||'' });
+    });
+  });
+
+  hourlySignals.push(snapshot);
+  saveHourlySignals();
+}
+
+loadHourlySignals();
+setInterval(recordHourlySnapshot, 3600000); // every hour
+setTimeout(recordHourlySnapshot, 60000); // first snapshot after 1 min
 
 // ═══════════════════════════════════════════════
 // DAILY PDCA AUTO-IMPROVEMENT
@@ -4251,16 +4589,20 @@ function schedulePDCA(){
 
 function runDailyPDCA(){
   const today = new Date().toISOString().slice(0,10);
-  const categories = [
-    { ids:['john','mike'] },
-    { ids:['sarah','emma'] },
-    { ids:['alex','yuki'] },
-  ];
 
-  categories.forEach(cat=>{
+  // Build dynamic categories from ALL bots (tf + style)
+  const catMap = {};
+  ALL_BOTS.forEach(d=>{
+    const key = `${d.tf}_${d.style}`;
+    if(!catMap[key]) catMap[key] = [];
+    catMap[key].push(d.id);
+  });
+
+  Object.values(catMap).forEach(ids=>{
     // Calculate today's performance for each bot in category
-    const botPerf = cat.ids.map(id=>{
+    const botPerf = ids.map(id=>{
       const bs = botStates[id];
+      if(!bs) return { id, wins:0, losses:0, pnl:0, total:0 };
       const todayTrades = bs.trades.filter(t=>t.exitTime&&t.exitTime.startsWith(today));
       const wins = todayTrades.filter(t=>t.win).length;
       const losses = todayTrades.filter(t=>!t.win).length;
@@ -4271,58 +4613,61 @@ function runDailyPDCA(){
     // Store daily stats
     botPerf.forEach(bp=>{
       const bs = botStates[bp.id];
-      bs.dailyStats.push({ date:today, wins:bp.wins, losses:bp.losses, pnlPct:+bp.pnl.toFixed(3), tradeCount:bp.total });
+      if(bs) bs.dailyStats.push({ date:today, wins:bp.wins, losses:bp.losses, pnlPct:+bp.pnl.toFixed(3), tradeCount:bp.total });
     });
 
-    // Find winner and loser
+    // Sort by win rate then P&L
     const sorted = [...botPerf].sort((a,b)=>{
       const rA = a.total>0 ? a.wins/a.total : 0;
       const rB = b.total>0 ? b.wins/b.total : 0;
       return rB - rA || b.pnl - a.pnl;
     });
-    const winner = sorted[0];
-    const loser = sorted[sorted.length-1];
-    if(winner.id === loser.id) return; // same bot, nothing to adjust
+    if(sorted.length < 2) return;
 
-    // Adjust loser's params toward winner's params
-    const winParams = botStates[winner.id].params;
-    const loseParams = botStates[loser.id].params;
-    const adjustments = [];
+    // Top 3 → teach bottom 3 (or fewer if category is small)
+    const teachCount = Math.min(3, Math.floor(sorted.length / 2));
+    const winners = sorted.slice(0, teachCount);
+    const losers = sorted.slice(-teachCount);
 
-    // Adjust numeric params: move 20% toward winner + 5% random exploration
-    ['tpPct','slPct','timeoutMin','cooldownMin'].forEach(key=>{
-      if(winParams[key] !== undefined && loseParams[key] !== undefined){
-        const old = loseParams[key];
-        const diff = winParams[key] - loseParams[key];
-        const exploration = (Math.random()-0.5) * 0.1 * Math.abs(winParams[key]);
-        const newVal = +(old + diff * 0.2 + exploration).toFixed(3);
-        if(key==='tpPct') loseParams[key] = Math.max(0.05, Math.min(2.0, newVal));
-        else if(key==='slPct') loseParams[key] = Math.max(0.05, Math.min(1.0, newVal));
-        else if(key==='timeoutMin') loseParams[key] = Math.max(5, Math.min(120, Math.round(newVal)));
-        else if(key==='cooldownMin') loseParams[key] = Math.max(1, Math.min(30, Math.round(newVal)));
-        if(loseParams[key] !== old){
-          adjustments.push(`${key}: ${old}→${loseParams[key]}`);
+    losers.forEach((loser, li)=>{
+      const winner = winners[Math.min(li, winners.length-1)];
+      if(winner.id === loser.id) return;
+      const winParams = botStates[winner.id]?.params;
+      const loseParams = botStates[loser.id]?.params;
+      if(!winParams || !loseParams) return;
+      const adjustments = [];
+
+      ['tpPct','slPct','timeoutMin','cooldownMin'].forEach(key=>{
+        if(winParams[key] !== undefined && loseParams[key] !== undefined){
+          const old = loseParams[key];
+          const diff = winParams[key] - loseParams[key];
+          const exploration = (Math.random()-0.5) * 0.1 * Math.abs(winParams[key]);
+          const newVal = +(old + diff * 0.2 + exploration).toFixed(3);
+          if(key==='tpPct') loseParams[key] = Math.max(0.05, Math.min(2.0, newVal));
+          else if(key==='slPct') loseParams[key] = Math.max(0.05, Math.min(1.0, newVal));
+          else if(key==='timeoutMin') loseParams[key] = Math.max(5, Math.min(120, Math.round(newVal)));
+          else if(key==='cooldownMin') loseParams[key] = Math.max(1, Math.min(30, Math.round(newVal)));
+          if(loseParams[key] !== old) adjustments.push(`${key}: ${old}→${loseParams[key]}`);
         }
+      });
+
+      ['scoreEntry','rsiOB','rsiOS','fgExtreme','fgGreed','lsThresh','frThresh','atrMultiple'].forEach(key=>{
+        if(winParams[key] !== undefined && loseParams[key] !== undefined){
+          const old = loseParams[key];
+          const diff = winParams[key] - loseParams[key];
+          const exploration = (Math.random()-0.5) * 0.05 * Math.abs(winParams[key]||1);
+          loseParams[key] = +(old + diff * 0.15 + exploration).toFixed(3);
+          if(loseParams[key] !== old) adjustments.push(`${key}: ${old}→${loseParams[key]}`);
+        }
+      });
+
+      if(adjustments.length > 0){
+        const loserDef = ALL_BOTS.find(d=>d.id===loser.id);
+        const winnerDef = ALL_BOTS.find(d=>d.id===winner.id);
+        const msg = `${winnerDef?.name||winner.id}の成績を参考に調整: ${adjustments.join(', ')}`;
+        if(botStates[loser.id]) botStates[loser.id].pdcaLog.push({ time:Date.now(), msg });
       }
     });
-
-    // Also adjust strategy-specific thresholds
-    ['scoreEntry','rsiOB','rsiOS','fgExtreme','fgGreed','lsThresh','frThresh'].forEach(key=>{
-      if(winParams[key] !== undefined && loseParams[key] !== undefined){
-        const old = loseParams[key];
-        const diff = winParams[key] - loseParams[key];
-        const exploration = (Math.random()-0.5) * 0.05 * Math.abs(winParams[key]||1);
-        loseParams[key] = +(old + diff * 0.15 + exploration).toFixed(3);
-        if(loseParams[key] !== old) adjustments.push(`${key}: ${old}→${loseParams[key]}`);
-      }
-    });
-
-    if(adjustments.length > 0){
-      const loserDef = BOT_DEFS.find(d=>d.id===loser.id);
-      const winnerDef = BOT_DEFS.find(d=>d.id===winner.id);
-      const msg = `${winnerDef.name}の成績を参考に調整: ${adjustments.join(', ')}`;
-      botStates[loser.id].pdcaLog.push({ time:Date.now(), msg });
-    }
   });
 
   saveBotArena();
@@ -4509,77 +4854,249 @@ function addReport(def, type, snap, opts={}){
 function generateDailyReview(){
   const today = new Date().toISOString().slice(0,10);
   const todayReports = botReports.filter(r=>new Date(r.ts).toISOString().slice(0,10)===today);
-  if(todayReports.length===0) return;
 
-  // Aggregate stats per bot
+  // ── Section 1: Overall Stats ──
   const botSummaries = {};
-  BOT_DEFS.forEach(def=>{
+  ALL_BOTS.forEach(def=>{
     const bs = botStates[def.id];
+    if(!bs) return;
     const ts = getTodayStats(bs);
+    if(ts.count === 0 && !def.isChild) return; // skip bots with no trades (except track all)
     const myReports = todayReports.filter(r=>r.botId===def.id);
     const entries = myReports.filter(r=>r.type==='entry');
-    const exits = myReports.filter(r=>r.type==='tp'||r.type==='sl'||r.type==='timeout');
     const avgConf = entries.length>0 ? Math.round(entries.reduce((s,r)=>s+r.confidence,0)/entries.length) : 0;
-    botSummaries[def.id] = {
-      def, stats:ts, entries:entries.length, exits:exits.length,
-      avgConfidence: avgConf,
-      tpCount: exits.filter(r=>r.type==='tp').length,
-      slCount: exits.filter(r=>r.type==='sl').length,
-    };
+    botSummaries[def.id] = { def, stats:ts, avgConfidence:avgConf };
   });
 
-  // Overall stats
-  const totalTrades = Object.values(botSummaries).reduce((s,b)=>s+b.stats.count,0);
-  const totalWins = Object.values(botSummaries).reduce((s,b)=>s+b.stats.wins,0);
-  const totalLosses = Object.values(botSummaries).reduce((s,b)=>s+b.stats.losses,0);
-  const totalPnl = Object.values(botSummaries).reduce((s,b)=>s+b.stats.pnl,0);
+  const activeBots = Object.values(botSummaries).filter(b=>b.stats.count>0);
+  const totalTrades = activeBots.reduce((s,b)=>s+b.stats.count,0);
+  const totalWins = activeBots.reduce((s,b)=>s+b.stats.wins,0);
+  const totalLosses = activeBots.reduce((s,b)=>s+b.stats.losses,0);
+  const totalPnl = activeBots.reduce((s,b)=>s+b.stats.pnl,0);
   const winRate = totalTrades>0 ? (totalWins/totalTrades*100).toFixed(0) : '--';
 
-  // Best/worst bot today
-  const ranked = Object.values(botSummaries).filter(b=>b.stats.count>0).sort((a,b)=>b.stats.pnl-a.stats.pnl);
+  const ranked = [...activeBots].sort((a,b)=>b.stats.pnl-a.stats.pnl);
   const bestBot = ranked[0];
-  const worstBot = ranked[ranked.length-1];
+  const worstBot = ranked.length>1 ? ranked[ranked.length-1] : null;
 
-  // Market trend analysis using kline data
+  // Market analysis
   let trendSummary = '';
   const k1h = S.k1h;
   if(k1h && k1h.length>=10){
     const opens = k1h.slice(-10).map(k=>parseFloat(k[1]));
     const closes = k1h.slice(-10).map(k=>parseFloat(k[4]));
-    const first = opens[0];
-    const last = closes[closes.length-1];
-    const changePct = ((last-first)/first*100).toFixed(2);
+    const changePct = ((closes[closes.length-1]-opens[0])/opens[0]*100).toFixed(2);
     const vol = k1h.slice(-10).reduce((s,k)=>s+parseFloat(k[5]),0);
     const prevVol = k1h.slice(-20,-10).reduce((s,k)=>s+parseFloat(k[5]),0);
     const volChange = prevVol>0 ? ((vol-prevVol)/prevVol*100).toFixed(0) : '0';
-    if(changePct>0.3) trendSummary = `本日のBTCは<span class="br-daily-stat" style="color:var(--green);">+${changePct}%</span>の上昇基調。`;
-    else if(changePct<-0.3) trendSummary = `本日のBTCは<span class="br-daily-stat" style="color:var(--red);">${changePct}%</span>の下落基調。`;
-    else trendSummary = `本日のBTCは<span class="br-daily-stat">${changePct}%</span>のレンジ相場。`;
-    trendSummary += `直近10時間の出来高は前10時間比<span class="br-daily-stat">${volChange}%</span>。`;
+    const trend = changePct>0.3 ? '上昇' : changePct<-0.3 ? '下落' : 'レンジ';
+    const trendCls = changePct>0.3 ? 'ba-ds-highlight' : changePct<-0.3 ? 'ba-ds-warn' : '';
+    trendSummary = `<span class="${trendCls}">${trend}基調(${changePct>0?'+':''}${changePct}%)</span> / 出来高:前10h比${volChange}%`;
+  }
+  const fgComment = S.fg>=75 ? '極度の強欲' : S.fg<=25 ? '極度の恐怖' : S.fg>=50 ? 'やや強欲' : 'やや恐怖';
+  const frComment = S.fr>0.0003 ? 'ロング過多' : S.fr<-0.0001 ? 'ショート過多' : '中立';
+
+  let overviewHtml = `<div class="ba-ds-section">
+    <div class="ba-ds-section-title">📊 全体成績サマリー</div>
+    <div class="ba-ds-body">
+      <strong>${totalTrades}</strong>トレード / 勝率 <span class="${totalWins>=totalLosses?'ba-ds-highlight':'ba-ds-warn'}">${winRate}%</span> (${totalWins}勝${totalLosses}敗) / P&L <span class="${totalPnl>=0?'ba-ds-highlight':'ba-ds-warn'}">${totalPnl>=0?'+':''}${totalPnl.toFixed(2)}%</span><br>
+      ${bestBot ? `🏆 MVP: ${bestBot.def.emoji}<strong>${bestBot.def.name}</strong> — ${bestBot.stats.wins}勝${bestBot.stats.losses}敗 (P&L ${bestBot.stats.pnl>=0?'+':''}${bestBot.stats.pnl.toFixed(2)}%, 自信度${bestBot.avgConfidence}%)` : ''}
+      ${worstBot && worstBot!==bestBot ? `<br>📉 改善要: ${worstBot.def.emoji}${worstBot.def.name} — P&L ${worstBot.stats.pnl.toFixed(2)}%` : ''}<br>
+      マーケット: ${trendSummary} / F&G=${S.fg}(${fgComment}) / FR: ${frComment} / L/S=${S.ls.toFixed(0)}%L<br>
+      稼働Bot: ${ALL_BOTS.length}体 / アクティブ(トレード発生): ${activeBots.length}体
+    </div>
+  </div>`;
+
+  // ── Section 2: Hourly Timeline ──
+  const todayHourly = hourlySignals.filter(h=>h.date===today).sort((a,b)=>a.hour-b.hour);
+  let timelineHtml = '';
+  if(todayHourly.length > 0){
+    timelineHtml = `<div class="ba-ds-section">
+      <div class="ba-ds-section-title">⏰ 時間帯別チャンス分析</div>
+      <div class="ba-ds-body">`;
+    todayHourly.forEach(h=>{
+      const hourStr = `${String(h.hour).padStart(2,'0')}:00`;
+      let chanceParts = [];
+      ['5m','15m','1h'].forEach(tf=>{
+        const s = h.scores[tf];
+        if(!s) return;
+        const isChance = s.score >= 70 || s.score <= 30;
+        if(isChance){
+          const dir = s.score>=70 ? 'LONG' : 'SHORT';
+          const cls = s.score>=70 ? 'ba-ds-highlight' : 'ba-ds-warn';
+          chanceParts.push(`<span class="${cls}">${tf}足スコア${s.score}(${dir})</span>`);
+        }
+      });
+      // Trades during this hour
+      const tradeParts = (h.trades||[]).map(t=>{
+        const cls = t.win ? 'ba-ds-highlight' : 'ba-ds-warn';
+        return `${t.emoji}${t.botName}: <span class="${cls}">${t.dir} ${t.win?'WIN':'LOSE'}(${t.pnl>=0?'+':''}${t.pnl.toFixed(2)}%)</span>`;
+      });
+      if(chanceParts.length === 0 && tradeParts.length === 0) return;
+      timelineHtml += `<div class="ba-ds-timeline-row">
+        <span class="ba-ds-hour">${hourStr}</span>
+        <div class="ba-ds-chance">
+          ${chanceParts.length>0 ? chanceParts.join(' / ') : '<span style="color:var(--dim)">シグナル弱</span>'}
+          ${tradeParts.length>0 ? '<br>' + tradeParts.join(' / ') : ''}
+        </div>
+      </div>`;
+    });
+    timelineHtml += `</div></div>`;
   }
 
-  // F&G and FR context
-  const fgComment = S.fg>=75 ? '極度の強欲圏（反落注意）' : S.fg<=25 ? '極度の恐怖圏（反発候補）' : S.fg>=50 ? 'やや強欲' : 'やや恐怖';
-  const frComment = S.fr>0.0003 ? 'ロングポジション過多（FR高め）' : S.fr<-0.0001 ? 'ショートポジション過多（FR低め）' : 'FR中立圏';
+  // ── Section 3: Signal Performance Analysis ──
+  // Extract keywords from trade reasons across ALL bots today
+  const allTodayTrades = [];
+  ALL_BOTS.forEach(def=>{
+    const bs = botStates[def.id];
+    if(!bs) return;
+    bs.trades.filter(t=>t.exitTime&&t.exitTime.startsWith(today)).forEach(t=>{
+      allTodayTrades.push({ ...t, botId:def.id, botName:def.name, emoji:def.emoji, style:def.style, tf:def.tf });
+    });
+  });
 
-  const summary = `${today} のBot Arena振り返り`;
-  const html = `
-    <div>📊 <strong>全体成績</strong>: ${totalTrades}トレード / 勝率<span class="br-daily-stat" style="color:${totalWins>totalLosses?'var(--green)':'var(--red)'}">${winRate}%</span> (${totalWins}勝${totalLosses}敗) / P&L <span class="br-daily-stat" style="color:${totalPnl>=0?'var(--green)':'var(--red)'};">${totalPnl>=0?'+':''}${totalPnl.toFixed(2)}%</span></div>
-    ${bestBot ? `<div>🏆 <strong>本日のMVP</strong>: ${bestBot.def.emoji}${bestBot.def.name} — ${bestBot.stats.wins}勝${bestBot.stats.losses}敗 (P&L ${bestBot.stats.pnl>=0?'+':''}${bestBot.stats.pnl.toFixed(2)}%, 平均自信度${bestBot.avgConfidence}%)</div>` : ''}
-    ${worstBot && worstBot!==bestBot ? `<div>📉 <strong>改善要注目</strong>: ${worstBot.def.emoji}${worstBot.def.name} — ${worstBot.stats.wins}勝${worstBot.stats.losses}敗 (P&L ${worstBot.stats.pnl.toFixed(2)}%)</div>` : ''}
-    <div>📋 <strong>Bot別トレード数</strong>: ${Object.values(botSummaries).map(b=>`${b.def.emoji}${b.def.name}=${b.stats.count}回`).join(' / ')}</div>
-    <div class="br-daily-trend">
-      <strong>📈 マーケット環境</strong><br>
-      ${trendSummary}
-      F&G指数=<span class="br-daily-stat">${S.fg} (${fgComment})</span>
-      ${frComment}。L/S比率=<span class="br-daily-stat">${S.ls.toFixed(0)}%L</span>。
-      ${totalTrades>0 ? `<br><strong>💡 所感</strong>: ${totalPnl>0 ? '全体的にプラス圏。機能しているBotの戦略パラメータを維持しつつ、PDCAで微調整を継続。' : '全体的にマイナス圏。市場環境とBot戦略のミスマッチの可能性。PDCAでのパラメータ見直しに期待。'}${bestBot && bestBot.avgConfidence>=60 ? ` ${bestBot.def.name}の高自信度トレードは特に参考になる。` : ''}` : '本日はまだトレードが発生していません。'}
-    </div>`;
+  let signalHtml = '';
+  if(allTodayTrades.length >= 2){
+    // Pattern matching on reason strings
+    const patterns = [
+      { label:'RSI売られすぎ', test:r=>/RSI.*売られ|rsiOS|RSI[0-9].*\(売/i.test(r) },
+      { label:'RSI買われすぎ', test:r=>/RSI.*買われ|rsiOB|RSI[0-9].*\(買/i.test(r) },
+      { label:'SMAトレンド', test:r=>/SMA|トレンド上昇|トレンド下降/i.test(r) },
+      { label:'VWAP確認', test:r=>/VWAP/i.test(r) },
+      { label:'スコア70+', test:r=>{ const m=r.match(/スコア(\d+)/); return m && parseInt(m[1])>=70; } },
+      { label:'BB(ボリンジャー)', test:r=>/BB|ボリンジャー/i.test(r) },
+      { label:'Delta(出来高)', test:r=>/Delta|デルタ|出来高/i.test(r) },
+      { label:'FR乖離', test:r=>/FR|ファンディング/i.test(r) },
+      { label:'F&G極値', test:r=>/F&G|恐怖|強欲/i.test(r) },
+      { label:'ATR急拡大', test:r=>/ATR|ボラ/i.test(r) },
+      { label:'マルチTF', test:r=>/1H.*4H|方向一致|マルチ/i.test(r) },
+    ];
 
-  // Remove previous today's review if exists
+    const patternStats = patterns.map(p=>{
+      const matches = allTodayTrades.filter(t=>p.test(t.entryReason||''));
+      if(matches.length===0) return null;
+      const wins = matches.filter(t=>t.win).length;
+      return { label:p.label, total:matches.length, wins, rate:matches.length>0?(wins/matches.length*100).toFixed(0):0 };
+    }).filter(Boolean).sort((a,b)=>b.total-a.total);
+
+    if(patternStats.length > 0){
+      signalHtml = `<div class="ba-ds-section">
+        <div class="ba-ds-section-title">🎯 シグナル・指標パフォーマンス</div>
+        <div class="ba-ds-body">`;
+      patternStats.forEach(p=>{
+        const cls = p.rate>=60 ? 'ba-ds-highlight' : p.rate<=40 ? 'ba-ds-warn' : '';
+        signalHtml += `<div class="ba-ds-signal-stat">
+          <strong>${p.label}</strong>: ${p.total}戦${p.wins}勝 <span class="${cls}">(勝率${p.rate}%)</span>
+        </div>`;
+      });
+      signalHtml += `</div></div>`;
+    }
+  }
+
+  // ── Section 4: Pattern Discovery ──
+  let patternHtml = '';
+  if(allTodayTrades.length >= 3){
+    const discoveries = [];
+
+    // Trend vs Counter performance
+    const trendTrades = allTodayTrades.filter(t=>t.style==='trend');
+    const counterTrades = allTodayTrades.filter(t=>t.style==='counter');
+    if(trendTrades.length>0 && counterTrades.length>0){
+      const trendWR = trendTrades.length>0 ? (trendTrades.filter(t=>t.win).length/trendTrades.length*100).toFixed(0) : '--';
+      const counterWR = counterTrades.length>0 ? (counterTrades.filter(t=>t.win).length/counterTrades.length*100).toFixed(0) : '--';
+      const better = parseInt(trendWR) > parseInt(counterWR) ? '順張り' : '逆張り';
+      discoveries.push(`順張り系: ${trendTrades.length}回(勝率${trendWR}%) vs 逆張り系: ${counterTrades.length}回(勝率${counterWR}%) → 本日は<strong>${better}</strong>が優勢`);
+    }
+
+    // TF performance
+    ['5m','15m','1h'].forEach(tf=>{
+      const tfTrades = allTodayTrades.filter(t=>t.tf===tf);
+      if(tfTrades.length>=2){
+        const wr = (tfTrades.filter(t=>t.win).length/tfTrades.length*100).toFixed(0);
+        const pnl = tfTrades.reduce((s,t)=>s+t.pnlPct,0).toFixed(2);
+        discoveries.push(`${tf}足Bot: ${tfTrades.length}回(勝率${wr}%, P&L ${pnl>=0?'+':''}${pnl}%)`);
+      }
+    });
+
+    // Mother vs Child performance
+    const motherTrades = allTodayTrades.filter(t=>!ALL_BOTS.find(d=>d.id===t.botId)?.isChild);
+    const childTrades = allTodayTrades.filter(t=>ALL_BOTS.find(d=>d.id===t.botId)?.isChild);
+    if(motherTrades.length>0 && childTrades.length>0){
+      const mWR = (motherTrades.filter(t=>t.win).length/motherTrades.length*100).toFixed(0);
+      const cWR = (childTrades.filter(t=>t.win).length/childTrades.length*100).toFixed(0);
+      discoveries.push(`マザーBot: 勝率${mWR}%(${motherTrades.length}回) / 派生Bot: 勝率${cWR}%(${childTrades.length}回)`);
+    }
+
+    // FR environment
+    if(S.fr > 0.0002){
+      const shortWins = allTodayTrades.filter(t=>t.dir==='SHORT'&&t.win).length;
+      const shortTotal = allTodayTrades.filter(t=>t.dir==='SHORT').length;
+      if(shortTotal>0) discoveries.push(`FR高め(ロング過多)環境でのSHORT: ${shortTotal}回中${shortWins}勝`);
+    } else if(S.fr < -0.0001){
+      const longWins = allTodayTrades.filter(t=>t.dir==='LONG'&&t.win).length;
+      const longTotal = allTodayTrades.filter(t=>t.dir==='LONG').length;
+      if(longTotal>0) discoveries.push(`FR低め(ショート過多)環境でのLONG: ${longTotal}回中${longWins}勝`);
+    }
+
+    if(discoveries.length > 0){
+      patternHtml = `<div class="ba-ds-section">
+        <div class="ba-ds-section-title">🔍 パターン発見</div>
+        <div class="ba-ds-body">
+          ${discoveries.map(d=>`<div class="ba-ds-pattern">${d}</div>`).join('')}
+        </div>
+      </div>`;
+    }
+  }
+
+  // ── Section 5: Category Rankings ──
+  const catMap = getCategoryTopBots();
+  let rankingHtml = `<div class="ba-ds-section">
+    <div class="ba-ds-section-title">🏅 カテゴリ別ランキング (本日)</div>
+    <div class="ba-ds-body">`;
+  Object.values(catMap).forEach(cat=>{
+    // Sort by today's performance
+    const todayRanked = cat.bots.map(b=>{
+      const ts = getTodayStats(b.bs);
+      return { ...b, todayPnl:ts.pnl, todayCount:ts.count, todayWins:ts.wins, todayLosses:ts.losses };
+    }).filter(b=>b.todayCount>0).sort((a,b)=>b.todayPnl-a.todayPnl);
+
+    if(todayRanked.length === 0) return;
+    rankingHtml += `<div style="margin:6px 0 4px;font-size:.78rem;font-weight:600;color:var(--accent);">${cat.label}</div>`;
+    todayRanked.slice(0,5).forEach((b,i)=>{
+      const variant = b.def.isChild ? `(${b.def.variantLabel})` : '';
+      const pnlCls = b.todayPnl>=0 ? 'ba-ds-highlight' : 'ba-ds-warn';
+      rankingHtml += `<div class="ba-ds-ranking-row">
+        <span class="ba-ds-rank">#${i+1}</span>
+        <span>${b.def.emoji}${b.def.name}${variant}</span>
+        <span>${b.todayWins}勝${b.todayLosses}敗</span>
+        <span class="${pnlCls}">${b.todayPnl>=0?'+':''}${b.todayPnl.toFixed(2)}%</span>
+      </div>`;
+    });
+  });
+  rankingHtml += `</div></div>`;
+
+  // ── Combine all sections ──
+  const summary = `${today} のBot Arena総括`;
+  const html = overviewHtml + timelineHtml + signalHtml + patternHtml + rankingHtml;
+
+  // Store in daily reviews (for Trade Report section)
   botDailyReviews = botDailyReviews.filter(r=>r.date!==today);
   botDailyReviews.push({ date:today, html, summary });
   saveReports();
+
+  // Also render to the Bot Arena daily summary section
+  renderEnhancedDailySummary(html);
+}
+
+function renderEnhancedDailySummary(html){
+  const el = document.getElementById('baDailySummaryContent');
+  if(el){
+    if(html){
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div class="ba-ds-body" style="color:var(--dim);">データ蓄積中... トレードが発生すると総括が生成されます。</div>';
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -4633,7 +5150,7 @@ function renderReportEntries(){
   filtered.sort((a,b)=>b.ts-a.ts);
 
   if(filtered.length===0){
-    el.innerHTML = '<div style="color:var(--dim);font-size:.64rem;padding:12px;">Botが取引を開始すると、ここに思考レポートが蓄積されます...</div>';
+    el.innerHTML = '<div style="color:var(--dim);font-size:.82rem;padding:12px;">Botが取引を開始すると、ここに思考レポートが蓄積されます...</div>';
     if(moreBtn) moreBtn.style.display='none';
     return;
   }
@@ -4665,7 +5182,7 @@ function renderReportEntries(){
     }
 
     // Quote based on def
-    const defObj = BOT_DEFS.find(d=>d.id===r.botId);
+    const defObj = ALL_BOTS.find(d=>d.id===r.botId);
     const quote = defObj ? (defObj.quotes[r.type] || defObj.quotes.watching) : '';
 
     return `<div class="br-entry ${r.type}">
@@ -4673,7 +5190,7 @@ function renderReportEntries(){
         <span class="br-entry-time">${date} ${time}</span>
         <span class="br-entry-bot">${r.botEmoji} ${r.botName}</span>
         <span class="br-entry-action ${actionCls}">${actionText}</span>
-        <span style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);">${r.botCat}</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);">${r.botCat}</span>
         <span class="br-entry-confidence ${conf.cls}">${conf.text}</span>
       </div>
       <div class="br-entry-thought">${r.thought}</div>

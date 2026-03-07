@@ -1576,7 +1576,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
   <div id="baConsensus" style="display:none;"></div>
   <div class="ba-leaders" id="baLeaders"></div>
-  <div class="ba-log-title">💀 養分枠 — ワースト2名の微妙トレード</div>
+  <div class="ba-log-title">💀 養分枠 — 生涯成績ワースト2名（子botのみ）</div>
   <div class="ba-worst" id="baWorst"><div style="color:var(--dim);font-size:.8rem;">データ蓄積中...（最低3回トレード後に表示）</div></div>
   <div class="ba-log-title">🔴 ライブトレード状況</div>
   <div class="ba-bots" id="baBots"></div>
@@ -5624,6 +5624,8 @@ function getWorst2Bots(){
   const candidates = ALL_BOTS.map(d=>{
     const bs = botStates[d.id];
     if(!bs) return null;
+    // マザーbotは養分枠の対象外（パラメータ保護対象）
+    if(MOTHER_BOT_IDS.includes(d.id)) return null;
     const total = bs.totalWins + bs.totalLosses;
     if(total < 3) return null;
     return { id:d.id, def:d, bs, pnl:bs.totalPnlPct, total };

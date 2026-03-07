@@ -483,8 +483,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-panel-bot::before{background:linear-gradient(90deg,#a78bfa,transparent);}
 .ov-panel-header{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
 /* Signal Panel */
-.ov-sig-score{font-family:'Share Tech Mono',monospace;font-size:2.4rem;font-weight:900;line-height:1;}
-.ov-sig-dir{font-family:'Share Tech Mono',monospace;font-size:.88rem;font-weight:700;padding:2px 8px;border-radius:3px;display:inline-block;margin:4px 0 8px;}
+.ov-sig-score{font-family:'Share Tech Mono',monospace;font-size:2.4rem;font-weight:900;line-height:1;animation:sigScorePulse 2s ease-in-out infinite;}
+.ov-sig-dir{font-family:'Share Tech Mono',monospace;font-size:.88rem;font-weight:700;padding:2px 8px;border-radius:3px;display:inline-block;margin:4px 0 8px;animation:sigDirBlink 1.5s ease-in-out infinite;}
 .ov-sig-meta{margin:6px 0;}
 .ov-sig-row{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);}
 .ov-sig-label{color:var(--dim);}
@@ -604,6 +604,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-dd-conf{width:42px;text-align:right;color:var(--dim);font-size:.48rem;flex-shrink:0;}
 .ov-dd-note{font-size:.52rem;color:var(--dim);padding:6px 0 2px;line-height:1.5;}
 
+/* Signal panel animations */
+@keyframes sigScorePulse{0%,100%{opacity:1;text-shadow:0 0 8px currentColor;}50%{opacity:.7;text-shadow:0 0 20px currentColor,0 0 40px currentColor;}}
+@keyframes sigDirBlink{0%,100%{opacity:1;box-shadow:0 0 6px currentColor;}50%{opacity:.6;box-shadow:0 0 16px currentColor,0 0 30px currentColor;}}
 /* Pulse animation for score changes */
 @keyframes ov-pulse{0%{box-shadow:0 0 5px rgba(0,212,255,.2);}50%{box-shadow:0 0 20px rgba(0,212,255,.5);}100%{box-shadow:0 0 5px rgba(0,212,255,.2);}}
 .ov-pulse{animation:ov-pulse 1.5s ease-in-out;}

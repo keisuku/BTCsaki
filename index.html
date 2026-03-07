@@ -454,7 +454,10 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-coin.bull{background:linear-gradient(135deg,rgba(0,128,60,.55),rgba(0,80,35,.4));border-color:rgba(0,255,136,.3);}
 .ov-coin.bear{background:linear-gradient(135deg,rgba(128,20,30,.55),rgba(80,10,20,.4));border-color:rgba(255,45,85,.3);}
 .ov-coin.neut{background:linear-gradient(135deg,rgba(80,80,40,.4),rgba(50,50,25,.3));border-color:rgba(255,214,10,.2);}
-.ov-coin.focused{box-shadow:0 0 16px rgba(0,212,255,.35);border-color:rgba(0,212,255,.5)!important;}
+.ov-coin.focused{box-shadow:0 0 20px rgba(0,212,255,.5),inset 0 0 20px rgba(0,212,255,.08)!important;border:2px solid rgba(0,212,255,.8)!important;transform:scale(1.03);z-index:2;}
+.ov-coin.focused::before{content:'▶ 詳細表示中';position:absolute;bottom:6px;right:8px;font-size:.5rem;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:.08em;opacity:.9;z-index:1;}
+.ov-coin:not(.focused){opacity:.6;filter:brightness(.85);transition:opacity .3s,filter .3s,transform .3s;}
+.ov-coin:not(.focused):hover{opacity:.85;filter:brightness(1);}
 .ov-coin-name{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:rgba(255,255,255,.7);font-weight:700;display:flex;align-items:center;gap:4px;}
 .ov-coin-name .ov-arrow{font-size:.65rem;}
 .ov-coin-price{font-family:'Share Tech Mono',monospace;font-size:1.05rem;font-weight:900;color:var(--text);margin:2px 0;}
@@ -465,7 +468,39 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-coin-signal.WAIT{color:#ffd60a;background:rgba(255,214,10,.1);border:1px solid rgba(255,214,10,.2);}
 .ov-spark{position:absolute;bottom:0;left:0;right:0;height:32px;opacity:.45;}
 
-/* OV Gauge */
+/* OV Coin Banner */
+.ov-coin-banner{display:flex;align-items:baseline;gap:12px;padding:8px 4px;margin:8px 0 4px;border-bottom:1px solid rgba(0,212,255,.15);}
+.ov-banner-coin{font-family:'Share Tech Mono',monospace;font-size:1.6rem;font-weight:900;color:var(--accent);letter-spacing:.04em;}
+.ov-banner-pair{font-size:.9rem;color:var(--dim);font-weight:400;}
+.ov-banner-price{font-family:'Share Tech Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--text);}
+.ov-banner-chg{font-family:'Share Tech Mono',monospace;font-size:.82rem;font-weight:700;}
+
+/* OV Two Panel Layout */
+.ov-two-panel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 12px;}
+.ov-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden;}
+.ov-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.ov-panel-signal::before{background:linear-gradient(90deg,var(--accent),transparent);}
+.ov-panel-bot::before{background:linear-gradient(90deg,#a78bfa,transparent);}
+.ov-panel-header{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+/* Signal Panel */
+.ov-sig-score{font-family:'Share Tech Mono',monospace;font-size:2.4rem;font-weight:900;line-height:1;}
+.ov-sig-dir{font-family:'Share Tech Mono',monospace;font-size:.88rem;font-weight:700;padding:2px 8px;border-radius:3px;display:inline-block;margin:4px 0 8px;}
+.ov-sig-meta{margin:6px 0;}
+.ov-sig-row{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:.62rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.ov-sig-label{color:var(--dim);}
+.ov-sig-verdict{font-size:.72rem;color:var(--dim);margin-top:6px;line-height:1.4;}
+/* Bot Panel */
+.ov-bot-summary{display:flex;gap:8px;margin-bottom:8px;}
+.ov-bot-stat{flex:1;text-align:center;padding:6px 4px;border-radius:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);}
+.ov-bot-stat-num{font-family:'Share Tech Mono',monospace;font-size:1.4rem;font-weight:900;line-height:1;}
+.ov-bot-stat-label{font-family:'Share Tech Mono',monospace;font-size:.5rem;color:var(--dim);letter-spacing:.06em;margin-top:2px;}
+.ov-bot-consensus{padding:6px 8px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:.7rem;margin-top:6px;}
+.ov-bot-top{font-family:'Share Tech Mono',monospace;font-size:.68rem;margin-top:6px;padding:4px 0;border-top:1px solid rgba(255,255,255,.06);}
+.ov-bot-dir-bar{display:flex;height:4px;border-radius:2px;overflow:hidden;margin:4px 0;background:rgba(255,255,255,.06);}
+.ov-bot-dir-long{background:var(--green);height:100%;}
+.ov-bot-dir-short{background:var(--red);height:100%;}
+
+/* OV Gauge (legacy - kept for reference) */
 .ov-gauge-wrap{text-align:center;margin:8px 0 12px;position:relative;}
 .ov-gauge-svg{display:block;margin:0 auto;max-width:240px;filter:drop-shadow(0 0 10px rgba(0,212,255,.3));}
 .ov-gauge-label{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);letter-spacing:.1em;margin-top:4px;}
@@ -1408,43 +1443,37 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     </div>
   </div>
 
-  <!-- Signal & Trend text (left/right of gauge) -->
-  <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:.48rem;color:var(--dim);margin-bottom:2px;">
-    <div id="ovGaugeLeft">SIGNAL: --<br>TREND: --</div>
-    <div id="ovGaugeRight" style="text-align:right;">SIGNAL: --<br>TREND: --</div>
+  <!-- Selected Coin Banner -->
+  <div class="ov-coin-banner" id="ovCoinBanner">
+    <div class="ov-banner-coin" id="ovBannerCoin">BTC<span class="ov-banner-pair">/USDT</span></div>
+    <div class="ov-banner-price" id="ovBannerPrice">--</div>
+    <div class="ov-banner-chg" id="ovBannerChg">--</div>
   </div>
 
-  <!-- Main Gauge -->
-  <div class="ov-gauge-wrap">
-    <svg class="ov-gauge-svg" viewBox="0 0 200 125" xmlns="http://www.w3.org/2000/svg">
-      <!-- Background arc -->
-      <path d="M 20 105 A 80 80 0 0 1 180 105" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="10" stroke-linecap="round"/>
-      <!-- Colored arc -->
-      <path id="ovGaugeArc" d="M 20 105 A 80 80 0 0 1 180 105" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="125.7"/>
-      <!-- Tick marks 0-5 -->
-      <text x="18" y="118" fill="var(--dim)" font-size="7" font-family="Share Tech Mono" text-anchor="middle">0</text>
-      <text x="28" y="62" fill="var(--dim)" font-size="7" font-family="Share Tech Mono" text-anchor="middle">1</text>
-      <text x="62" y="30" fill="var(--dim)" font-size="7" font-family="Share Tech Mono" text-anchor="middle">2</text>
-      <text x="100" y="20" fill="var(--dim)" font-size="7" font-family="Share Tech Mono" text-anchor="middle">3</text>
-      <text x="138" y="30" fill="var(--dim)" font-size="7" font-family="Share Tech Mono" text-anchor="middle">4</text>
-      <text x="172" y="62" fill="var(--dim)" font-size="7" font-family="Share Tech Mono" text-anchor="middle">5</text>
-      <text x="182" y="118" fill="var(--dim)" font-size="7" font-family="Share Tech Mono" text-anchor="middle">100</text>
-      <!-- Needle -->
-      <line id="ovGaugeNeedle" x1="100" y1="105" x2="100" y2="35" stroke="var(--text)" stroke-width="2" stroke-linecap="round" style="transition:transform .8s cubic-bezier(.34,1.56,.64,1);transform-origin:100px 105px;"/>
-      <!-- Center dot -->
-      <circle cx="100" cy="105" r="4" fill="var(--accent)" opacity=".8"/>
-      <!-- Score number -->
-      <text id="ovGaugeNum" x="100" y="90" fill="var(--accent)" font-size="36" font-weight="900" font-family="Share Tech Mono" text-anchor="middle" dominant-baseline="middle">--</text>
-      <!-- Signal label -->
-      <text id="ovGaugeSig" x="100" y="108" fill="var(--accent)" font-size="10" font-weight="700" font-family="Share Tech Mono" text-anchor="middle">WAIT</text>
-    </svg>
-    <div class="ov-gauge-label">5 LEVEL STRENGTH</div>
-  </div>
+  <!-- Two Panel Indicator -->
+  <div class="ov-two-panel">
+    <!-- Left: Signal Summary -->
+    <div class="ov-panel ov-panel-signal">
+      <div class="ov-panel-header">📡 シグナル総合</div>
+      <div class="ov-panel-body">
+        <div class="ov-sig-score" id="ovPanelScore">--</div>
+        <div class="ov-sig-dir" id="ovPanelDir">WAIT</div>
+        <div class="ov-sig-meta">
+          <div class="ov-sig-row"><span class="ov-sig-label">CONFIDENCE</span><span id="ovPanelConf">--</span></div>
+          <div class="ov-sig-row"><span class="ov-sig-label">VOLATILITY</span><span id="ovPanelVol">--</span></div>
+          <div class="ov-sig-row"><span class="ov-sig-label">TREND</span><span id="ovPanelTrend">--</span></div>
+        </div>
+        <div class="ov-sig-verdict" id="ovPanelVerdict">--</div>
+      </div>
+    </div>
 
-  <!-- Gauge Metadata (Confidence, Persistence, etc.) -->
-  <div style="display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:.44rem;color:var(--dim);margin:-4px 8px 8px;">
-    <div id="ovMetaLeft">VOLATILITY: --<br>CONFIDENCE: --<br>TIME HORIZON: --<br>DATA-SYNC: --</div>
-    <div id="ovMetaRight" style="text-align:right;">VOLATILITY: --<br>CONFIDENCE: --<br>TIME HORIZON: --<br>DATA-SYNC: --</div>
+    <!-- Right: AI Bot Status -->
+    <div class="ov-panel ov-panel-bot">
+      <div class="ov-panel-header">🤖 AI Bot ステータス</div>
+      <div class="ov-panel-body" id="ovPanelBotBody">
+        <!-- Populated by JS -->
+      </div>
+    </div>
   </div>
 
   <!-- AI Insight -->
@@ -4479,7 +4508,9 @@ async function initOverview(){
 function renderOverview(){
   renderOvClock();
   renderOvHeatmap();
-  renderOvGauge();
+  renderOvCoinBanner();
+  renderOvSignalPanel();
+  renderOvBotPanel();
   renderOvInsight();
   renderOvBadges();
   renderOvRange();
@@ -4569,60 +4600,141 @@ function drawOvSparkline(canvasId, data, color){
   ctx.stroke();
 }
 
-// ── Gauge ──
-function renderOvGauge(){
+// ── Coin Banner ──
+function renderOvCoinBanner(){
   const ov = OV[ovFocusCoin];
-  const composite = ov.composite;
+  const bannerCoin = document.getElementById('ovBannerCoin');
+  if(bannerCoin) bannerCoin.innerHTML = `${ovFocusCoin}<span class="ov-banner-pair">/USDT</span>`;
+  const bannerPrice = document.getElementById('ovBannerPrice');
+  if(bannerPrice) bannerPrice.textContent = ov.price > 0 ? '$' + ov.price.toLocaleString('en',{maximumFractionDigits:2}) : '--';
+  const bannerChg = document.getElementById('ovBannerChg');
+  if(bannerChg){
+    const chg = ov.pctChg;
+    bannerChg.textContent = (chg>=0?'+':'') + chg.toFixed(2) + '%';
+    bannerChg.style.color = chg>=0 ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+// ── Signal Panel (left) ──
+function renderOvSignalPanel(){
+  const ov = OV[ovFocusCoin];
   const sig = ov.signal;
   const sigColor = sig==='LONG'?'var(--green)':sig==='SHORT'?'var(--red)':'var(--yellow)';
-  // Arc
-  const arc = document.getElementById('ovGaugeArc');
-  if(arc){
-    const offset = 251.3 * (1 - composite/100);
-    arc.setAttribute('stroke-dashoffset', offset.toFixed(1));
-    arc.setAttribute('stroke', sig==='LONG'?'#00ff88':sig==='SHORT'?'#ff2d55':'#ffd60a');
-  }
-  // Needle angle: -90(0) → 0(50) → +90(100)
-  const needle = document.getElementById('ovGaugeNeedle');
-  if(needle){
-    const deg = (composite/100)*180 - 90;
-    needle.style.transform = `rotate(${deg}deg)`;
-  }
-  // Score number
-  const numEl = document.getElementById('ovGaugeNum');
-  if(numEl){ numEl.textContent = composite; numEl.setAttribute('fill', sig==='LONG'?'#00ff88':sig==='SHORT'?'#ff2d55':'#ffd60a'); }
-  // Signal label
-  const sigEl = document.getElementById('ovGaugeSig');
-  if(sigEl){ sigEl.textContent = sig; sigEl.setAttribute('fill', sig==='LONG'?'#00ff88':sig==='SHORT'?'#ff2d55':'#ffd60a'); }
 
-  // Gauge side text
-  const trendLabel = composite >= 80 ? 'STRONGLY BULLISH' : composite >= 65 ? 'BULLISH' : composite <= 20 ? 'STRONGLY BEARISH' : composite <= 35 ? 'BEARISH' : 'NEUTRAL';
-  const leftEl = document.getElementById('ovGaugeLeft');
-  if(leftEl){
-    leftEl.innerHTML = `SIGNAL: <span style="color:${sigColor};font-weight:700;">${sig}</span><br>TREND: <span style="color:${sigColor};font-weight:700;">${trendLabel}</span>`;
-  }
-  const rightEl = document.getElementById('ovGaugeRight');
-  if(rightEl){
-    rightEl.innerHTML = `SIGNAL: <span style="color:${sigColor};font-weight:700;">${sig}</span><br><span style="color:${sigColor};font-weight:700;">${trendLabel}</span>`;
+  const scoreEl = document.getElementById('ovPanelScore');
+  if(scoreEl){ scoreEl.textContent = ov.composite; scoreEl.style.color = sigColor; }
+
+  const dirEl = document.getElementById('ovPanelDir');
+  if(dirEl){
+    dirEl.textContent = sig;
+    dirEl.style.color = sigColor;
+    dirEl.style.background = sig==='LONG'?'rgba(0,255,136,.12)':sig==='SHORT'?'rgba(255,45,85,.12)':'rgba(255,214,10,.1)';
+    dirEl.style.border = `1px solid ${sig==='LONG'?'rgba(0,255,136,.25)':sig==='SHORT'?'rgba(255,45,85,.25)':'rgba(255,214,10,.2)'}`;
   }
 
-  // Gauge meta
-  const volLabel = ov.persistence >= 70 ? 'LOW' : ov.persistence >= 50 ? 'MEDIUM' : 'HIGH';
-  const volColor = ov.persistence >= 70 ? 'var(--green)' : ov.persistence >= 50 ? 'var(--yellow)' : 'var(--red)';
-  const metaL = document.getElementById('ovMetaLeft');
-  if(metaL){
-    metaL.innerHTML = `VOLATILITY: <span style="color:${volColor};font-weight:700;">${volLabel}</span><br>` +
-      `CONFIDENCE: <span style="color:${ov.confidence>=70?'var(--green)':ov.confidence>=50?'var(--yellow)':'var(--red)'};font-weight:700;">${ov.confidence}%</span><br>` +
-      `TIME HORIZON: <span style="color:var(--accent);font-weight:700;">4H</span><br>` +
-      `DATA-SYNC: <span style="color:var(--green);font-weight:700;">SYNCED</span>`;
+  const confEl = document.getElementById('ovPanelConf');
+  if(confEl){
+    confEl.textContent = ov.confidence + '%';
+    confEl.style.color = ov.confidence>=70?'var(--green)':ov.confidence>=50?'var(--yellow)':'var(--red)';
   }
-  const metaR = document.getElementById('ovMetaRight');
-  if(metaR){
-    metaR.innerHTML = `VOLATILITY: <span style="color:${volColor};font-weight:700;">${volLabel}</span><br>` +
-      `CONFIDENCE: <span style="color:${ov.confidence>=70?'var(--green)':ov.confidence>=50?'var(--yellow)':'var(--red)'};font-weight:700;">${ov.confidence}%</span><br>` +
-      `TIME HORIZON: <span style="color:var(--accent);font-weight:700;">4H</span><br>` +
-      `DATA-SYNC: <span style="color:var(--green);font-weight:700;">SYNCED</span>`;
+
+  const volLabel = ov.persistence>=70?'LOW':ov.persistence>=50?'MEDIUM':'HIGH';
+  const volColor = ov.persistence>=70?'var(--green)':ov.persistence>=50?'var(--yellow)':'var(--red)';
+  const volEl = document.getElementById('ovPanelVol');
+  if(volEl){ volEl.textContent = volLabel; volEl.style.color = volColor; }
+
+  const trendLabel = ov.composite>=80?'STRONGLY BULLISH':ov.composite>=65?'BULLISH':ov.composite<=20?'STRONGLY BEARISH':ov.composite<=35?'BEARISH':'NEUTRAL';
+  const trendEl = document.getElementById('ovPanelTrend');
+  if(trendEl){ trendEl.textContent = trendLabel; trendEl.style.color = sigColor; }
+
+  const verdictEl = document.getElementById('ovPanelVerdict');
+  if(verdictEl){
+    const verdicts = {
+      'LONG': ov.confidence>=70 ? '高確度LONGシグナル。エントリー有利な局面。' : 'LONGシグナル出現。確度の上昇を待つか検討。',
+      'SHORT': ov.confidence>=70 ? '高確度SHORTシグナル。ショート検討。' : 'SHORTシグナル出現。確度の上昇を待つか検討。',
+      'WAIT': '方向感なし。ポジション見送り推奨。'
+    };
+    verdictEl.textContent = verdicts[sig] || '';
   }
+}
+
+// ── AI Bot Panel (right) ──
+function renderOvBotPanel(){
+  const el = document.getElementById('ovPanelBotBody');
+  if(!el) return;
+
+  let holding=0, ready=0, watching=0, longCount=0, shortCount=0;
+  BOT_DEFS.forEach(def=>{
+    const bs = botStates[def.id];
+    if(!bs) return;
+    if(bs.position){
+      holding++;
+      if(bs.position.dir==='LONG') longCount++; else shortCount++;
+    } else if(bs.status==='ready') ready++;
+    else watching++;
+  });
+
+  // Top performer
+  let best = null;
+  try{
+    const cats = getCategoryTopBots();
+    Object.values(cats).forEach(cat=>{
+      if(cat.bots[0]){
+        const b = cat.bots[0];
+        if(!best || b.rate > best.rate || (b.rate === best.rate && b.bs.totalPnlPct > best.bs.totalPnlPct)) best = b;
+      }
+    });
+  }catch(e){}
+
+  // Consensus
+  let consensus = null;
+  try{ consensus = getConsensusSignal(); }catch(e){}
+
+  let html = `<div class="ov-bot-summary">
+    <div class="ov-bot-stat">
+      <div class="ov-bot-stat-num" style="color:${holding>0?'var(--accent)':'var(--dim)'};">${holding}</div>
+      <div class="ov-bot-stat-label">保有中</div>
+    </div>
+    <div class="ov-bot-stat">
+      <div class="ov-bot-stat-num" style="color:${ready>0?'var(--yellow)':'var(--dim)'};">${ready}</div>
+      <div class="ov-bot-stat-label">狙い中</div>
+    </div>
+    <div class="ov-bot-stat">
+      <div class="ov-bot-stat-num" style="color:var(--dim);">${watching}</div>
+      <div class="ov-bot-stat-label">様子見</div>
+    </div>
+  </div>`;
+
+  if(holding > 0){
+    const longPct = (longCount/holding*100).toFixed(0);
+    const shortPct = (shortCount/holding*100).toFixed(0);
+    html += `<div style="font-size:.56rem;color:var(--dim);display:flex;justify-content:space-between;">
+      <span>LONG ${longCount}体</span><span>SHORT ${shortCount}体</span>
+    </div>
+    <div class="ov-bot-dir-bar">
+      <div class="ov-bot-dir-long" style="width:${longPct}%;"></div>
+      <div class="ov-bot-dir-short" style="width:${shortPct}%;"></div>
+    </div>`;
+  }
+
+  if(consensus){
+    const cColor = consensus.dir==='LONG'?'var(--green)':'var(--red)';
+    html += `<div class="ov-bot-consensus" style="background:${consensus.dir==='LONG'?'rgba(0,255,136,.08)':'rgba(255,45,85,.08)'};border:1px solid ${consensus.dir==='LONG'?'rgba(0,255,136,.25)':'rgba(255,45,85,.25)'};">
+      <span style="color:${cColor};font-weight:700;">🔥 ${consensus.count}/${consensus.total}体 ${consensus.dir} 一致</span>
+    </div>`;
+  }
+
+  if(best && best.bs){
+    const winRate = best.total>0 ? (best.rate*100).toFixed(0) : '--';
+    const pnl = best.bs.totalPnlPct;
+    html += `<div class="ov-bot-top">
+      👑 <strong>${best.def.emoji}${best.def.name}</strong>
+      勝率${winRate}%
+      <span style="color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}${pnl.toFixed(1)}%</span>
+    </div>`;
+  }
+
+  el.innerHTML = html;
 }
 
 // ── AI Insight ──

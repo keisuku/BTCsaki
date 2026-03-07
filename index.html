@@ -515,6 +515,23 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-range-status{width:56px;font-weight:700;flex-shrink:0;}
 .ov-range-dev{width:70px;color:var(--dim);text-align:right;flex-shrink:0;}
 
+/* OV Bot Grid (compact) */
+.ov-bot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;}
+.ov-bg-cell{padding:5px 4px;border-radius:4px;text-align:center;font-family:'Share Tech Mono',monospace;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.015);transition:border-color .3s ease,background .3s ease;}
+.ov-bg-cell.watching{border-color:rgba(90,122,138,.25);background:rgba(90,122,138,.06);}
+.ov-bg-cell.ready-long{border-color:rgba(0,255,136,.25);background:rgba(0,255,136,.06);}
+.ov-bg-cell.ready-short{border-color:rgba(255,45,85,.25);background:rgba(255,45,85,.06);}
+.ov-bg-cell.holding-long{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.12);box-shadow:0 0 6px rgba(0,255,136,.15);}
+.ov-bg-cell.holding-short{border-color:rgba(255,45,85,.4);background:rgba(255,45,85,.12);box-shadow:0 0 6px rgba(255,45,85,.15);}
+.ov-bg-name{font-size:.5rem;font-weight:700;color:var(--text);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ov-bg-status{font-size:.42rem;font-weight:700;line-height:1.2;}
+.ov-bg-status.watching{color:var(--dim);}
+.ov-bg-status.ready-long{color:#00ff88;}
+.ov-bg-status.ready-short{color:#ff2d55;}
+.ov-bg-status.holding-long{color:#00ff88;}
+.ov-bg-status.holding-short{color:#ff2d55;}
+.ov-bg-pnl{font-size:.4rem;color:var(--dim);margin-top:1px;}
+
 /* OV Bot Status */
 .ov-bot{padding:6px 10px;margin-bottom:8px;border:1px solid rgba(167,139,250,.2);border-radius:5px;background:rgba(167,139,250,.04);font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);}
 .ov-bot strong{color:#c4b5fd;}
@@ -1448,6 +1465,13 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
 
   <!-- Bot Status -->
+  <!-- Bot Grid (compact status) -->
+  <div class="ov-label" style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:4px;letter-spacing:.1em;">BOT STATUS GRID</div>
+  <div class="ov-bot-grid" id="ovBotGrid">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Bot Status (top performer) -->
   <div class="ov-label" style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:4px;letter-spacing:.1em;">BOT STATUS BAR</div>
   <div class="ov-bot" id="ovBot">-- | POSITION: -- | PNL: --</div>
 
@@ -4429,6 +4453,7 @@ function renderOverview(){
   renderOvInsight();
   renderOvBadges();
   renderOvRange();
+  renderOvBotGrid();
   renderOvBot();
   renderOvStatus();
   renderOvDrillBadges();
@@ -4669,7 +4694,46 @@ function renderOvRange(){
   bars.innerHTML = html;
 }
 
-// ── Bot Status ──
+// ── Bot Grid (compact status for all mother bots) ──
+function renderOvBotGrid(){
+  const grid = document.getElementById('ovBotGrid');
+  if(!grid) return;
+  try{
+    let html = '';
+    BOT_DEFS.forEach(def => {
+      const bs = botStates[def.id];
+      if(!bs) return;
+      let cellCls = 'watching';
+      let statusText = '様子見';
+      let statusCls = 'watching';
+      if(bs.position){
+        const dir = bs.position.dir || bs.position.side || '';
+        const isLong = dir === 'LONG';
+        cellCls = isLong ? 'holding-long' : 'holding-short';
+        statusCls = cellCls;
+        statusText = isLong ? 'LONG保有' : 'SHORT保有';
+      } else if(bs.status === 'ready' && bs.readyDetail){
+        const isLong = bs.readyDetail.dir === 'LONG';
+        cellCls = isLong ? 'ready-long' : 'ready-short';
+        statusCls = cellCls;
+        statusText = isLong ? 'LONG狙い' : 'SHORT狙い';
+      }
+      // PnL
+      const pnl = bs.totalPnlPct || 0;
+      const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--dim)';
+      html += `<div class="ov-bg-cell ${cellCls}">
+        <div class="ov-bg-name">${def.emoji}${def.name}</div>
+        <div class="ov-bg-status ${statusCls}">${statusText}</div>
+        <div class="ov-bg-pnl" style="color:${pnlColor};">${pnl>=0?'+':''}${pnl.toFixed(1)}%</div>
+      </div>`;
+    });
+    grid.innerHTML = html;
+  }catch(e){
+    grid.innerHTML = '<div style="color:var(--dim);font-size:.5rem;grid-column:1/-1;text-align:center;">Bot データ取得中...</div>';
+  }
+}
+
+// ── Bot Status (top performer) ──
 function renderOvBot(){
   const el = document.getElementById('ovBot');
   if(!el) return;

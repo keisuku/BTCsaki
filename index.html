@@ -4333,7 +4333,41 @@ function initBotArena(){
   // Clean up old bot states that no longer exist in ALL_BOTS
   const validIds = new Set(ALL_BOTS.map(d=>d.id));
   Object.keys(botStates).forEach(id=>{ if(!validIds.has(id)) delete botStates[id]; });
+  // Backfill missing dailyStats from trade history
+  backfillDailyStats();
   schedulePDCA();
+}
+
+// トレード履歴からdailyStatsの欠損日を復元する
+function backfillDailyStats(){
+  Object.values(botStates).forEach(bs=>{
+    if(!bs || !bs.trades || bs.trades.length===0) return;
+    if(!bs.dailyStats) bs.dailyStats = [];
+    const existingDates = new Set(bs.dailyStats.map(ds=>ds.date));
+    // トレード履歴から日別集計を作成
+    const dayMap = {};
+    bs.trades.forEach(t=>{
+      const date = (t.exitTime||t.time||'').slice(0,10);
+      if(!date || date.length!==10) return;
+      if(!dayMap[date]) dayMap[date] = { wins:0, losses:0, pnl:0 };
+      if(t.win) dayMap[date].wins++; else dayMap[date].losses++;
+      dayMap[date].pnl += t.pnlPct||0;
+    });
+    // 欠損日を追加（既にdailyStatsにある日はスキップ）
+    let added = false;
+    Object.entries(dayMap).forEach(([date, d])=>{
+      if(existingDates.has(date)) return;
+      // 当日分はスキップ（PDCAで正式に記録される & リアルタイム表示で対応）
+      const today = new Date().toISOString().slice(0,10);
+      if(date === today) return;
+      bs.dailyStats.push({ date, wins:d.wins, losses:d.losses, pnlPct:+d.pnl.toFixed(3), tradeCount:d.wins+d.losses });
+      added = true;
+    });
+    if(added){
+      bs.dailyStats.sort((a,b)=>a.date.localeCompare(b.date));
+    }
+  });
+  saveBotArena();
 }
 
 function createBotState(id){
@@ -4373,7 +4407,7 @@ function saveBotArena(){
   Object.entries(botStates).forEach(([id, bs])=>{
     const def = ALL_BOTS.find(d=>d.id===id);
     const isTop = topBots.has(id);
-    const isMother = def && !def.isChild;
+    const isMother = MOTHER_BOT_IDS.includes(id);
     if(isMother || isTop){
       if(bs.trades.length>200) bs.trades = bs.trades.slice(-200);
       if(bs.dailyStats.length>30) bs.dailyStats = bs.dailyStats.slice(-30);
@@ -6270,11 +6304,22 @@ function showAdminBotDetail(botId){
     return `<div style="font-size:.72rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);">${d}: ${l.msg}</div>`;
   }).join('') || '<div style="color:var(--dim);">PDCA履歴なし</div>';
 
-  // Daily stats
-  const dailyHtml = (bs.dailyStats||[]).slice(-7).reverse().map(ds=>{
+  // Daily stats (過去分はdailyStats、当日分はトレード履歴からリアルタイム計算)
+  const todayDate = new Date().toISOString().slice(0,10);
+  const todayTrades = (bs.trades||[]).filter(t=>(t.exitTime||'').startsWith(todayDate));
+  const pastDaily = (bs.dailyStats||[]).filter(ds=>ds.date!==todayDate);
+  const allDaily = [...pastDaily];
+  if(todayTrades.length > 0){
+    const tw = todayTrades.filter(t=>t.win).length;
+    const tl = todayTrades.filter(t=>!t.win).length;
+    const tp = todayTrades.reduce((s,t)=>s+(t.pnlPct||0),0);
+    allDaily.push({ date:todayDate, wins:tw, losses:tl, pnlPct:+tp.toFixed(3), tradeCount:tw+tl });
+  }
+  const dailyHtml = allDaily.slice(-7).reverse().map(ds=>{
     const dpnlCls = ds.pnlPct>=0?'var(--green)':'var(--red)';
+    const isToday = ds.date===todayDate ? ' (本日)' : '';
     return `<div style="display:flex;gap:8px;font-size:.72rem;padding:2px 0;">
-      <span style="color:var(--dim);min-width:70px;">${ds.date.slice(5)}</span>
+      <span style="color:var(--dim);min-width:70px;">${ds.date.slice(5)}${isToday}</span>
       <span>${ds.wins}勝${ds.losses}敗</span>
       <span style="color:${dpnlCls}">${ds.pnlPct>=0?'+':''}${ds.pnlPct.toFixed(3)}%</span>
     </div>`;

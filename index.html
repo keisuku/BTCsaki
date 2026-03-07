@@ -1565,6 +1565,14 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <span class="ba-title">🤖 BOT ARENA</span>
     <span class="ba-live">LIVE</span>
     <span class="ba-sub" id="baSubtitle">AI Trading Bot — BTC ペーパートレードバトル（48体稼働中 / カテゴリTop1表示）</span>
+    <button id="adminToggleBtn" onclick="toggleAdminMode()" style="margin-left:auto;padding:4px 10px;font-size:.7rem;border:1px solid var(--dim);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;">🔑 管理者</button>
+  </div>
+  <!-- Admin Bot Detail Modal -->
+  <div id="adminBotDetailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto;padding:20px;">
+    <div style="max-width:600px;margin:0 auto;background:var(--bg2,#1a1a2e);border-radius:12px;padding:20px;position:relative;">
+      <button onclick="closeAdminBotDetail()" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--dim);font-size:1.4rem;cursor:pointer;">✕</button>
+      <div id="adminBotDetailContent"></div>
+    </div>
   </div>
   <div id="baConsensus" style="display:none;"></div>
   <div class="ba-leaders" id="baLeaders"></div>
@@ -5523,8 +5531,9 @@ function renderWorst2(){
       detail = `${pos.dir} @ $${pos.entry.toLocaleString('en',{maximumFractionDigits:0})} 含み<span style="color:${pnlCls};font-weight:700;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span>`;
     }
     const quote = pos ? (def.quotes?.holding||'') : (def.quotes?.watching||'');
-    return `<div class="ba-worst-card">
-      <div class="ba-worst-rank">${i===0?'💀':'💸'}養分${i+1}位</div>
+    const worstAdminClick = isAdminMode ? `onclick="showAdminBotDetail('${def.id}')" style="cursor:pointer;"` : '';
+    return `<div class="ba-worst-card" ${worstAdminClick}>
+      <div class="ba-worst-rank">${i===0?'💀':'💸'}養分${i+1}位${isAdminMode?' <span style="font-size:.58rem;color:var(--accent);">TAP詳細</span>':''}</div>
       <div class="ba-worst-name">${def.emoji} ${def.name}${def.isChild?' <span style="font-size:.68rem;color:var(--dim);">'+def.variantLabel+'</span>':''}</div>
       <div class="ba-worst-cat">${def.cat}</div>
       <div class="ba-worst-stats">
@@ -5560,6 +5569,7 @@ function renderBotArena(){
 }
 
 // Helper: get top bot per category from ALL_BOTS
+// ランキング基準: 累計P&L%（買った額が多い順）
 function getCategoryTopBots(){
   const catMap = {};
   ALL_BOTS.forEach(d=>{
@@ -5572,9 +5582,9 @@ function getCategoryTopBots(){
       catMap[key].bots.push({ id:d.id, def:d, bs, rate, total });
     }
   });
-  // Sort each category by win rate, then P&L
+  // Sort each category by cumulative P&L% (買った額が多い順), then win rate
   Object.values(catMap).forEach(cat=>{
-    cat.bots.sort((a,b)=> b.rate - a.rate || b.bs.totalPnlPct - a.bs.totalPnlPct);
+    cat.bots.sort((a,b)=> b.bs.totalPnlPct - a.bs.totalPnlPct || b.rate - a.rate);
   });
   return catMap;
 }
@@ -5595,12 +5605,12 @@ function renderLeaderboard(){
     const catKey = `${def.tf}_${def.style}`;
     const botCount = cat.bots.length;
     return `<div class="ba-lead-card" onclick="toggleCategoryExpand('${catKey}')">
-      <div class="ba-lc-cat">${cat.label} <span style="font-size:.66rem;color:var(--dim);">(${botCount}体中1位)</span></div>
+      <div class="ba-lc-cat">${cat.label} <span style="font-size:.66rem;color:var(--dim);">(${botCount}体中1位 / 累計P&L順)</span></div>
       <div class="ba-lc-name"><span class="ba-lc-crown">👑</span>${def.emoji} ${def.name}</div>
       <div class="ba-lc-stats">
-        <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">勝率</span><span class="ba-lc-stat-val ${pnlCls}">${rate}%</span></div>
+        <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">累計P&L</span><span class="ba-lc-stat-val ${pnlCls}" style="font-size:1.1rem;">${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</span></div>
+        <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">勝率</span><span class="ba-lc-stat-val">${rate}%</span></div>
         <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">勝/負</span><span class="ba-lc-stat-val">${bs.totalWins}/${bs.totalLosses}</span></div>
-        <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">累計P&L</span><span class="ba-lc-stat-val ${pnlCls}">${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</span></div>
         <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">本日P&L</span><span class="ba-lc-stat-val ${todayCls}">${todayPnl>=0?'+':''}${todayPnl.toFixed(2)}%</span></div>
       </div>
       <div class="ba-lc-style">${def.philosophy}</div>
@@ -5628,18 +5638,21 @@ function toggleCategoryExpand(catKey){
   const catMap = getCategoryTopBots();
   const cat = catMap[catKey];
   if(!cat) return;
-  el.innerHTML = '<div style="font-size:.74rem;font-weight:600;margin:8px 0 4px;color:var(--accent);">カテゴリ内ランキング</div>' +
+  el.innerHTML = '<div style="font-size:.74rem;font-weight:600;margin:8px 0 4px;color:var(--accent);">カテゴリ内ランキング（累計P&L順）</div>' +
     cat.bots.slice(0,10).map((b,i)=>{
       const total = b.bs.totalWins + b.bs.totalLosses;
       const rate = total > 0 ? (b.bs.totalWins/total*100).toFixed(0) : '--';
       const pnlCls = b.bs.totalPnlPct>=0?'var(--green)':'var(--red)';
       const variant = b.def.isChild ? ` <span style="color:var(--dim)">(${b.def.variantLabel})</span>` : '';
-      return `<div style="display:flex;gap:8px;align-items:center;padding:2px 0;font-size:.74rem;">
+      const motherBadge = !b.def.isChild ? ' <span style="color:var(--accent);font-size:.62rem;">MOTHER</span>' : '';
+      const adminDetailClick = isAdminMode ? `onclick="event.stopPropagation();showAdminBotDetail('${b.def.id}')" style="cursor:pointer;"` : '';
+      return `<div style="display:flex;gap:8px;align-items:center;padding:2px 0;font-size:.74rem;" ${adminDetailClick}>
         <span style="min-width:20px;color:var(--dim);">#${i+1}</span>
-        <span>${b.def.emoji}${b.def.name}${variant}</span>
+        <span>${b.def.emoji}${b.def.name}${variant}${motherBadge}</span>
+        <span style="color:${pnlCls};font-weight:600;">${b.bs.totalPnlPct>=0?'+':''}${b.bs.totalPnlPct.toFixed(2)}%</span>
         <span>勝率${rate}%</span>
-        <span style="color:${pnlCls}">${b.bs.totalPnlPct>=0?'+':''}${b.bs.totalPnlPct.toFixed(2)}%</span>
         <span style="color:var(--dim)">${total}回</span>
+        ${isAdminMode?'<span style="font-size:.58rem;color:var(--accent);">詳細</span>':''}
       </div>`;
     }).join('');
   el.style.display = 'block';
@@ -5726,27 +5739,31 @@ function renderSingleBotCard(def, bs, isFull){
 
   const variant = def.isChild ? ` <span style="font-size:.68rem;color:var(--dim);">${def.variantLabel}</span>` : '';
 
+  const adminClick = isAdminMode ? `onclick="showAdminBotDetail('${def.id}')" style="cursor:pointer;"` : '';
+
   if(!isFull){
     // Compact card for non-top holding bots
     const pnlPct = pos && pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : pos ? (pos.entry-S.price)/pos.entry*100 : 0;
     const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
-    return `<div class="ba-bot st-holding ${dirCls}" style="padding:8px 12px;">
+    return `<div class="ba-bot st-holding ${dirCls}" style="padding:8px 12px;${isAdminMode?'cursor:pointer;':''}" ${adminClick}>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span class="ba-bot-emoji" style="font-size:1rem;">${def.emoji}</span>
         <span class="ba-bot-name" style="font-size:.88rem;">${def.name}${variant}</span>
         <span class="ba-bot-status ${statusCls}">${statusText}</span>
         <span style="color:${pnlCls};font-weight:700;font-size:.82rem;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span>
         <span style="color:var(--dim);font-size:.72rem;">${def.cat}</span>
+        ${isAdminMode?'<span style="font-size:.62rem;color:var(--accent);">TAP詳細</span>':''}
       </div>
     </div>`;
   }
 
-  return `<div class="ba-bot st-${bs.status==='holding'?'holding':bs.status} ${dirCls}">
+  return `<div class="ba-bot st-${bs.status==='holding'?'holding':bs.status} ${dirCls}" ${adminClick}>
     <div class="ba-bot-top">
       <span class="ba-bot-emoji">${def.emoji}</span>
       <span class="ba-bot-name">${def.name}${variant}</span>
       <span class="ba-bot-cat">${def.cat}</span>
       <span class="ba-bot-status ${statusCls}">${statusText}</span>
+      ${isAdminMode?'<span style="font-size:.62rem;color:var(--accent);margin-left:auto;">TAP詳細</span>':''}
     </div>
     <div class="ba-bot-detail">${detail}</div>
     ${rationale?`<div class="ba-bot-rationale">根拠: ${rationale}</div>`:''}
@@ -5794,6 +5811,11 @@ function renderPerfBars(){
   // Show top 3 per category for performance comparison
   const catMap = getCategoryTopBots();
   let html = '';
+  // Find max P&L for bar scaling
+  let maxPnl = 1;
+  Object.values(catMap).forEach(cat=>{
+    cat.bots.slice(0,3).forEach(b=>{ if(Math.abs(b.bs.totalPnlPct) > maxPnl) maxPnl = Math.abs(b.bs.totalPnlPct); });
+  });
   Object.values(catMap).forEach(cat=>{
     html += `<div style="font-size:.72rem;color:var(--accent);margin:6px 0 2px;font-weight:600;">${cat.label}</div>`;
     cat.bots.slice(0,3).forEach((b,i)=>{
@@ -5802,10 +5824,11 @@ function renderPerfBars(){
       const pnlCls = b.bs.totalPnlPct>=0?'var(--green)':'var(--red)';
       const variant = b.def.isChild ? `(${b.def.variantLabel})` : '';
       const crown = i===0 ? '👑' : '';
+      const barWidth = maxPnl > 0 ? Math.max(2, Math.abs(b.bs.totalPnlPct)/maxPnl*100) : 0;
       html += `<div class="ba-perf-row">
         <span class="ba-perf-name">${crown}${b.def.emoji}${b.def.name}${variant}</span>
-        <div class="ba-perf-bar-wrap"><div class="ba-perf-bar" style="width:${rate}%"></div></div>
-        <span class="ba-perf-val" style="color:${pnlCls}">${rate.toFixed(0)}% (${b.bs.totalPnlPct>=0?'+':''}${b.bs.totalPnlPct.toFixed(1)}%)</span>
+        <div class="ba-perf-bar-wrap"><div class="ba-perf-bar" style="width:${barWidth}%;background:${b.bs.totalPnlPct>=0?'var(--green)':'var(--red)'};"></div></div>
+        <span class="ba-perf-val" style="color:${pnlCls}">${b.bs.totalPnlPct>=0?'+':''}${b.bs.totalPnlPct.toFixed(2)}% (勝率${rate.toFixed(0)}%)</span>
       </div>`;
     });
   });
@@ -5924,23 +5947,50 @@ function runDailyPDCA(){
       if(bs) bs.dailyStats.push({ date:today, wins:bp.wins, losses:bp.losses, pnlPct:+bp.pnl.toFixed(3), tradeCount:bp.total });
     });
 
-    // Sort by win rate then P&L
+    // Sort by cumulative P&L (買った額が多い順), then win rate
     const sorted = [...botPerf].sort((a,b)=>{
+      const bsA = botStates[a.id], bsB = botStates[b.id];
+      const pnlA = bsA ? bsA.totalPnlPct : 0;
+      const pnlB = bsB ? bsB.totalPnlPct : 0;
+      if(pnlB !== pnlA) return pnlB - pnlA;
       const rA = a.total>0 ? a.wins/a.total : 0;
       const rB = b.total>0 ? b.wins/b.total : 0;
-      return rB - rA || b.pnl - a.pnl;
+      return rB - rA;
     });
     if(sorted.length < 2) return;
 
-    // Top 3 → teach bottom 3 (or fewer if category is small)
-    const teachCount = Math.min(3, Math.floor(sorted.length / 2));
-    const winners = sorted.slice(0, teachCount);
-    const losers = sorted.slice(-teachCount);
+    // ── マザーbotは改善対象外（パラメータ固定） ──
+    // 良い成績のマザーbotから子botに知識を伝達する方式
+    // 特にJOHN（初期設定を崩さない）
+
+    // Find best-performing mother bot in this category as teacher
+    const motherPerf = sorted.filter(s => MOTHER_BOT_IDS.includes(s.id));
+    const bestMother = motherPerf.length > 0 ? motherPerf[0] : null;
+
+    // Only child bots are eligible for PDCA improvement
+    const childPerf = sorted.filter(s => !MOTHER_BOT_IDS.includes(s.id));
+    if(childPerf.length < 2) return;
+
+    const teachCount = Math.min(3, Math.floor(childPerf.length / 2));
+    const childWinners = childPerf.slice(0, teachCount);
+    const childLosers = childPerf.slice(-teachCount);
 
     // ワースト2名はPDCA改善をスキップ、SLを拡大して養分化
     const worst2Ids = new Set(getWorst2Bots().map(w=>w.id));
 
-    losers.forEach((loser, li)=>{
+    // Log that mother bots are preserved
+    if(bestMother){
+      const motherDef = ALL_BOTS.find(d=>d.id===bestMother.id);
+      if(motherDef && botStates[bestMother.id]){
+        const msg = `【マザーbot固定】${motherDef.name}のパラメータは保護されています。子botへの知識伝達元として使用。`;
+        botStates[bestMother.id].pdcaLog.push({ time:Date.now(), msg });
+      }
+    }
+
+    childLosers.forEach((loser, li)=>{
+      // マザーbotは絶対に改善対象にしない（二重チェック）
+      if(MOTHER_BOT_IDS.includes(loser.id)) return;
+
       // 養分枠: PDCA改善スキップ、SL拡大
       if(worst2Ids.has(loser.id)){
         const lp = botStates[loser.id]?.params;
@@ -5952,9 +6002,11 @@ function runDailyPDCA(){
         }
         return;
       }
-      const winner = winners[Math.min(li, winners.length-1)];
-      if(winner.id === loser.id) return;
-      const winParams = botStates[winner.id]?.params;
+
+      // Teacher: prefer best mother bot, fallback to best child
+      const teacher = bestMother || childWinners[Math.min(li, childWinners.length-1)];
+      if(teacher.id === loser.id) return;
+      const winParams = botStates[teacher.id]?.params;
       const loseParams = botStates[loser.id]?.params;
       if(!winParams || !loseParams) return;
       const adjustments = [];
@@ -5985,8 +6037,9 @@ function runDailyPDCA(){
 
       if(adjustments.length > 0){
         const loserDef = ALL_BOTS.find(d=>d.id===loser.id);
-        const winnerDef = ALL_BOTS.find(d=>d.id===winner.id);
-        const msg = `${winnerDef?.name||winner.id}の成績を参考に調整: ${adjustments.join(', ')}`;
+        const teacherDef = ALL_BOTS.find(d=>d.id===teacher.id);
+        const src = MOTHER_BOT_IDS.includes(teacher.id) ? '【マザーbot参考】' : '';
+        const msg = `${src}${teacherDef?.name||teacher.id}の成績を参考に調整: ${adjustments.join(', ')}`;
         if(botStates[loser.id]) botStates[loser.id].pdcaLog.push({ time:Date.now(), msg });
       }
     });
@@ -6000,6 +6053,140 @@ function runDailyPDCA(){
 
 // Make runDailyPDCA available in console for testing
 window.runDailyPDCA = runDailyPDCA;
+
+// ═══════════════════════════════════════════════
+// ADMIN MODE — 管理者専用Bot詳細表示
+// ═══════════════════════════════════════════════
+
+let isAdminMode = false;
+const ADMIN_PIN = '1234'; // 管理者PINコード（変更可能）
+
+function toggleAdminMode(){
+  if(isAdminMode){
+    isAdminMode = false;
+    document.getElementById('adminToggleBtn').style.borderColor = 'var(--dim)';
+    document.getElementById('adminToggleBtn').style.color = 'var(--dim)';
+    document.getElementById('adminToggleBtn').textContent = '🔑 管理者';
+    if(botArenaVisible) renderBotArena();
+    return;
+  }
+  const pin = prompt('管理者PINを入力してください:');
+  if(pin === ADMIN_PIN){
+    isAdminMode = true;
+    document.getElementById('adminToggleBtn').style.borderColor = 'var(--accent)';
+    document.getElementById('adminToggleBtn').style.color = 'var(--accent)';
+    document.getElementById('adminToggleBtn').textContent = '🔓 管理者ON';
+    if(botArenaVisible) renderBotArena();
+  } else if(pin !== null) {
+    alert('PINが正しくありません。');
+  }
+}
+
+function showAdminBotDetail(botId){
+  if(!isAdminMode) return;
+  const def = ALL_BOTS.find(d=>d.id===botId);
+  const bs = botStates[botId];
+  if(!def || !bs) return;
+
+  const p = bs.params;
+  const total = bs.totalWins + bs.totalLosses;
+  const rate = total > 0 ? (bs.totalWins/total*100).toFixed(1) : '--';
+  const motherLabel = def.isChild ? `<span style="color:var(--dim);">親Bot: ${def.motherId.toUpperCase()}</span>` : '<span style="color:var(--accent);">マザーBot</span>';
+
+  // Build params table
+  const paramKeys = Object.keys(p);
+  const paramsHtml = paramKeys.map(k=>{
+    const defaultP = def.isChild
+      ? generateChildParams(def.motherId, def.paramMod)
+      : BOT_DEFAULT_PARAMS[def.id];
+    const defaultVal = defaultP ? defaultP[k] : '—';
+    const changed = defaultVal !== undefined && p[k] !== defaultVal;
+    return `<tr style="${changed?'color:var(--accent);':''}">
+      <td style="padding:3px 8px;border-bottom:1px solid rgba(255,255,255,.06);">${k}</td>
+      <td style="padding:3px 8px;border-bottom:1px solid rgba(255,255,255,.06);font-weight:600;">${typeof p[k]==='boolean'?p[k]:p[k]}</td>
+      <td style="padding:3px 8px;border-bottom:1px solid rgba(255,255,255,.06);color:var(--dim);">${defaultVal!==undefined?defaultVal:'—'}</td>
+      <td style="padding:3px 8px;border-bottom:1px solid rgba(255,255,255,.06);">${changed?'変更済':'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // Recent trades
+  const recentTrades = bs.trades.slice(-10).reverse();
+  const tradesHtml = recentTrades.map(t=>{
+    const pnlCls = t.pnlPct>=0?'var(--green)':'var(--red)';
+    return `<div style="display:flex;gap:6px;font-size:.72rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+      <span style="color:var(--dim);min-width:70px;">${t.exitTime?t.exitTime.slice(5,16):''}</span>
+      <span style="min-width:40px;">${t.dir}</span>
+      <span style="color:${pnlCls};min-width:50px;font-weight:600;">${t.pnlPct>=0?'+':''}${t.pnlPct.toFixed(2)}%</span>
+      <span>${t.win?'WIN':'LOSE'}</span>
+      <span style="color:var(--dim);font-size:.68rem;">${t.entryReason||''}</span>
+    </div>`;
+  }).join('') || '<div style="color:var(--dim);">まだ取引がありません</div>';
+
+  // PDCA log
+  const pdcaHtml = (bs.pdcaLog||[]).slice(-5).reverse().map(l=>{
+    const d = new Date(l.time).toLocaleDateString('ja-JP');
+    return `<div style="font-size:.72rem;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);">${d}: ${l.msg}</div>`;
+  }).join('') || '<div style="color:var(--dim);">PDCA履歴なし</div>';
+
+  // Daily stats
+  const dailyHtml = (bs.dailyStats||[]).slice(-7).reverse().map(ds=>{
+    const dpnlCls = ds.pnlPct>=0?'var(--green)':'var(--red)';
+    return `<div style="display:flex;gap:8px;font-size:.72rem;padding:2px 0;">
+      <span style="color:var(--dim);min-width:70px;">${ds.date.slice(5)}</span>
+      <span>${ds.wins}勝${ds.losses}敗</span>
+      <span style="color:${dpnlCls}">${ds.pnlPct>=0?'+':''}${ds.pnlPct.toFixed(3)}%</span>
+    </div>`;
+  }).join('') || '<div style="color:var(--dim);">日次データなし</div>';
+
+  const html = `
+    <div style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">${def.emoji} ${def.name} ${def.isChild?def.variantLabel:''}</div>
+    <div style="font-size:.78rem;margin-bottom:8px;">${motherLabel} / ${def.cat} / ${def.tf}足 / ${def.style}</div>
+    <div style="font-size:.78rem;color:var(--dim);margin-bottom:12px;font-style:italic;">${def.philosophy}</div>
+
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--accent);">📊 パフォーマンス</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div style="text-align:center;padding:8px;background:rgba(255,255,255,.03);border-radius:8px;">
+        <div style="font-size:.68rem;color:var(--dim);">累計P&L</div>
+        <div style="font-size:1.1rem;font-weight:700;color:${bs.totalPnlPct>=0?'var(--green)':'var(--red)'};">${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:rgba(255,255,255,.03);border-radius:8px;">
+        <div style="font-size:.68rem;color:var(--dim);">勝率</div>
+        <div style="font-size:1.1rem;font-weight:700;">${rate}%</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:rgba(255,255,255,.03);border-radius:8px;">
+        <div style="font-size:.68rem;color:var(--dim);">勝/負</div>
+        <div style="font-size:1.1rem;font-weight:700;">${bs.totalWins}/${bs.totalLosses}</div>
+      </div>
+    </div>
+
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--accent);">🔧 パラメータ詳細</div>
+    <table style="width:100%;font-size:.72rem;border-collapse:collapse;margin-bottom:16px;">
+      <tr style="color:var(--dim);border-bottom:1px solid rgba(255,255,255,.1);">
+        <th style="text-align:left;padding:4px 8px;">パラメータ</th>
+        <th style="text-align:left;padding:4px 8px;">現在値</th>
+        <th style="text-align:left;padding:4px 8px;">初期値</th>
+        <th style="text-align:left;padding:4px 8px;">状態</th>
+      </tr>
+      ${paramsHtml}
+    </table>
+
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--accent);">📈 日次成績（直近7日）</div>
+    <div style="margin-bottom:16px;">${dailyHtml}</div>
+
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--accent);">📋 直近取引（最大10件）</div>
+    <div style="margin-bottom:16px;">${tradesHtml}</div>
+
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--accent);">🔄 PDCA改善履歴</div>
+    <div style="margin-bottom:8px;">${pdcaHtml}</div>
+  `;
+
+  document.getElementById('adminBotDetailContent').innerHTML = html;
+  document.getElementById('adminBotDetailModal').style.display = 'block';
+}
+
+function closeAdminBotDetail(){
+  document.getElementById('adminBotDetailModal').style.display = 'none';
+}
 
 // ═══════════════════════════════════════════════
 // BOT TRADE REPORT — 詳細思考・判断レポート

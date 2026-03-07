@@ -524,6 +524,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-bg-cell.holding-long{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.12);box-shadow:0 0 6px rgba(0,255,136,.15);}
 .ov-bg-cell.holding-short{border-color:rgba(255,45,85,.4);background:rgba(255,45,85,.12);box-shadow:0 0 6px rgba(255,45,85,.15);}
 .ov-bg-name{font-size:.5rem;font-weight:700;color:var(--text);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ov-bg-cat{font-size:.38rem;color:rgba(255,255,255,.35);line-height:1.1;margin-bottom:1px;}
 .ov-bg-status{font-size:.42rem;font-weight:700;line-height:1.2;}
 .ov-bg-status.watching{color:var(--dim);}
 .ov-bg-status.ready-long{color:#00ff88;}
@@ -4721,8 +4722,11 @@ function renderOvBotGrid(){
       // PnL
       const pnl = bs.totalPnlPct || 0;
       const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--dim)';
+      // Short category label from def.cat (e.g. '5分スキャル(順張り)' → '5m順張')
+      const catShort = (def.cat||'').replace(/スキャル|トレード|スイング/g,'').replace(/[（(]/,'').replace(/[）)]/,'').replace('分','m').replace('時間','h');
       html += `<div class="ov-bg-cell ${cellCls}">
         <div class="ov-bg-name">${def.emoji}${def.name}</div>
+        <div class="ov-bg-cat">${catShort}</div>
         <div class="ov-bg-status ${statusCls}">${statusText}</div>
         <div class="ov-bg-pnl" style="color:${pnlColor};">${pnl>=0?'+':''}${pnl.toFixed(1)}%</div>
       </div>`;

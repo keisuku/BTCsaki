@@ -621,6 +621,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-wrap{padding:10px 16px;max-width:1200px;margin:0 auto;}
 .ba-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
 .ba-title{font-size:1.15rem;font-weight:900;color:#c4b5fd;font-family:'Share Tech Mono',monospace;letter-spacing:.08em;}
+.ba-coin-name{color:#ff2d55;font-weight:900;}
 .ba-sub{font-size:.76rem;color:var(--dim);}
 .ba-live{font-size:.64rem;padding:3px 9px;background:rgba(167,139,250,.12);color:#c4b5fd;border:1px solid rgba(167,139,250,.25);border-radius:3px;letter-spacing:.1em;animation:baPulse 2s infinite;}
 @keyframes baPulse{0%,100%{opacity:1}50%{opacity:.5}}
@@ -815,14 +816,13 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <div class="topbar">
   <div class="logo">⬡ <span data-coin-name>BTC</span>先物 スキャルシグナル <span style="color:var(--dim);font-size:.62rem;">— スキャルピング特化</span></div>
   <div class="coin-switcher">
-    <button class="coin-btn overview-btn" id="overviewTab" onclick="toggleOverview()">◈ 総合</button>
-    <span class="coin-sep">|</span>
-    <button class="coin-btn active" data-coin="BTC" onclick="switchCoin('BTC')">BTC</button>
+    <button class="coin-btn overview-btn active" id="overviewTab" onclick="toggleOverview()">◈ 総合</button>
+    <button class="coin-btn" data-coin="BTC" onclick="switchCoin('BTC')">BTC</button>
     <button class="coin-btn" data-coin="ETH" onclick="switchCoin('ETH')">ETH</button>
     <button class="coin-btn" data-coin="XRP" onclick="switchCoin('XRP')">XRP</button>
     <button class="coin-btn" data-coin="SOL" onclick="switchCoin('SOL')">SOL</button>
     <span class="coin-sep">|</span>
-    <button class="coin-btn bot-arena-btn" id="botArenaTab" onclick="toggleBotArena()">🤖 Bot Arena</button>
+    <button class="coin-btn bot-arena-btn" id="botArenaTab" onclick="toggleBotArena()">🤖 <span id="baTabCoin" style="color:#ff2d55;font-weight:700;">BTC</span> Bot Arena</button>
   </div>
   <div class="topbar-r">
     <span class="session-badge" id="sessionBadge">--</span>
@@ -859,7 +859,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div>
 
 
-<div id="mainDashboard">
+<div id="mainDashboard" class="hidden">
 <!-- CHART (TradingView) -->
 <div class="sec" style="padding-bottom:4px;">
   <div class="sec-t">リアルタイムチャート (TradingView) <span id="chartTfLabel" class="live-b">5分足</span></div>
@@ -1407,7 +1407,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div><!-- /mainDashboard -->
 
 <!-- OVERVIEW SECTION -->
-<div id="overviewSection">
+<div id="overviewSection" class="visible">
 
   <!-- Header -->
   <div class="ov-header">
@@ -1562,7 +1562,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <div id="botArenaSection">
 <div class="ba-wrap">
   <div class="ba-header">
-    <span class="ba-title">🤖 BOT ARENA</span>
+    <span class="ba-title">🤖 <span class="ba-coin-name" id="baCoinName">BTC</span> BOT ARENA</span>
     <span class="ba-live">LIVE</span>
     <span class="ba-sub" id="baSubtitle">AI Trading Bot — BTC ペーパートレードバトル（48体稼働中 / カテゴリTop1表示）</span>
     <button id="adminToggleBtn" onclick="toggleAdminMode()" style="margin-left:auto;padding:4px 10px;font-size:.7rem;border:1px solid var(--dim);border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;">🔑 管理者</button>
@@ -1662,6 +1662,12 @@ async function switchCoin(key){
   document.querySelectorAll('[data-coin-name]')
     .forEach(el=>el.textContent=COINS[key].name);
   document.title = COINS[key].name+'先物 スキャルシグナル';
+
+  // Bot Arenaコイン名更新
+  const baCN = document.getElementById('baCoinName');
+  if(baCN) baCN.textContent = COINS[key].name;
+  const baTC = document.getElementById('baTabCoin');
+  if(baTC) baTC.textContent = COINS[key].name;
 
   // Stateリセット
   S.price=0; S.p24h=0; S.fr=0; S.ls=50; S.oiVal=0; S.oiPrev=0;
@@ -3296,6 +3302,8 @@ async function init(){
   restartUpdLoop();
   // Recalculate position sizes once price is loaded
   setTimeout(calcPosition, 1000);
+  // 総合ページをデフォルトで表示
+  if(overviewVisible) initOverview();
   }
 }
 init();
@@ -4410,7 +4418,7 @@ switchCoin = async function(key){
 // ═══════════════════════════════════════════════
 // OVERVIEW (総合) PAGE
 // ═══════════════════════════════════════════════
-let overviewVisible = false;
+let overviewVisible = true;
 let ovInterval = null;
 let ovFocusCoin = 'BTC';
 let ovStartTime = null;
@@ -4441,9 +4449,14 @@ function toggleOverview() {
     document.getElementById('botArenaTab').classList.remove('active');
   }
   if(overviewVisible){
+    // 総合に戻る時、コインボタンのactiveを外す
+    document.querySelectorAll('.coin-btn[data-coin]').forEach(b=>b.classList.remove('active'));
     ovStartTime = Date.now();
     initOverview();
   } else {
+    // 総合を離れる時、現在のコインボタンをactiveにする
+    document.querySelectorAll('.coin-btn[data-coin]').forEach(b=>
+      b.classList.toggle('active', b.dataset.coin===currentCoin));
     if(ovInterval) clearInterval(ovInterval);
     ovInterval = null;
   }
@@ -5677,6 +5690,10 @@ function renderWorst2(){
 // ═══════════════════════════════════════════════
 
 function renderBotArena(){
+  const coinNameEl = document.getElementById('baCoinName');
+  if(coinNameEl) coinNameEl.textContent = currentCoin;
+  const tabCoinEl = document.getElementById('baTabCoin');
+  if(tabCoinEl) tabCoinEl.textContent = currentCoin;
   const subEl = document.getElementById('baSubtitle');
   if(subEl) subEl.textContent = `AI Trading Bot — ${currentCoin} ペーパートレードバトル（${ALL_BOTS.length}体稼働中 / カテゴリTop1表示）`;
   renderConsensus();

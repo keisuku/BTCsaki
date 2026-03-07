@@ -652,6 +652,24 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-pdca-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;color:#c4b5fd;font-family:'Share Tech Mono',monospace;margin-bottom:8px;}
 .ba-pdca-log{font-size:.8rem;color:var(--dim);line-height:1.55;}
 
+/* ══ CONSENSUS SIGNAL ══ */
+.ba-consensus{padding:12px 16px;margin:8px 0;border-radius:8px;border:2px solid;background:rgba(0,0,0,0.3);animation:consensusPulse 2s infinite;}
+@keyframes consensusPulse{0%,100%{opacity:1;}50%{opacity:.85;}}
+.ba-cons-title{font-size:1rem;font-weight:700;}
+.ba-cons-bots{font-size:.78rem;color:var(--dim);margin:4px 0;}
+.ba-cons-msg{font-size:.74rem;opacity:.8;}
+
+/* ══ WORST 2 (養分枠) ══ */
+.ba-worst{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;}
+.ba-worst-card{flex:1;min-width:260px;padding:12px;border:1px dashed #ff4444;border-radius:8px;background:linear-gradient(135deg,rgba(255,68,68,0.08),rgba(0,0,0,0));}
+.ba-worst-rank{font-size:.72rem;color:#ff4444;font-weight:700;}
+.ba-worst-name{font-size:1rem;font-weight:700;margin:4px 0;}
+.ba-worst-cat{font-size:.7rem;color:var(--dim);}
+.ba-worst-stats{font-size:.78rem;margin:6px 0;}
+.ba-worst-detail{font-size:.78rem;margin:4px 0;}
+.ba-worst-quote{font-size:.74rem;color:#ff6666;font-style:italic;margin:4px 0;}
+.ba-worst-warn{font-size:.68rem;color:#ff4444;opacity:.7;margin-top:6px;}
+
 /* ══ BOT TRADE REPORT ══ */
 .bot-report{padding:12px 16px;max-width:1200px;margin:0 auto;}
 .br-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
@@ -1511,9 +1529,12 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="ba-header">
     <span class="ba-title">🤖 BOT ARENA</span>
     <span class="ba-live">LIVE</span>
-    <span class="ba-sub">AI Trading Bot — BTC ペーパートレードバトル（48体稼働中 / カテゴリTop1表示）</span>
+    <span class="ba-sub" id="baSubtitle">AI Trading Bot — BTC ペーパートレードバトル（48体稼働中 / カテゴリTop1表示）</span>
   </div>
+  <div id="baConsensus" style="display:none;"></div>
   <div class="ba-leaders" id="baLeaders"></div>
+  <div class="ba-log-title">💀 養分枠 — ワースト2名の微妙トレード</div>
+  <div class="ba-worst" id="baWorst"><div style="color:var(--dim);font-size:.8rem;">データ蓄積中...（最低3回トレード後に表示）</div></div>
   <div class="ba-log-title">🔴 ライブトレード状況</div>
   <div class="ba-bots" id="baBots"></div>
   <div class="ba-log-title">📋 本日のトレード履歴</div>
@@ -1606,6 +1627,14 @@ async function switchCoin(key){
   // ETFフローセクション: BTC/ETHのみ表示
   const etfEl = document.querySelector('.etf-section');
   if(etfEl) etfEl.style.display=(key==='BTC'||key==='ETH')?'':'none';
+
+  // Bot Arena: 現コインのstateを保存 → 新コインのstateをロード
+  if(typeof saveBotArena === 'function') saveBotArena();
+  if(typeof loadReports === 'function'){
+    loadReports();
+    loadHourlySignals();
+  }
+  if(typeof initBotArena === 'function') initBotArena();
 
   // TradingViewチャート再初期化
   const activeTf = document.querySelector('.chart-tf-btn.active');
@@ -3316,7 +3345,7 @@ async function fastFetch(){
     renderEntryTiming();
     renderPriceRange();
     // Bot Arena evaluation on every fast tick (only when BTC selected for accurate data)
-    if(currentCoin === 'BTC' && typeof botEvalAndSave === 'function') botEvalAndSave();
+    if(['BTC','SOL'].includes(currentCoin) && typeof botEvalAndSave === 'function') botEvalAndSave();
   }catch(e){}
 }
 
@@ -4106,11 +4135,11 @@ function generateChildParams(motherId, paramMod){
 // Bot Arena state
 let botArenaVisible = false;
 let botStates = {};  // id -> state object
-const BA_STORAGE_KEY = 'botArena_BTC_v2';
+function getBAStorageKey(){ return `botArena_${currentCoin}_v2`; }
 
 function initBotArena(){
   // Load from localStorage or create fresh
-  const saved = localStorage.getItem(BA_STORAGE_KEY);
+  const saved = localStorage.getItem(getBAStorageKey());
   if(saved){
     try{ botStates = JSON.parse(saved); }catch(e){ botStates = {}; }
   }
@@ -4183,7 +4212,7 @@ function saveBotArena(){
       if(bs.pdcaLog.length>5) bs.pdcaLog = bs.pdcaLog.slice(-5);
     }
   });
-  try{ localStorage.setItem(BA_STORAGE_KEY, JSON.stringify(botStates)); }catch(e){}
+  try{ localStorage.setItem(getBAStorageKey(), JSON.stringify(botStates)); }catch(e){}
 }
 
 // ── Toggle Bot Arena view ──
@@ -5295,11 +5324,106 @@ function botEvalAndSave(){
 }
 
 // ═══════════════════════════════════════════════
+// CONSENSUS SIGNAL + WORST 2 (養分枠)
+// ═══════════════════════════════════════════════
+
+function getConsensusSignal(){
+  const trendMothers = BOT_DEFS.filter(d=> d.style==='trend');
+  const holding = trendMothers.filter(d=>{
+    const bs = botStates[d.id];
+    return bs && bs.position;
+  });
+  if(holding.length < 2) return null;
+  const dirs = holding.map(d=> botStates[d.id].position.dir);
+  const allSame = dirs.every(d=> d===dirs[0]);
+  if(!allSame) return null;
+  return {
+    dir: dirs[0],
+    count: holding.length,
+    total: trendMothers.length,
+    bots: holding.map(d=>({ name:d.name, emoji:d.emoji, tf:d.tf }))
+  };
+}
+
+function renderConsensus(){
+  const el = document.getElementById('baConsensus');
+  if(!el) return;
+  const c = getConsensusSignal();
+  if(!c){
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+  const color = c.dir==='LONG' ? 'var(--green)' : 'var(--red)';
+  const names = c.bots.map(b=>`${b.emoji}${b.name}(${b.tf})`).join(' ');
+  el.innerHTML = `<div class="ba-consensus" style="border-color:${color};">
+    <div class="ba-cons-title" style="color:${color};">
+      🔥 順張りbot ${c.count}/${c.total}体が ${c.dir} 一致！
+    </div>
+    <div class="ba-cons-bots">${names}</div>
+    <div class="ba-cons-msg">全員が自信を持ってエントリー中 — 最強シグナル発生中</div>
+  </div>`;
+}
+
+function getWorst2Bots(){
+  const candidates = ALL_BOTS.map(d=>{
+    const bs = botStates[d.id];
+    if(!bs) return null;
+    const total = bs.totalWins + bs.totalLosses;
+    if(total < 3) return null;
+    return { id:d.id, def:d, bs, pnl:bs.totalPnlPct, total };
+  }).filter(Boolean);
+  candidates.sort((a,b)=> a.pnl - b.pnl);
+  return candidates.slice(0,2);
+}
+
+function renderWorst2(){
+  const el = document.getElementById('baWorst');
+  if(!el) return;
+  const worst = getWorst2Bots();
+  if(worst.length === 0){
+    el.innerHTML = '<div style="color:var(--dim);font-size:.8rem;">データ蓄積中...（最低3回トレード後に表示）</div>';
+    return;
+  }
+  el.innerHTML = worst.map((w,i)=>{
+    const def = w.def;
+    const bs = w.bs;
+    const total = bs.totalWins + bs.totalLosses;
+    const rate = total > 0 ? (bs.totalWins/total*100).toFixed(0) : '--';
+    const pos = bs.position;
+    let detail = '';
+    if(pos){
+      const pnlPct = pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : (pos.entry-S.price)/pos.entry*100;
+      const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
+      detail = `${pos.dir} @ $${pos.entry.toLocaleString('en',{maximumFractionDigits:0})} 含み<span style="color:${pnlCls};font-weight:700;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span>`;
+    }
+    const quote = pos ? (def.quotes?.holding||'') : (def.quotes?.watching||'');
+    return `<div class="ba-worst-card">
+      <div class="ba-worst-rank">${i===0?'💀':'💸'}養分${i+1}位</div>
+      <div class="ba-worst-name">${def.emoji} ${def.name}${def.isChild?' <span style="font-size:.68rem;color:var(--dim);">'+def.variantLabel+'</span>':''}</div>
+      <div class="ba-worst-cat">${def.cat}</div>
+      <div class="ba-worst-stats">
+        勝率${rate}% (${bs.totalWins}勝${bs.totalLosses}敗) /
+        累計:<span style="color:var(--red);">${bs.totalPnlPct.toFixed(2)}%</span> /
+        SL: ${bs.params.slPct}%
+      </div>
+      ${detail?`<div class="ba-worst-detail">${detail}</div>`:''}
+      ${quote?`<div class="ba-worst-quote">「${quote}」</div>`:''}
+      <div class="ba-worst-warn">⚠️ このbotの真似はやめましょう</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
 // BOT ARENA UI RENDERING
 // ═══════════════════════════════════════════════
 
 function renderBotArena(){
+  const subEl = document.getElementById('baSubtitle');
+  if(subEl) subEl.textContent = `AI Trading Bot — ${currentCoin} ペーパートレードバトル（${ALL_BOTS.length}体稼働中 / カテゴリTop1表示）`;
+  renderConsensus();
   renderLeaderboard();
+  renderWorst2();
   renderBotCards();
   renderTradeLog();
   renderPerfBars();
@@ -5587,14 +5711,14 @@ function renderPDCALog(){
 // ═══════════════════════════════════════════════
 
 let hourlySignals = [];
-const HOURLY_STORAGE_KEY = 'hourlySignals_BTC';
+function getHourlyStorageKey(){ return `hourlySignals_${currentCoin}`; }
 
 function loadHourlySignals(){
-  try{ hourlySignals = JSON.parse(localStorage.getItem(HOURLY_STORAGE_KEY)) || []; }catch(e){ hourlySignals = []; }
+  try{ hourlySignals = JSON.parse(localStorage.getItem(getHourlyStorageKey())) || []; }catch(e){ hourlySignals = []; }
 }
 function saveHourlySignals(){
   if(hourlySignals.length > 48) hourlySignals = hourlySignals.slice(-48);
-  try{ localStorage.setItem(HOURLY_STORAGE_KEY, JSON.stringify(hourlySignals)); }catch(e){}
+  try{ localStorage.setItem(getHourlyStorageKey(), JSON.stringify(hourlySignals)); }catch(e){}
 }
 
 function recordHourlySnapshot(){
@@ -5688,7 +5812,21 @@ function runDailyPDCA(){
     const winners = sorted.slice(0, teachCount);
     const losers = sorted.slice(-teachCount);
 
+    // ワースト2名はPDCA改善をスキップ、SLを拡大して養分化
+    const worst2Ids = new Set(getWorst2Bots().map(w=>w.id));
+
     losers.forEach((loser, li)=>{
+      // 養分枠: PDCA改善スキップ、SL拡大
+      if(worst2Ids.has(loser.id)){
+        const lp = botStates[loser.id]?.params;
+        if(lp){
+          const oldSl = lp.slPct;
+          lp.slPct = Math.min(1.0, +(oldSl * 1.5).toFixed(3));
+          const msg = `【養分枠】PDCA改善スキップ。SL拡大: ${oldSl}→${lp.slPct}（傷口拡大中）`;
+          botStates[loser.id].pdcaLog.push({ time:Date.now(), msg });
+        }
+        return;
+      }
       const winner = winners[Math.min(li, winners.length-1)];
       if(winner.id === loser.id) return;
       const winParams = botStates[winner.id]?.params;
@@ -5742,8 +5880,8 @@ window.runDailyPDCA = runDailyPDCA;
 // BOT TRADE REPORT — 詳細思考・判断レポート
 // ═══════════════════════════════════════════════
 
-const BR_STORAGE_KEY = 'botReports_BTC_v1';
-const BR_REVIEW_KEY = 'botDailyReview_BTC_v1';
+function getBRStorageKey(){ return `botReports_${currentCoin}_v1`; }
+function getBRReviewKey(){ return `botDailyReview_${currentCoin}_v1`; }
 let botReports = [];       // [{ts, botId, type, ...details}]
 let botDailyReviews = [];  // [{date, html, summary}]
 let brFilter = 'all';
@@ -5751,9 +5889,9 @@ let brShowCount = 15;
 
 function loadReports(){
   try{
-    const s1 = localStorage.getItem(BR_STORAGE_KEY);
+    const s1 = localStorage.getItem(getBRStorageKey());
     if(s1) botReports = JSON.parse(s1);
-    const s2 = localStorage.getItem(BR_REVIEW_KEY);
+    const s2 = localStorage.getItem(getBRReviewKey());
     if(s2) botDailyReviews = JSON.parse(s2);
   }catch(e){ botReports=[]; botDailyReviews=[]; }
 }
@@ -5763,8 +5901,8 @@ function saveReports(){
   if(botReports.length>500) botReports = botReports.slice(-500);
   if(botDailyReviews.length>14) botDailyReviews = botDailyReviews.slice(-14);
   try{
-    localStorage.setItem(BR_STORAGE_KEY, JSON.stringify(botReports));
-    localStorage.setItem(BR_REVIEW_KEY, JSON.stringify(botDailyReviews));
+    localStorage.setItem(getBRStorageKey(), JSON.stringify(botReports));
+    localStorage.setItem(getBRReviewKey(), JSON.stringify(botDailyReviews));
   }catch(e){}
 }
 

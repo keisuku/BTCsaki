@@ -798,6 +798,16 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .day-gauge-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
 .day-gauge-pct{font-family:'Share Tech Mono',monospace;font-size:1.05rem;font-weight:bold;line-height:1;}
 .day-gauge-lbl{font-family:'Share Tech Mono',monospace;font-size:.46rem;color:var(--dim);margin-top:2px;white-space:nowrap;}
+
+/* ── NOTIFICATION TOGGLE ── */
+.notif-toggle-row{display:flex;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.notif-toggle-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);letter-spacing:.05em;}
+.notif-btn{font-family:'Share Tech Mono',monospace;font-size:.56rem;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);cursor:pointer;transition:all .2s;user-select:none;white-space:nowrap;}
+.notif-btn:hover{border-color:var(--accent);color:var(--accent);}
+.notif-btn.active{background:rgba(0,212,255,.15);color:var(--accent);border-color:var(--accent);box-shadow:0 0 6px rgba(0,212,255,.2);}
+.notif-btn.active.type-entry{background:rgba(0,212,255,.15);color:var(--accent);border-color:var(--accent);}
+.notif-btn.active.type-tp{background:rgba(0,255,136,.15);color:var(--green);border-color:var(--green);}
+.notif-btn.active.type-sl{background:rgba(255,45,85,.12);color:var(--red);border-color:var(--red);}
 </style>
 
 </head>
@@ -5534,6 +5544,8 @@ function checkBotEntry(def, state, price, now){
     state.readyDetail = null;
     state.lastMsg = `${def.name}が${signal}でエントリー！ @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`;
     addBotTradeLog(def, 'entry', signal, price, reason);
+    // Push notification: entry
+    sendBotNotification(def, 'entry', { dir:signal, price, reason });
     // Report: entry
     if(typeof addReport === 'function'){
       const snap = captureMarketSnapshot(def.tf);
@@ -5601,6 +5613,12 @@ function checkBotExit(def, state, price, now){
     state.status = 'watching';
     state.lastTradeTime = now;
     addBotTradeLog(def, exitType, pos.dir, price, exitReason, pnlPct);
+    // Push notification: tp or sl
+    if(exitType === 'tp'){
+      sendBotNotification(def, 'tp', { price, pnlPct });
+    } else if(exitType === 'sl'){
+      sendBotNotification(def, 'sl', { price, pnlPct });
+    }
     saveBotArena();
   }
 }
@@ -5611,6 +5629,84 @@ function addBotTradeLog(def, type, dir, price, reason, pnlPct){
   const time = new Date().toLocaleTimeString('ja-JP',{hour12:false,hour:'2-digit',minute:'2-digit'});
   botTradeLogEntries.unshift({ time, name:def.name, emoji:def.emoji, type, dir, price, reason, pnlPct });
   if(botTradeLogEntries.length > 50) botTradeLogEntries = botTradeLogEntries.slice(0, 50);
+}
+
+// ═══════════════════════════════════════════════
+// PUSH NOTIFICATION SYSTEM (per coin, per category top bot)
+// ═══════════════════════════════════════════════
+
+// Notification settings: { "BTC_5m_trend": { entry:true, tp:true, sl:false }, ... }
+let notifSettings = {};
+function getNotifStorageKey(){ return 'notifSettings_v1'; }
+function loadNotifSettings(){
+  try{ notifSettings = JSON.parse(localStorage.getItem(getNotifStorageKey())) || {}; }catch(e){ notifSettings = {}; }
+}
+function saveNotifSettings(){
+  try{ localStorage.setItem(getNotifStorageKey(), JSON.stringify(notifSettings)); }catch(e){}
+}
+loadNotifSettings();
+
+// Build key: coin + category
+function notifKey(coin, catKey){ return `${coin}_${catKey}`; }
+
+// Check if a specific notification type is enabled for a category
+function isNotifEnabled(coin, catKey, type){
+  const k = notifKey(coin, catKey);
+  return notifSettings[k] && notifSettings[k][type] === true;
+}
+
+// Toggle notification type for a category
+function toggleNotif(coin, catKey, type){
+  const k = notifKey(coin, catKey);
+  if(!notifSettings[k]) notifSettings[k] = { entry:false, tp:false, sl:false };
+  notifSettings[k][type] = !notifSettings[k][type];
+  // If enabling, request permission
+  if(notifSettings[k][type]) requestNotifPermission();
+  saveNotifSettings();
+  renderLeaderboard();
+}
+
+// Request browser notification permission
+function requestNotifPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    Notification.requestPermission();
+  }
+}
+
+// Send a push notification
+function sendBotNotification(def, type, opts){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const catKey = `${def.tf}_${def.style}`;
+  if(!isNotifEnabled(currentCoin, catKey, type)) return;
+
+  // Check if this bot is actually the #1 in its category
+  const catMap = getCategoryTopBots();
+  const cat = catMap[catKey];
+  if(!cat || cat.bots.length === 0 || cat.bots[0].id !== def.id) return;
+
+  let title = '', body = '';
+  const coinName = COINS[currentCoin] ? COINS[currentCoin].name : currentCoin;
+  const priceFmt = opts.price ? `$${opts.price.toLocaleString('en',{maximumFractionDigits:0})}` : '';
+
+  if(type === 'entry'){
+    title = `${def.emoji} ${coinName} ポジション保有！`;
+    body = `${def.name}が${opts.dir}でエントリー @ ${priceFmt}\n${opts.reason||''}`;
+  } else if(type === 'tp'){
+    title = `${def.emoji} ${coinName} 利確！`;
+    body = `${def.name}が利確 ${opts.pnlPct>=0?'+':''}${opts.pnlPct.toFixed(2)}% @ ${priceFmt}`;
+  } else if(type === 'sl'){
+    title = `${def.emoji} ${coinName} 損切り！`;
+    body = `${def.name}が損切り ${opts.pnlPct.toFixed(2)}% @ ${priceFmt}`;
+  }
+
+  try{
+    const n = new Notification(title, {
+      body, icon: '📊', tag: `${coinName}_${def.id}_${type}_${Date.now()}`,
+      requireInteraction: false,
+    });
+    setTimeout(()=> n.close(), 10000);
+  }catch(e){}
 }
 
 // ── Run all bots (mother/child dormancy system) ──
@@ -5810,6 +5906,12 @@ function renderLeaderboard(){
         <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">本日P&L</span><span class="ba-lc-stat-val ${todayCls}">${todayPnl>=0?'+':''}${todayPnl.toFixed(2)}%</span></div>
       </div>
       <div class="ba-lc-style">${def.philosophy}</div>
+      <div class="notif-toggle-row" onclick="event.stopPropagation();">
+        <span class="notif-toggle-label">🔔 通知:</span>
+        <button class="notif-btn ${isNotifEnabled(currentCoin,catKey,'entry')?'active type-entry':''}" onclick="event.stopPropagation();toggleNotif('${currentCoin}','${catKey}','entry')">ポジション保有</button>
+        <button class="notif-btn ${isNotifEnabled(currentCoin,catKey,'tp')?'active type-tp':''}" onclick="event.stopPropagation();toggleNotif('${currentCoin}','${catKey}','tp')">利確</button>
+        <button class="notif-btn ${isNotifEnabled(currentCoin,catKey,'sl')?'active type-sl':''}" onclick="event.stopPropagation();toggleNotif('${currentCoin}','${catKey}','sl')">損切り</button>
+      </div>
       <div id="catExpand_${catKey}" class="ba-cat-expand" style="display:none;"></div>
     </div>`;
   }).join('');

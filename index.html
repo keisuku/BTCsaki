@@ -4660,6 +4660,27 @@ function calcOvRangePos(klines){
 // ── Overview select focus coin ──
 function ovSelectCoin(key){
   ovFocusCoin = key;
+
+  // currentCoinも切り替えてbotStatesを連動させる
+  if(currentCoin !== key){
+    saveBotArena();  // 現在のコインのbot状態を保存
+    currentCoin = key;
+    localStorage.setItem('selectedCoin', key);
+    initBotArena();  // 新しいコインのbot状態をロード
+
+    // UI更新: data-coin-name, Bot Arenaコイン名, ボタンactive
+    document.querySelectorAll('[data-coin-name]')
+      .forEach(el => el.textContent = COINS[key].name);
+    document.title = COINS[key].name + '先物 スキャルシグナル';
+    const baCN = document.getElementById('baCoinName');
+    if(baCN) baCN.textContent = COINS[key].name;
+    const baTC = document.getElementById('baTabCoin');
+    if(baTC) baTC.textContent = COINS[key].name;
+    // コインボタンactive更新（総合内での選択なのでcoin-btnのactiveは外したまま）
+    document.querySelectorAll('.coin-btn[data-coin]').forEach(b =>
+      b.classList.remove('active'));
+  }
+
   // Re-fetch 5m/15m for new focus
   const fp = COINS[key].pair;
   Promise.allSettled([

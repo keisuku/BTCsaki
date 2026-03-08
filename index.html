@@ -808,6 +808,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .notif-btn.active.type-entry{background:rgba(0,212,255,.15);color:var(--accent);border-color:var(--accent);}
 .notif-btn.active.type-tp{background:rgba(0,255,136,.15);color:var(--green);border-color:var(--green);}
 .notif-btn.active.type-sl{background:rgba(255,45,85,.12);color:var(--red);border-color:var(--red);}
+.notif-btn.active.type-night{background:rgba(138,43,226,.15);color:#b388ff;border-color:#b388ff;}
+.night-notif-indicator{font-size:.52rem;color:var(--dim);margin-left:2px;}
 </style>
 
 </head>
@@ -5666,6 +5668,33 @@ function toggleNotif(coin, catKey, type){
   renderLeaderboard();
 }
 
+// Night notification control (21:00-6:30 default OFF)
+let nightNotifEnabled = false;
+function loadNightNotif(){
+  try{ nightNotifEnabled = JSON.parse(localStorage.getItem('nightNotifEnabled_v1')) === true; }catch(e){ nightNotifEnabled = false; }
+}
+function saveNightNotif(){
+  try{ localStorage.setItem('nightNotifEnabled_v1', JSON.stringify(nightNotifEnabled)); }catch(e){}
+}
+loadNightNotif();
+
+function isNightTime(){
+  const h = new Date().getHours(), m = new Date().getMinutes();
+  // 21:00 ~ 6:30 is night
+  return h >= 21 || h < 6 || (h === 6 && m < 30);
+}
+
+function isNotifBlockedByNight(){
+  return isNightTime() && !nightNotifEnabled;
+}
+
+function toggleNightNotif(){
+  nightNotifEnabled = !nightNotifEnabled;
+  if(nightNotifEnabled) requestNotifPermission();
+  saveNightNotif();
+  renderLeaderboard();
+}
+
 // Request browser notification permission
 function requestNotifPermission(){
   if(!('Notification' in window)) return;
@@ -5677,6 +5706,7 @@ function requestNotifPermission(){
 // Send a push notification
 function sendBotNotification(def, type, opts){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  if(isNotifBlockedByNight()) return;
   const catKey = `${def.tf}_${def.style}`;
   if(!isNotifEnabled(currentCoin, catKey, type)) return;
 
@@ -5911,6 +5941,9 @@ function renderLeaderboard(){
         <button class="notif-btn ${isNotifEnabled(currentCoin,catKey,'entry')?'active type-entry':''}" onclick="event.stopPropagation();toggleNotif('${currentCoin}','${catKey}','entry')">ポジション保有</button>
         <button class="notif-btn ${isNotifEnabled(currentCoin,catKey,'tp')?'active type-tp':''}" onclick="event.stopPropagation();toggleNotif('${currentCoin}','${catKey}','tp')">利確</button>
         <button class="notif-btn ${isNotifEnabled(currentCoin,catKey,'sl')?'active type-sl':''}" onclick="event.stopPropagation();toggleNotif('${currentCoin}','${catKey}','sl')">損切り</button>
+        <span style="margin-left:4px;color:var(--border);">|</span>
+        <button class="notif-btn ${nightNotifEnabled?'active type-night':''}" onclick="event.stopPropagation();toggleNightNotif()">🌙 ナイト通知</button>
+        ${isNightTime() ? '<span class="night-notif-indicator">' + (nightNotifEnabled ? '🌙夜間通知ON' : '🌙夜間通知OFF(21-6:30)') + '</span>' : ''}
       </div>
       <div id="catExpand_${catKey}" class="ba-cat-expand" style="display:none;"></div>
     </div>`;

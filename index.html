@@ -3396,14 +3396,19 @@ function restartUpdLoop(){
 
 // Fast fetch: only price + klines (no heavy APIs for high-speed refresh)
 async function fastFetch(){
+  const coinAtStart = currentCoin;
   try{
     await fetchPrice();
+    // Guard: if coin changed during async fetch, discard stale data
+    if(currentCoin !== coinAtStart){ S.price = 0; return; }
     const [r5,r15,r1h,r4h] = await Promise.allSettled([
       fetchKlines('5m',50).then(d=>S.k5=d),
       fetchKlines('15m',50).then(d=>S.k15=d),
       fetchKlines('1h',50).then(d=>S.k1h=d),
       fetchKlines('4h',50).then(d=>S.k4h=d),
     ]);
+    // Guard again after kline fetch
+    if(currentCoin !== coinAtStart){ S.price = 0; return; }
     renderAll();
     renderEntryTiming();
     renderPriceRange();
@@ -4345,6 +4350,22 @@ function initBotArena(){
   // Clean up old bot states that no longer exist in ALL_BOTS
   const validIds = new Set(ALL_BOTS.map(d=>d.id));
   Object.keys(botStates).forEach(id=>{ if(!validIds.has(id)) delete botStates[id]; });
+  // Purge anomalous trades caused by cross-coin price contamination (|pnlPct| > 50% is impossible for scalp/swing bots)
+  Object.values(botStates).forEach(bs=>{
+    if(!bs || !bs.trades) return;
+    const before = bs.trades.length;
+    bs.trades = bs.trades.filter(t=> Math.abs(t.pnlPct) <= 50);
+    if(bs.trades.length < before){
+      // Recalculate totalPnlPct/wins/losses from clean trades
+      bs.totalWins = bs.trades.filter(t=>t.win).length;
+      bs.totalLosses = bs.trades.filter(t=>!t.win).length;
+      bs.totalPnlPct = +(bs.trades.reduce((s,t)=>s+t.pnlPct, 0)).toFixed(3);
+      // Rebuild dailyStats from clean trades
+      bs.dailyStats = [];
+    }
+    // Also discard positions with suspicious entry prices (will be validated on next tick)
+    if(bs.position && bs.position.entry <= 0) bs.position = null;
+  });
   // Backfill missing dailyStats from trade history
   backfillDailyStats();
   schedulePDCA();
@@ -4678,6 +4699,8 @@ function ovSelectCoin(key){
     saveBotArena();  // 現在のコインのbot状態を保存
     currentCoin = key;
     localStorage.setItem('selectedCoin', key);
+    // Reset price/kline state to prevent cross-coin contamination
+    S.price=0; S.p24h=0; S.k5=[]; S.k15=[]; S.k1h=[]; S.k4h=[]; S.k1d=[];
     initBotArena();  // 新しいコインのbot状態をロード
 
     // UI更新: data-coin-name, Bot Arenaコイン名, ボタンactive
@@ -5569,6 +5592,16 @@ function checkBotExit(def, state, price, now){
   const pos = state.position;
   const p = state.params;
   if(!pos) return;
+
+  // Sanity check: if price vs entry differs by more than 10x, data is cross-coin contaminated — force close at 0% PnL
+  const priceRatio = price / pos.entry;
+  if(priceRatio > 10 || priceRatio < 0.1){
+    state.position = null;
+    state.status = 'watching';
+    state.lastTradeTime = now;
+    state.lastMsg = `${def.name}: 異常価格検知 — ポジション破棄 (entry=$${pos.entry.toLocaleString()}, price=$${price.toLocaleString()})`;
+    return;
+  }
 
   const isLong = pos.dir === 'LONG';
   const pnlPct = isLong ? (price - pos.entry)/pos.entry*100 : (pos.entry - price)/pos.entry*100;

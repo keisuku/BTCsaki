@@ -1,0 +1,88 @@
+============================================================
+ Seedance 2.0 プロンプト — TORICOちゃん「イーサリアム！」
+ スタイル: リアル調（実写/コスプレ風）
+============================================================
+
+【メインプロンプト（185語版・推奨）】
+
+@Image1 storyboard reference. @Image2 character reference.
+
+Photorealistic cinematic style, shallow depth of field, anamorphic lens flare.
+A young woman with long white-silver hair, red fabric headband,
+red sleeveless dress, flowing blue cape with blue interior,
+blue gem pendant necklace, white long gloves past the elbow,
+white thigh-high socks, vivid blue eyes. Dark cosmic void with
+faint hexagonal blockchain grid.
+
+0-2s: Hand on glowing blue pendant, eyes closed then snapping open
+glowing bright blue. Blue luminous energy threads stream upward
+from pendant. Silver hair floats upward catching blue light.
+Slow camera push-in toward her face.
+
+2-5s: Arms raised wide. Blue energy threads connect to floating
+octahedral crystal nodes forming a spherical validator network.
+She shouts with fierce determination. Nodes flash in rapid
+sequence like consensus wave. Camera pulls to wide low-angle shot.
+
+5-8s: Nodes converge above her hands. Glowing data particles stream
+inward. Massive crystalline Ethereum octahedron forges at convergence.
+Octahedron splits into orange and blue halves, merges back with
+brilliant flash and expanding shockwave ring. Slow orbital camera.
+
+8-10s: Shockwave transforms void into vast crystalline geometric
+city of blue light stretching to horizon. She floats center, cape
+flowing majestically, completed octahedron orbiting above like crown.
+Final hero pose, hand extended toward camera, confident expression.
+Static wide shot, dramatic backlighting.
+
+Maintain face and clothing consistency, no facial distortion,
+stable human anatomy, natural smooth movements. Cinematic dramatic
+lighting, blue-indigo dominant palette, orange accent only at merge.
+Epic orchestral crescendo, crystalline chimes, deep boom on shockwave.
+
+
+============================================================
+
+【ショート版プロンプト（120語版・より安全）】
+
+@Image1 storyboard. @Image2 character ref.
+
+Photorealistic cinematic, anamorphic lens. Young woman: long silver
+hair, red headband, red dress, blue cape, blue gem pendant, white
+gloves, white thigh-highs, blue eyes. Dark cosmic void, hex grid.
+
+0-2s: Hand on glowing pendant, eyes snap open glowing blue.
+Energy threads rise. Hair floats. Push-in camera.
+
+2-5s: Arms wide. Energy connects to octahedral crystal nodes
+in sphere formation. She shouts fiercely. Nodes flash sequentially.
+Pull-back low-angle wide.
+
+5-8s: Nodes converge above hands. Data particles stream in.
+Ethereum octahedron crystallizes, splits orange/blue, re-merges
+with flash and shockwave. Orbital camera.
+
+8-10s: Shockwave creates crystalline blue city to horizon.
+She floats center, cape flowing, octahedron orbiting above.
+Hero pose, hand toward camera. Static wide, backlit.
+
+Consistent face/clothing, no distortion, smooth motion.
+Blue-indigo lighting, orange at merge only. Orchestral crescendo.
+
+
+============================================================
+
+【参照ファイル構成】
+
+@Image1 = 3x3ストーリーボードグリッド（9パネル展開）
+@Image2 = TORICOちゃんキャラクター一貫性シート or コスプレ参照写真
+@Image3 = イーサリアム八面体3Dレンダー（任意）
+
+============================================================
+
+【スタイル参考キーワード】
+- Doctor Strange mirror dimension visual effects
+- Fate/Stay Night Unlimited Blade Works gem magic
+- Makoto Shinkai lens flare and lighting
+- Ethereum The Merge orange-blue fusion artwork
+- Matrix data particle streams

@@ -1,0 +1,223 @@
+============================================================
+ Nano Banana Pro — ストーリーボード画像生成プロンプト集
+ TORICOちゃん「イーサリアム！」
+ スタイル: リアル調（実写/コスプレ風）
+============================================================
+
+【重要】
+- 全パネルで以下のキャラ描写を統一すること
+- コスプレ参照写真を一緒にアップロードして「この人物の外見を維持」と指示
+- 9コマを1枚の3x3グリッド画像として生成する
+- 解像度: 2K以上推奨
+
+============================================================
+【キャラクター統一描写（全プロンプト共通）】
+
+A young woman in photorealistic cosplay style: long flowing
+white-silver hair, thin red fabric headband, red sleeveless
+A-line dress, dark blue cape with blue satin interior lining,
+blue crystal gem pendant necklace at chest, white long opera
+gloves past the elbow, white thigh-high socks, vivid blue eyes,
+fair skin, delicate features.
+============================================================
+
+
+■■■ 方法A: 1枚の画像に9コマグリッドを直接生成 ■■■
+
+【プロンプト（Image 1: メインストーリーボード）】
+
+Create a 3x3 grid storyboard image, photorealistic cinematic
+style, consistent character across all 9 panels. The character
+is a young woman cosplayer with long white-silver hair, red
+headband, red sleeveless dress, blue cape, blue gem pendant,
+white opera gloves, white thigh-high socks, blue eyes.
+
+Panel layout (left to right, top to bottom):
+
+1. Medium shot: She stands in dark cosmic void with faint blue
+   hexagonal grid. Right hand on glowing blue gem pendant, eyes
+   closed. Serene, anticipatory mood.
+
+2. Close-up face/chest: Eyes snapping open, glowing vivid blue.
+   Blue luminous energy threads streaming upward from pendant.
+   White hair floating upward in blue light.
+
+3. Wide shot: Both arms spread wide. Blue energy threads extend
+   outward connecting to small glowing octahedral crystal nodes
+   floating in spherical arrangement around her. Network of light
+   lines between nodes. Ethereal blue magic circle aesthetic.
+
+4. Medium shot, low angle heroic framing: Mouth open wide shouting.
+   Fierce determined expression. Red dress contrasts against blue
+   energy. The crystal nodes flash with light in sequence around her.
+
+5. Wide shot: All crystal nodes converging upward above her raised
+   hands. Streams of glowing data particles flowing along connection
+   lines toward center. Small brilliant Ethereum-shaped octahedron
+   crystallizing above her hands. Cape flaring dramatically upward.
+
+6. Close-up: Massive faceted Ethereum octahedron crystal above her
+   white-gloved hands. Translucent crystal with swirling light data
+   inside. Hands framing from below, fingers spread. Shallow depth
+   of field, dreamy bokeh.
+
+7. Wide shot: The octahedron split into two halves — one glowing
+   orange, one glowing blue — slamming back together with blinding
+   white flash. Circular shockwave ring expanding outward. Most
+   dramatic and intense panel.
+
+8. Wide shot: Dark void transformed into vast crystalline geometric
+   city of blue light stretching to horizon. She floats at center,
+   cape flowing majestically. Completed octahedron orbiting above
+   her head like a crown.
+
+9. Final hero shot: One hand extended toward viewer palm-out, confident
+   calm expression. Massive Ethereum octahedron floating behind her
+   like a sun. Geometric crystal city to horizon. Dramatic backlight.
+   Faint arc of light reading "TORICO" across the sky like constellation.
+
+Consistent lighting (blue-indigo dominant, cinematic). High detail,
+4K quality, professional VFX film aesthetic. Each panel clearly
+separated by thin borders.
+
+
+============================================================
+
+【プロンプト（Image 2: キャラクター一貫性シート）】
+
+Create a 3x3 character reference sheet grid, photorealistic cosplay
+style, same young woman in all 9 panels. She has long white-silver
+hair, thin red fabric headband, red sleeveless A-line dress, dark
+blue cape with blue satin lining, blue crystal gem pendant at chest,
+white long opera gloves, white thigh-high socks, vivid blue eyes.
+
+Panel layout:
+1. Front view, full body, neutral standing pose, soft studio lighting
+2. Three-quarter view, showing cape drape and silhouette
+3. Side profile, showing headband detail and hair flow
+4. Face close-up, eyes open, neutral expression, beauty lighting
+5. Face close-up, eyes glowing bright blue (magical activation)
+6. Face close-up, mouth open wide shouting, fierce expression
+7. Hands close-up, white opera gloves, fingers spread elegantly
+8. Chest close-up, blue gem pendant glowing with blue light
+9. Full body, dynamic action pose, cape billowing dramatically
+
+Clean white or neutral gray background. Consistent character design
+across all panels. Professional character turnaround sheet aesthetic.
+4K quality, thin borders between panels.
+
+
+============================================================
+
+■■■ 方法B: 個別パネルを生成して後で結合 ■■■
+（より高品質だが手間がかかる）
+
+各パネルを個別に生成し、Canva等で3x3グリッドに結合する方法。
+以下は各パネルの個別プロンプト：
+
+---
+
+【Panel 1 — 構え】
+Photorealistic cinematic shot. A young woman cosplayer with long
+white-silver hair, red headband, red sleeveless dress, blue cape,
+blue gem pendant, white gloves, white thigh-high socks stands in
+a dark cosmic void. Faint blue hexagonal grid pattern in background.
+Her right hand rests on the glowing blue gem pendant at her chest.
+Eyes closed, serene expression. Medium shot, soft blue rim lighting.
+4K, shallow depth of field, anamorphic lens.
+
+---
+
+【Panel 2 — 覚醒】
+Photorealistic cinematic close-up. Same young woman, white-silver
+hair now floating upward catching blue light. Her eyes have just
+snapped open — vivid glowing blue irises. Thin blue luminous energy
+threads stream upward from the blue gem pendant at her chest.
+Expression of awakening power. Close-up on face and upper body.
+Blue volumetric lighting from below. 4K, anamorphic bokeh.
+
+---
+
+【Panel 3 — ネットワーク展開】
+Photorealistic cinematic wide shot. Same young woman, both arms
+spread wide. Blue energy threads extend outward from her pendant
+in all directions. The threads connect to 8-12 small floating
+octahedral crystal nodes arranged in a sphere around her. Nodes
+glow blue-white and are connected to each other by thin light lines,
+forming a network/magic circle. Dark cosmic void background with
+hexagonal grid now glowing brighter. 4K, dramatic wide framing.
+
+---
+
+【Panel 4 — 叫び】
+Photorealistic cinematic medium shot, low angle heroic framing.
+Same young woman, mouth open wide, shouting with fierce determined
+expression. Red dress creates striking contrast against surrounding
+blue energy. The octahedral crystal nodes around her flash with
+light in rapid sequence. Light ripple propagating through the
+network. Dramatic rim lighting. 4K, anamorphic lens flare.
+
+---
+
+【Panel 5 — 収束】
+Photorealistic cinematic wide shot. Same young woman, arms raised
+upward. All octahedral crystal nodes converging toward a single
+point above her hands. Streams of glowing particles (like data/code)
+flowing along the connection lines toward the convergence point.
+A small, intensely bright Ethereum-shaped octahedron begins
+crystallizing at the focal point. Her blue cape flares dramatically
+upward from energy updraft. 4K, volumetric blue light.
+
+---
+
+【Panel 6 — 鍛造】
+Photorealistic cinematic close-up. A massive faceted crystalline
+Ethereum octahedron hovers above white-gloved hands. The crystal
+is translucent with swirling galaxies of light data inside — like
+smart contracts being written in light. The surface shows geometric
+diamond facets. Her white-gloved hands frame it from below, fingers
+spread. Shallow depth of field with beautiful bokeh. 4K.
+
+---
+
+【Panel 7 — The Merge ★クライマックス】
+Photorealistic cinematic VFX wide shot. A massive crystalline
+octahedron has split into two halves: left half glows intense orange,
+right half glows intense blue. They are slamming back together in the
+center with a blinding white flash at the contact point. A circular
+shockwave ring of light expands outward from the fusion. Same young
+woman silhouetted below. Most dramatic and intense lighting. 4K,
+high-contrast, lens flare.
+
+---
+
+【Panel 8 — 世界変容】
+Photorealistic cinematic wide aerial shot. Where there was dark void,
+now a vast crystalline geometric city of blue light rises to the
+horizon. Tall prismatic structures, geometric spires, light bridges.
+Same young woman floats at the center, cape flowing majestically.
+The completed Ethereum octahedron orbits above her head like a
+luminous crown. Blue and white color palette. 4K, epic scale.
+
+---
+
+【Panel 9 — アイコン（最終フレーム/サムネイル）】
+Photorealistic cinematic hero shot. Same young woman in powerful
+stance. One hand extended toward the viewer, palm out, presenting
+her creation. Confident, calm, visionary expression. The massive
+Ethereum octahedron floats behind her radiating light like a sun.
+The geometric crystal city of blue light extends to the horizon.
+Dramatic backlight silhouette edge. A faint arc of light across
+the sky suggests the text "TORICO" like a constellation. 4K,
+iconic composition, poster-worthy framing.
+
+
+============================================================
+【補足: ETH八面体参照画像用プロンプト（@Image3用）】
+
+A perfect 3D render of the Ethereum logo as a physical crystalline
+octahedron. Translucent blue-white crystal material with internal
+light refraction. The classic Ethereum diamond/octahedron shape,
+geometrically precise. Floating against a dark background. Subtle
+blue glow emanating from within. Photorealistic crystal material
+with caustics and light dispersion. Studio lighting, 4K render.

@@ -6651,7 +6651,7 @@ function runDailyPDCA(){
         }
       });
 
-      ['scoreEntry','rsiOB','rsiOS','fgExtreme','fgGreed','lsThresh','frThresh','atrMultiple'].forEach(key=>{
+      ['scoreEntry','rsiOB','rsiOS','fgExtreme','fgGreed','lsThresh','frThresh','atrMultiple','tpAtrMult','slAtrMult','trailAtrMult'].forEach(key=>{
         if(winParams[key] !== undefined && loseParams[key] !== undefined){
           const old = loseParams[key];
           const diff = winParams[key] - loseParams[key];

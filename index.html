@@ -694,6 +694,52 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-pdca-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;color:#c4b5fd;font-family:'Share Tech Mono',monospace;margin-bottom:8px;}
 .ba-pdca-log{font-size:.8rem;color:var(--dim);line-height:1.55;}
 
+/* ══ BOT ENTRY/EXIT ANIMATIONS ══ */
+@keyframes bot-entry-flash{
+  0%{box-shadow:0 0 0 rgba(0,255,136,0);transform:scale(1);}
+  25%{box-shadow:0 0 40px rgba(0,255,136,0.6);transform:scale(1.02);}
+  50%{box-shadow:0 0 80px rgba(0,255,136,0.3);transform:scale(1.01);}
+  100%{box-shadow:0 0 0 rgba(0,255,136,0);transform:scale(1);}
+}
+@keyframes bot-tp-flash{
+  0%{box-shadow:0 0 0 rgba(0,255,136,0);background:rgba(0,255,136,0);}
+  30%{box-shadow:0 0 60px rgba(0,255,136,0.5);background:rgba(0,255,136,0.08);}
+  100%{box-shadow:0 0 0 rgba(0,255,136,0);background:rgba(0,255,136,0);}
+}
+@keyframes bot-sl-shake{
+  0%,100%{transform:translateX(0);}
+  20%,60%{transform:translateX(-3px);}
+  40%,80%{transform:translateX(3px);}
+}
+.bot-entering{animation:bot-entry-flash 1.5s ease-out;}
+.bot-tp-hit{animation:bot-tp-flash 2s ease-out;}
+.bot-sl-hit{animation:bot-sl-shake 0.5s ease-out;}
+
+/* ══ BOT RANK BADGES ══ */
+.bot-rank-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.65rem;font-weight:700;margin-left:4px;letter-spacing:.05em;}
+.bot-rank-1{background:rgba(205,127,50,0.2);color:#cd7f32;}
+.bot-rank-2{background:rgba(192,192,192,0.2);color:#c0c0c0;}
+.bot-rank-3{background:rgba(255,215,0,0.2);color:#ffd700;}
+.bot-rank-4{background:rgba(0,212,255,0.2);color:#00d4ff;}
+.bot-rank-5{background:rgba(255,0,128,0.2);color:#ff0080;text-shadow:0 0 8px rgba(255,0,128,0.5);}
+
+/* ══ REGIME INDICATOR ══ */
+.regime-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;margin-left:8px;}
+.regime-uptrend{background:rgba(0,255,136,0.15);color:var(--green);border:1px solid rgba(0,255,136,0.3);}
+.regime-downtrend{background:rgba(255,45,85,0.15);color:var(--red);border:1px solid rgba(255,45,85,0.3);}
+.regime-range{background:rgba(255,214,10,0.15);color:var(--yellow);border:1px solid rgba(255,214,10,0.3);}
+.regime-high_volatility{background:rgba(255,107,53,0.15);color:var(--orange);border:1px solid rgba(255,107,53,0.3);}
+.regime-unknown{background:rgba(90,122,138,0.15);color:var(--dim);border:1px solid rgba(90,122,138,0.3);}
+
+/* ══ USER PREDICTION BATTLE ══ */
+.pred-btn{padding:6px 16px;border:2px solid;border-radius:6px;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;font-family:'Share Tech Mono',monospace;background:transparent;}
+.pred-btn-long{color:var(--green);border-color:var(--green);}
+.pred-btn-long:hover{background:rgba(0,255,136,0.15);}
+.pred-btn-short{color:var(--red);border-color:var(--red);}
+.pred-btn-short:hover{background:rgba(255,45,85,0.15);}
+.pred-active{opacity:0.5;pointer-events:none;}
+#predictionPanel{margin:12px 0;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+
 /* ══ CONSENSUS SIGNAL ══ */
 .ba-consensus{padding:12px 16px;margin:8px 0;border-radius:8px;border:2px solid;background:rgba(0,0,0,0.3);animation:consensusPulse 2s infinite;}
 @keyframes consensusPulse{0%,100%{opacity:1;}50%{opacity:.85;}}
@@ -1587,6 +1633,16 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     </div>
   </div>
   <div id="baConsensus" style="display:none;"></div>
+  <div id="predictionPanel">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:.82rem;font-weight:700;color:var(--accent);">🎯 予測バトル</span>
+      <span style="font-size:.72rem;color:var(--dim);">次の1時間の方向を予測してbotに挑戦</span>
+      <button class="pred-btn pred-btn-long" id="predBtnLong" onclick="makeUserPrediction('LONG')">▲ LONG</button>
+      <button class="pred-btn pred-btn-short" id="predBtnShort" onclick="makeUserPrediction('SHORT')">▼ SHORT</button>
+      <span id="predStatus" style="font-size:.72rem;color:var(--dim);"></span>
+    </div>
+    <div id="predHistory" style="margin-top:8px;font-size:.72rem;color:var(--dim);"></div>
+  </div>
   <div class="ba-leaders" id="baLeaders"></div>
   <div class="ba-log-title">💀 養分枠 — 生涯成績ワースト2名（子botのみ）</div>
   <div class="ba-worst" id="baWorst"><div style="color:var(--dim);font-size:.8rem;">データ蓄積中...（最低3回トレード後に表示）</div></div>
@@ -3252,7 +3308,7 @@ async function fullFetch(){
   document.getElementById('apiSt').textContent='更新中...';
   try{
     await fetchPrice(); setDot('ds-price','ok');
-    await Promise.allSettled([fetchFR(), fetchLS(), fetchOI(), fetchDXY()]);
+    await Promise.allSettled([fetchFR(), fetchLS(), fetchOI(), fetchDXY(), fetchBasisSpread()]);
     const results=await Promise.allSettled([
       fetchKlines('5m',100),fetchKlines('15m',100),
       fetchKlines('1h',100),fetchKlines('4h',100),fetchKlines('1d',60)
@@ -3908,6 +3964,155 @@ function calcATR(klines, period=14) {
 }
 
 // ═══════════════════════════════════════════════
+// MULTI-CONFIRMATION HELPERS
+// ═══════════════════════════════════════════════
+
+// オーダーフロー推定: 直近n本の出来高×価格変動方向の累積
+function calcOrderFlow(klines, n) {
+  if (!klines || klines.length < n) return 0;
+  const recent = klines.slice(-n);
+  return recent.reduce((sum, k) => {
+    const vol = parseFloat(k[5]);
+    const delta = parseFloat(k[4]) - parseFloat(k[1]);
+    return sum + vol * Math.sign(delta);
+  }, 0);
+}
+
+// ボラティリティフィルター: ATR(14)が20期間平均レンジの0.7〜1.5倍か
+function checkVolatilityFilter(klines) {
+  if (!klines || klines.length < 30) return true; // データ不足時はパス
+  const atr = calcATR(klines, 14);
+  const ranges = klines.slice(-30).map(k => parseFloat(k[2]) - parseFloat(k[3]));
+  const avgRange = calcSMA(ranges, 20);
+  if (avgRange <= 0) return true;
+  return atr > avgRange * 0.7 && atr < avgRange * 1.5;
+}
+
+// 上位TFの方向を取得
+function getUpperTFDirection(tf) {
+  const upperMap = { '5m': '15m', '15m': '1h', '1h': '4h', '4h': '1d' };
+  const upperTF = upperMap[tf];
+  if (!upperTF) return null;
+  const r = botComputeTF(upperTF);
+  return r ? r.signal : null;
+}
+
+// 動的ATRベースTP/SL計算
+function calcDynamicTPSL(price, dir, tf, params) {
+  const klines = KL[tf]();
+  if (!klines || klines.length < 20) {
+    // フォールバック: 従来の固定%方式
+    const tp = dir === 'LONG' ? price * (1 + params.tpPct / 100) : price * (1 - params.tpPct / 100);
+    const sl = dir === 'LONG' ? price * (1 - params.slPct / 100) : price * (1 + params.slPct / 100);
+    return { tp, sl };
+  }
+  const atr = calcATR(klines, 14);
+  const atrPct = (atr / price) * 100;
+  const tpMult = params.tpAtrMult || 2.0;
+  const slMult = params.slAtrMult || 1.0;
+  const tpDist = atrPct * tpMult;
+  const slDist = atrPct * slMult;
+  if (dir === 'LONG') {
+    return { tp: price * (1 + tpDist / 100), sl: price * (1 - slDist / 100) };
+  } else {
+    return { tp: price * (1 - tpDist / 100), sl: price * (1 + slDist / 100) };
+  }
+}
+
+// トレーリングストップ更新
+function updateTrailingStop(state, price, tf) {
+  const pos = state.position;
+  if (!pos) return;
+  const klines = KL[tf]();
+  const atr = calcATR(klines, 14);
+  const trailDist = atr * (state.params.trailAtrMult || 1.2);
+  const profitThreshold = atr * 1.5;
+
+  if (pos.dir === 'LONG') {
+    if (price - pos.entry > profitThreshold) pos.trailingActive = true;
+    if (pos.trailingActive) {
+      const newSL = price - trailDist;
+      if (newSL > pos.sl) { pos.sl = newSL; pos.trailingTriggered = true; }
+    }
+  } else {
+    if (pos.entry - price > profitThreshold) pos.trailingActive = true;
+    if (pos.trailingActive) {
+      const newSL = price + trailDist;
+      if (newSL < pos.sl) { pos.sl = newSL; pos.trailingTriggered = true; }
+    }
+  }
+}
+
+// マーケットレジーム検出 (1h足から判定)
+function detectMarketRegime() {
+  const k1h = S.k1h?.slice(-24) || [];
+  if (k1h.length < 20) return 'unknown';
+  const closes = k1h.map(k => parseFloat(k[4]));
+  const atr = calcATR(k1h, 14);
+  const atrPct = (atr / closes[closes.length - 1]) * 100;
+  const sma20 = calcSMA(closes, 20);
+  const trendStrength = Math.abs(closes[closes.length - 1] - sma20) / sma20 * 100;
+  const highs = k1h.map(k => parseFloat(k[2]));
+  const lows = k1h.map(k => parseFloat(k[3]));
+  let dmPlus = 0, dmMinus = 0;
+  for (let i = 1; i < k1h.length; i++) {
+    const upMove = highs[i] - highs[i - 1];
+    const downMove = lows[i - 1] - lows[i];
+    if (upMove > downMove && upMove > 0) dmPlus += upMove;
+    if (downMove > upMove && downMove > 0) dmMinus += downMove;
+  }
+  if (atrPct > 2.5) return 'high_volatility';
+  if (trendStrength > 1.5 && dmPlus > dmMinus * 1.5) return 'uptrend';
+  if (trendStrength > 1.5 && dmMinus > dmPlus * 1.5) return 'downtrend';
+  return 'range';
+}
+
+// レジームに応じてbotのスコア閾値を調整
+let currentRegime = 'unknown';
+function applyRegimeModifiers() {
+  const regime = detectMarketRegime();
+  currentRegime = regime;
+  ALL_BOTS.forEach(def => {
+    const bs = botStates[def.id];
+    if (!bs) return;
+    switch (regime) {
+      case 'high_volatility':
+        bs._regimeBonus = def.style === 'counter' ? -5 : 8;
+        break;
+      case 'uptrend': case 'downtrend':
+        bs._regimeBonus = def.style === 'trend' ? -5 : 5;
+        break;
+      case 'range':
+        bs._regimeBonus = def.style === 'counter' ? -3 : 5;
+        break;
+      default: bs._regimeBonus = 0;
+    }
+  });
+  return regime;
+}
+
+// Botランク判定
+function getBotRank(state) {
+  const total = state.totalWins + state.totalLosses;
+  const wr = total > 0 ? state.totalWins / total : 0;
+  if (wr >= 0.65 && total >= 100 && state.totalPnlPct >= 15) return { rank: 5, label: '神', icon: '👑' };
+  if (wr >= 0.60 && total >= 50 && state.totalPnlPct >= 5) return { rank: 4, label: 'レジェンド', icon: '💎' };
+  if (wr >= 0.55 && total >= 20) return { rank: 3, label: 'エリート', icon: '🥇' };
+  if (total >= 10) return { rank: 2, label: 'ベテラン', icon: '🥈' };
+  return { rank: 1, label: 'ルーキー', icon: '🥉' };
+}
+
+// 連敗カウント
+function countConsecutiveLosses(trades) {
+  let count = 0;
+  for (let i = trades.length - 1; i >= 0; i--) {
+    if (!trades[i].win) count++;
+    else break;
+  }
+  return count;
+}
+
+// ═══════════════════════════════════════════════
 // SWING LEVELS — find recent swing highs/lows
 // ═══════════════════════════════════════════════
 function findSwingLevels(klines, lookback=30) {
@@ -4293,14 +4498,14 @@ let ALL_BOTS = [...BOT_DEFS, ...BOT_CHILDREN];
 
 // Bot parameters (tunable by PDCA)
 const BOT_DEFAULT_PARAMS = {
-  john:  { scoreEntry:65, scoreExit:45, rsiBull:55, rsiBear:45, tpPct:0.30, slPct:0.15, timeoutMin:15, cooldownMin:3 },
-  mike:  { rsiOB:72, rsiOS:28, bbEntry:true, tpPct:0.25, slPct:0.15, timeoutMin:12, cooldownMin:3 },
-  sarah: { scoreEntry:68, smaCross:true, vwapConfirm:true, tpPct:0.45, slPct:0.20, timeoutMin:30, cooldownMin:5 },
-  emma:  { rsiDiv:true, frThresh:0.03, rsiOB:70, rsiOS:30, tpPct:0.40, slPct:0.20, timeoutMin:30, cooldownMin:5 },
-  alex:  { scoreEntry:65, multiTfAlign:true, deltaConfirm:true, tpPct:0.60, slPct:0.30, timeoutMin:60, cooldownMin:10 },
-  yuki:  { fgExtreme:25, fgGreed:75, lsThresh:62, bbEntry:true, tpPct:0.70, slPct:0.35, timeoutMin:90, cooldownMin:15 },
-  delta: { scoreEntry:62, deltaConfirm:true, tpPct:0.40, slPct:0.20, timeoutMin:25, cooldownMin:5 },
-  atr:   { atrMultiple:1.5, rsiOB:72, rsiOS:28, tpPct:0.55, slPct:0.30, timeoutMin:60, cooldownMin:10 },
+  john:  { scoreEntry:65, scoreExit:45, rsiBull:55, rsiBear:45, tpPct:0.30, slPct:0.15, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:15, cooldownMin:3 },
+  mike:  { rsiOB:72, rsiOS:28, bbEntry:true, tpPct:0.25, slPct:0.15, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:12, cooldownMin:3 },
+  sarah: { scoreEntry:68, smaCross:true, vwapConfirm:true, tpPct:0.45, slPct:0.20, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:30, cooldownMin:5 },
+  emma:  { rsiDiv:true, frThresh:0.03, rsiOB:70, rsiOS:30, tpPct:0.40, slPct:0.20, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:30, cooldownMin:5 },
+  alex:  { scoreEntry:65, multiTfAlign:true, deltaConfirm:true, tpPct:0.60, slPct:0.30, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:60, cooldownMin:10 },
+  yuki:  { fgExtreme:25, fgGreed:75, lsThresh:62, bbEntry:true, tpPct:0.70, slPct:0.35, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:90, cooldownMin:15 },
+  delta: { scoreEntry:62, deltaConfirm:true, tpPct:0.40, slPct:0.20, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:25, cooldownMin:5 },
+  atr:   { atrMultiple:1.5, rsiOB:72, rsiOS:28, tpPct:0.55, slPct:0.30, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:60, cooldownMin:10 },
 };
 
 // Generate child bot default params from mother params + variant modifiers
@@ -4369,6 +4574,7 @@ function initBotArena(){
   // Backfill missing dailyStats from trade history
   backfillDailyStats();
   schedulePDCA();
+  scheduleMicroPDCA();
 }
 
 // トレード履歴からdailyStatsの欠損日を復元する
@@ -5407,19 +5613,23 @@ function checkBotEntry(def, state, price, now){
   let reason = '';
   let readyMsg = '';
 
+  // レジームボーナスを加味した有効スコア閾値
+  const regimeBonus = state._regimeBonus || 0;
+  const effectiveScoreEntry = Math.max(50, Math.min(90, (p.scoreEntry || 65) + regimeBonus));
+
   const strategyKey = def.strategy || def.id;
   switch(strategyKey){
     case 'john': { // 5m trend follow
-      if(score >= p.scoreEntry && inds.trend && inds.trend.cls==='bull' && (!inds.rsi || inds.rsi.cls!=='bear')){
+      if(score >= effectiveScoreEntry && inds.trend && inds.trend.cls==='bull' && (!inds.rsi || inds.rsi.cls!=='bear')){
         signal = 'LONG';
         reason = `スコア${score} + SMAトレンド上昇` + (inds.delta?` + ${inds.delta.badge}`:'');
-      } else if(score <= (100-p.scoreEntry) && inds.trend && inds.trend.cls==='bear' && (!inds.rsi || inds.rsi.cls!=='bull')){
+      } else if(score <= (100-effectiveScoreEntry) && inds.trend && inds.trend.cls==='bear' && (!inds.rsi || inds.rsi.cls!=='bull')){
         signal = 'SHORT';
         reason = `スコア${score} + SMAトレンド下降` + (inds.delta?` + ${inds.delta.badge}`:'');
-      } else if(score >= (p.scoreEntry-8)){
+      } else if(score >= (effectiveScoreEntry-8)){
         state.status = 'ready';
         state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}で上昇準備中` };
-      } else if(score <= (100-p.scoreEntry+8)){
+      } else if(score <= (100-effectiveScoreEntry+8)){
         state.status = 'ready';
         state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}で下落準備中` };
       } else {
@@ -5450,13 +5660,13 @@ function checkBotEntry(def, state, price, now){
       break;
     }
     case 'sarah': { // 15m trend
-      if(score >= p.scoreEntry && inds.trend && inds.trend.cls==='bull' && (!inds.vwap || inds.vwap.cls!=='bear')){
+      if(score >= effectiveScoreEntry && inds.trend && inds.trend.cls==='bull' && (!inds.vwap || inds.vwap.cls!=='bear')){
         signal = 'LONG';
         reason = `15分スコア${score} + トレンド上昇` + (inds.vwap?` + VWAP${inds.vwap.cls==='bull'?'上方':'近傍'}`:'');
-      } else if(score <= (100-p.scoreEntry) && inds.trend && inds.trend.cls==='bear' && (!inds.vwap || inds.vwap.cls!=='bull')){
+      } else if(score <= (100-effectiveScoreEntry) && inds.trend && inds.trend.cls==='bear' && (!inds.vwap || inds.vwap.cls!=='bull')){
         signal = 'SHORT';
         reason = `15分スコア${score} + トレンド下降` + (inds.vwap?` + VWAP${inds.vwap.cls==='bear'?'下方':'近傍'}`:'');
-      } else if(score >= (p.scoreEntry-5)){
+      } else if(score >= (effectiveScoreEntry-5)){
         state.status = 'ready';
         state.readyDetail = { dir:'LONG', target:price, reason:`15分スコア${score}でLONG準備中` };
       } else {
@@ -5488,7 +5698,7 @@ function checkBotEntry(def, state, price, now){
       const r4h = botComputeTF('4h');
       if(!r1h || !r4h){ state.status = 'watching'; return; }
       const aligned = r1h.signal === r4h.signal && r1h.signal !== 'WAIT';
-      if(aligned && r1h.score >= p.scoreEntry){
+      if(aligned && r1h.score >= effectiveScoreEntry){
         signal = r1h.signal;
         reason = `1H(${r1h.score})+4H(${r4h.score})方向一致=${signal}` + (inds.delta?` + ${inds.delta.badge}`:'');
       } else if(r1h.signal === r4h.signal && r1h.signal !== 'WAIT'){
@@ -5521,16 +5731,16 @@ function checkBotEntry(def, state, price, now){
     }
     case 'delta': { // 15m delta-confirmed trend
       const delta = inds.delta;
-      if(score >= p.scoreEntry && delta && delta.cls==='bull'){
+      if(score >= effectiveScoreEntry && delta && delta.cls==='bull'){
         signal = 'LONG';
         reason = `スコア${score} + Delta買い優勢(${delta.badge})`;
-      } else if(score <= (100-p.scoreEntry) && delta && delta.cls==='bear'){
+      } else if(score <= (100-effectiveScoreEntry) && delta && delta.cls==='bear'){
         signal = 'SHORT';
         reason = `スコア${score} + Delta売り優勢(${delta.badge})`;
-      } else if(score >= (p.scoreEntry-8) && delta && delta.cls==='bull'){
+      } else if(score >= (effectiveScoreEntry-8) && delta && delta.cls==='bull'){
         state.status = 'ready';
         state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}+Delta買い優勢で準備中` };
-      } else if(score <= (100-p.scoreEntry+8) && delta && delta.cls==='bear'){
+      } else if(score <= (100-effectiveScoreEntry+8) && delta && delta.cls==='bear'){
         state.status = 'ready';
         state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}+Delta売り優勢で準備中` };
       } else {
@@ -5560,11 +5770,37 @@ function checkBotEntry(def, state, price, now){
     }
   }
 
-  // Execute entry if signal found
+  // Execute entry if signal found — マルチコンファメーション
   if(signal){
-    const tp = signal==='LONG' ? price*(1+p.tpPct/100) : price*(1-p.tpPct/100);
-    const sl = signal==='LONG' ? price*(1-p.slPct/100) : price*(1+p.slPct/100);
-    state.position = { dir:signal, entry:price, time:now, tp, sl, entryReason:reason };
+    // セカンダリ確認（2/3以上で発動）
+    let confirmCount = 0;
+    const klines = KL[def.tf]();
+
+    // ① 上位TF一致
+    const upperDir = getUpperTFDirection(def.tf);
+    if (upperDir === signal) confirmCount++;
+
+    // ② オーダーフロー（直近5本の出来高加重モメンタム）
+    if (klines && klines.length >= 5) {
+      const flow = calcOrderFlow(klines, 5);
+      if ((signal === 'LONG' && flow > 0) || (signal === 'SHORT' && flow < 0)) confirmCount++;
+    }
+
+    // ③ ボラティリティ適正範囲
+    if (klines && checkVolatilityFilter(klines)) confirmCount++;
+
+    if (confirmCount < 2) {
+      // 確認不足 → readyに格下げ、エントリーしない
+      state.status = 'ready';
+      state.readyDetail = { dir: signal, target: price, reason: `${reason} (確認${confirmCount}/3で待機)` };
+      signal = null;
+    }
+  }
+
+  if(signal){
+    // 動的ATRベースTP/SL
+    const { tp, sl } = calcDynamicTPSL(price, signal, def.tf, p);
+    state.position = { dir:signal, entry:price, time:now, tp, sl, entryReason:reason, trailingActive:false, trailingTriggered:false };
     state.status = 'holding';
     state.readyDetail = null;
     state.lastMsg = `${def.name}が${signal}でエントリー！ @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`;
@@ -5575,6 +5811,12 @@ function checkBotEntry(def, state, price, now){
     if(typeof addReport === 'function'){
       const snap = captureMarketSnapshot(def.tf);
       addReport(def, 'entry', snap, { dir:signal, reason, tp, sl });
+    }
+    // エントリーアニメーション
+    const botCard = document.getElementById('bot-card-' + def.id);
+    if (botCard) {
+      botCard.classList.add('bot-entering');
+      setTimeout(() => botCard.classList.remove('bot-entering'), 1500);
     }
   } else if(state.status==='ready' && state.readyDetail && !state._lastReadyReport){
     // Report: ready (throttle to once per ready state)
@@ -5592,6 +5834,9 @@ function checkBotExit(def, state, price, now){
   const pos = state.position;
   const p = state.params;
   if(!pos) return;
+
+  // トレーリングストップ更新
+  updateTrailingStop(state, price, def.tf);
 
   // Sanity check: if price vs entry differs by more than 10x, data is cross-coin contaminated — force close at 0% PnL
   const priceRatio = price / pos.entry;
@@ -5653,6 +5898,13 @@ function checkBotExit(def, state, price, now){
       sendBotNotification(def, 'tp', { price, pnlPct });
     } else if(exitType === 'sl'){
       sendBotNotification(def, 'sl', { price, pnlPct });
+    }
+    // 決済アニメーション
+    const botCard = document.getElementById('bot-card-' + def.id);
+    if (botCard) {
+      const animClass = win ? 'bot-tp-hit' : 'bot-sl-hit';
+      botCard.classList.add(animClass);
+      setTimeout(() => botCard.classList.remove(animClass), win ? 2000 : 500);
     }
     saveBotArena();
   }
@@ -5775,6 +6027,8 @@ function sendBotNotification(def, type, opts){
 // ── Run all bots (mother/child dormancy system) ──
 function botEvalAll(){
   if(!S.price) return;
+  // レジーム検出 & bot閾値調整
+  applyRegimeModifiers();
   // Stage 1: Evaluate all mother bots
   const motherSignals = {};
   BOT_DEFS.forEach(def=>{
@@ -5909,7 +6163,11 @@ function renderBotArena(){
   const tabCoinEl = document.getElementById('baTabCoin');
   if(tabCoinEl) tabCoinEl.textContent = currentCoin;
   const subEl = document.getElementById('baSubtitle');
-  if(subEl) subEl.textContent = `AI Trading Bot — ${currentCoin} ペーパートレードバトル（${ALL_BOTS.length}体稼働中 / カテゴリTop1表示）`;
+  if(subEl){
+    const regimeLabels = { uptrend:'📈 上昇トレンド', downtrend:'📉 下降トレンド', range:'↔️ レンジ相場', high_volatility:'⚡ 高ボラティリティ', unknown:'— 判定中' };
+    const regimeLbl = regimeLabels[currentRegime] || '— 判定中';
+    subEl.innerHTML = `AI Trading Bot — ${currentCoin} ペーパートレードバトル（${ALL_BOTS.length}体稼働中 / カテゴリTop1表示）<span class="regime-badge regime-${currentRegime}">${regimeLbl}</span>`;
+  }
   renderConsensus();
   renderLeaderboard();
   renderWorst2();
@@ -5917,6 +6175,7 @@ function renderBotArena(){
   renderTradeLog();
   renderPerfBars();
   renderPDCALog();
+  if(typeof updatePredictionUI === 'function') updatePredictionUI();
   // Render latest daily summary if available
   const today = new Date().toISOString().slice(0,10);
   const todayReview = botDailyReviews.find(r=>r.date===today);
@@ -5961,7 +6220,7 @@ function renderLeaderboard(){
     const botCount = cat.bots.length;
     return `<div class="ba-lead-card" onclick="toggleCategoryExpand('${catKey}')">
       <div class="ba-lc-cat">${cat.label} <span style="font-size:.66rem;color:var(--dim);">(${botCount}体中1位 / 累計P&L順)</span></div>
-      <div class="ba-lc-name"><span class="ba-lc-crown">👑</span>${def.emoji} ${def.name}</div>
+      <div class="ba-lc-name"><span class="ba-lc-crown">👑</span>${def.emoji} ${def.name} <span class="bot-rank-badge bot-rank-${getBotRank(bs).rank}">${getBotRank(bs).icon} ${getBotRank(bs).label}</span></div>
       <div class="ba-lc-stats">
         <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">累計P&L</span><span class="ba-lc-stat-val ${pnlCls}" style="font-size:1.1rem;">${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</span></div>
         <div class="ba-lc-stat"><span class="ba-lc-stat-lbl">勝率</span><span class="ba-lc-stat-val">${rate}%</span></div>
@@ -6110,10 +6369,11 @@ function renderSingleBotCard(def, bs, isFull){
     // Compact card for non-top holding bots
     const pnlPct = pos && pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : pos ? (pos.entry-S.price)/pos.entry*100 : 0;
     const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
-    return `<div class="ba-bot st-holding ${dirCls}" style="padding:8px 12px;${isAdminMode?'cursor:pointer;':''}" ${adminClick}>
+    const rnk = getBotRank(bs);
+    return `<div id="bot-card-${def.id}" class="ba-bot st-holding ${dirCls}" style="padding:8px 12px;${isAdminMode?'cursor:pointer;':''}" ${adminClick}>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span class="ba-bot-emoji" style="font-size:1rem;">${def.emoji}</span>
-        <span class="ba-bot-name" style="font-size:.88rem;">${def.name}${variant}${promotedBadge}</span>
+        <span class="ba-bot-name" style="font-size:.88rem;">${def.name}${variant}${promotedBadge} <span class="bot-rank-badge bot-rank-${rnk.rank}">${rnk.icon}</span></span>
         <span class="ba-bot-status ${statusCls}">${statusText}</span>
         <span style="color:${pnlCls};font-weight:700;font-size:.82rem;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span>
         <span style="color:var(--dim);font-size:.72rem;">${def.cat}</span>
@@ -6122,10 +6382,11 @@ function renderSingleBotCard(def, bs, isFull){
     </div>`;
   }
 
-  return `<div class="ba-bot st-${bs.status==='holding'?'holding':bs.status} ${dirCls}" ${adminClick}>
+  const rank = getBotRank(bs);
+  return `<div id="bot-card-${def.id}" class="ba-bot st-${bs.status==='holding'?'holding':bs.status} ${dirCls}" ${adminClick}>
     <div class="ba-bot-top">
       <span class="ba-bot-emoji">${def.emoji}</span>
-      <span class="ba-bot-name">${def.name}${variant}${promotedBadge}</span>
+      <span class="ba-bot-name">${def.name}${variant}${promotedBadge} <span class="bot-rank-badge bot-rank-${rank.rank}">${rank.icon} ${rank.label}</span></span>
       <span class="ba-bot-cat">${def.cat}</span>
       <span class="ba-bot-status ${statusCls}">${statusText}</span>
       ${isAdminMode?'<span style="font-size:.62rem;color:var(--accent);margin-left:auto;">TAP詳細</span>':''}
@@ -6418,6 +6679,177 @@ function runDailyPDCA(){
 
 // Make runDailyPDCA available in console for testing
 window.runDailyPDCA = runDailyPDCA;
+
+// ═══════════════════════════════════════════════
+// MICRO PDCA — 4時間ごとの高速適応
+// ═══════════════════════════════════════════════
+
+function runMicroPDCA() {
+  const cutoff = Date.now() - 4 * 3600000;
+  ALL_BOTS.forEach(def => {
+    if (MOTHER_BOT_IDS.includes(def.id)) return; // マザーbot保護
+    const bs = botStates[def.id];
+    if (!bs) return;
+    const recentTrades = bs.trades.filter(t => t.exitTime && new Date(t.exitTime).getTime() > cutoff);
+    if (recentTrades.length < 2) return;
+
+    const wins = recentTrades.filter(t => t.win).length;
+    const consecutiveLosses = countConsecutiveLosses(bs.trades);
+
+    // 連敗3回以上 → エントリー基準厳格化
+    if (consecutiveLosses >= 3) {
+      if (bs.params.scoreEntry !== undefined) bs.params.scoreEntry = Math.min(85, bs.params.scoreEntry + 3);
+      if (bs.params.rsiOS !== undefined) bs.params.rsiOS = Math.max(20, bs.params.rsiOS - 2);
+      if (bs.params.rsiOB !== undefined) bs.params.rsiOB = Math.min(85, bs.params.rsiOB + 2);
+      bs.pdcaLog.push({ time: Date.now(), msg: `[μPDCA] 連敗${consecutiveLosses}回検知 → エントリー基準厳格化` });
+    }
+
+    // 勝率80%以上 → やや積極化
+    if (wins / recentTrades.length > 0.8 && recentTrades.length >= 3) {
+      if (bs.params.scoreEntry !== undefined) bs.params.scoreEntry = Math.max(55, bs.params.scoreEntry - 2);
+      bs.pdcaLog.push({ time: Date.now(), msg: `[μPDCA] 直近勝率${(wins/recentTrades.length*100).toFixed(0)}% → やや積極化` });
+    }
+  });
+  saveBotArena();
+}
+
+let _lastMicroPDCAHour = -1;
+function scheduleMicroPDCA() {
+  setInterval(() => {
+    const jstH = (new Date().getUTCHours() + 9) % 24;
+    // 4時間ごと: 3:00, 7:00, 11:00, 15:00, 19:00, 23:00 JST
+    if ([3, 7, 11, 15, 19, 23].includes(jstH) && new Date().getMinutes() < 5 && _lastMicroPDCAHour !== jstH) {
+      _lastMicroPDCAHour = jstH;
+      runMicroPDCA();
+    }
+  }, 240000); // 4分ごとにチェック
+}
+
+window.runMicroPDCA = runMicroPDCA;
+
+// ═══════════════════════════════════════════════
+// USER PREDICTION BATTLE — ユーザー vs Bot予測対決
+// ═══════════════════════════════════════════════
+
+let userPredictions = JSON.parse(localStorage.getItem(`userPredictions_${currentCoin}`) || '[]');
+
+function makeUserPrediction(dir) {
+  // 未解決の予測がある場合はブロック
+  if (userPredictions.some(p => !p.resolved)) {
+    return;
+  }
+  const pred = {
+    time: Date.now(),
+    price: S.price,
+    dir: dir,
+    resolved: false,
+    result: null,
+    pnlPct: 0,
+    exitPrice: 0,
+  };
+  userPredictions.push(pred);
+  saveUserPredictions();
+  updatePredictionUI();
+  // 1時間後に結果判定
+  setTimeout(() => resolvePrediction(pred), 3600000);
+}
+
+function resolvePrediction(pred) {
+  if (pred.resolved) return;
+  const currentPrice = S.price;
+  const pnlPct = pred.dir === 'LONG'
+    ? (currentPrice - pred.price) / pred.price * 100
+    : (pred.price - currentPrice) / pred.price * 100;
+  pred.resolved = true;
+  pred.result = pnlPct > 0 ? 'WIN' : 'LOSE';
+  pred.pnlPct = +pnlPct.toFixed(3);
+  pred.exitPrice = currentPrice;
+  saveUserPredictions();
+  updatePredictionUI();
+}
+
+function saveUserPredictions() {
+  // 直近20件のみ保持
+  if (userPredictions.length > 20) userPredictions = userPredictions.slice(-20);
+  localStorage.setItem(`userPredictions_${currentCoin}`, JSON.stringify(userPredictions));
+}
+
+function updatePredictionUI() {
+  const statusEl = document.getElementById('predStatus');
+  const histEl = document.getElementById('predHistory');
+  const btnLong = document.getElementById('predBtnLong');
+  const btnShort = document.getElementById('predBtnShort');
+  if (!statusEl || !histEl) return;
+
+  const activePred = userPredictions.find(p => !p.resolved);
+  if (activePred) {
+    const elapsed = Math.round((Date.now() - activePred.time) / 60000);
+    const curPnl = activePred.dir === 'LONG'
+      ? (S.price - activePred.price) / activePred.price * 100
+      : (activePred.price - S.price) / activePred.price * 100;
+    const pnlCls = curPnl >= 0 ? 'var(--green)' : 'var(--red)';
+    statusEl.innerHTML = `⏳ ${activePred.dir}予測中(${elapsed}分経過) 含み: <span style="color:${pnlCls};font-weight:700;">${curPnl >= 0 ? '+' : ''}${curPnl.toFixed(2)}%</span> (60分後に判定)`;
+    if (btnLong) btnLong.classList.add('pred-active');
+    if (btnShort) btnShort.classList.add('pred-active');
+  } else {
+    statusEl.textContent = '方向を選んで予測開始！';
+    if (btnLong) btnLong.classList.remove('pred-active');
+    if (btnShort) btnShort.classList.remove('pred-active');
+  }
+
+  // 履歴表示
+  const resolved = userPredictions.filter(p => p.resolved).slice(-5).reverse();
+  if (resolved.length > 0) {
+    const wins = userPredictions.filter(p => p.resolved && p.result === 'WIN').length;
+    const total = userPredictions.filter(p => p.resolved).length;
+    const userWR = total > 0 ? (wins / total * 100).toFixed(0) : '--';
+    histEl.innerHTML = `<span style="color:var(--accent);">あなたの戦績: ${wins}勝${total - wins}敗 (勝率${userWR}%)</span> | ` +
+      resolved.map(p => {
+        const icon = p.result === 'WIN' ? '✅' : '❌';
+        const clr = p.result === 'WIN' ? 'var(--green)' : 'var(--red)';
+        return `<span style="color:${clr};">${icon}${p.dir} ${p.pnlPct >= 0 ? '+' : ''}${p.pnlPct.toFixed(2)}%</span>`;
+      }).join(' ');
+  } else {
+    histEl.textContent = 'まだ予測履歴がありません。上のボタンで予測を開始しましょう！';
+  }
+}
+
+// 未解決予測の残り時間タイマーを復元
+function restorePendingPredictions() {
+  userPredictions.forEach(pred => {
+    if (!pred.resolved) {
+      const remaining = (pred.time + 3600000) - Date.now();
+      if (remaining <= 0) {
+        resolvePrediction(pred);
+      } else {
+        setTimeout(() => resolvePrediction(pred), remaining);
+      }
+    }
+  });
+}
+restorePendingPredictions();
+
+// 予測UIを定期更新（アクティブな予測がある場合のPnL表示用）
+setInterval(() => {
+  if (userPredictions.some(p => !p.resolved)) updatePredictionUI();
+}, 10000);
+
+// ═══════════════════════════════════════════════
+// BASIS SPREAD — Binance先物 vs スポット乖離
+// ═══════════════════════════════════════════════
+
+async function fetchBasisSpread() {
+  try {
+    const pair = COINS[currentCoin].pair;
+    const res = await fetch(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${pair}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const futurePrice = parseFloat(data.price);
+    const basis = ((futurePrice - S.price) / S.price) * 100;
+    S.basisPct = basis;
+    return basis;
+  } catch(e) { return null; }
+}
 
 // ═══════════════════════════════════════════════
 // ADMIN MODE — 管理者専用Bot詳細表示

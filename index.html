@@ -308,6 +308,10 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .pos-tier.normal .pos-tier-lev{color:var(--accent);}
 .pos-tier.mid .pos-tier-lev{color:var(--yellow);}
 .pos-tier.high .pos-tier-lev{color:var(--red);}
+.pos-tier.ultra .pos-tier-lev{color:#a855f7;}
+.pos-tier.ultra{border-color:rgba(168,85,247,.3);}
+.pos-tier.max .pos-tier-lev{color:#f43f5e;text-shadow:0 0 8px rgba(244,63,94,.5);}
+.pos-tier.max{border-color:rgba(244,63,94,.3);}
 .pos-tier-row{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);margin-top:3px;line-height:1.5;}
 .pos-tier-row span{color:var(--text);}
 .pos-warn{font-size:.62rem;color:var(--dim);margin-top:10px;padding:8px 12px;background:rgba(255,214,10,.05);border:1px solid rgba(255,214,10,.15);border-radius:5px;line-height:1.6;}
@@ -3607,6 +3611,8 @@ const POS_TIERS = [
   { id:'normal',label:'🔵 一般',    lev:3,  riskPct:1.5, desc:'標準的なスキャル設定' },
   { id:'mid',   label:'🟡 中リスク',lev:5,  riskPct:2,   desc:'経験者向け・リスク許容' },
   { id:'high',  label:'🔴 ハイリスク',lev:10,riskPct:3, desc:'上級者のみ・資金管理必須' },
+  { id:'ultra', label:'🟣 超ハイレバ',lev:50, riskPct:4, desc:'⚠️ 50倍 — ボット自信度80%+で自動選択' },
+  { id:'max',   label:'💀 MAX',     lev:100,riskPct:5, desc:'⚠️ 100倍 — ボット自信度90%+で自動選択' },
 ];
 
 function calcPosition(){
@@ -6165,17 +6171,21 @@ function checkBotEntry(def, state, price, now){
     // 動的ATRベースTP/SL
     const { tp, sl } = calcDynamicTPSL(price, signal, def.tf, p);
     const entryFP = createMarketFingerprint(def.tf);
-    state.position = { dir:signal, entry:price, time:now, tp, sl, entryReason:reason, trailingActive:false, trailingTriggered:false, fingerprint:entryFP };
+    // 自信度に応じたレバレッジ自動選択
+    const entrySnap = captureMarketSnapshot(def.tf);
+    const entryConf = assessConfidence(def, entrySnap, signal);
+    const levInfo = selectLeverage(entryConf);
+    state.position = { dir:signal, entry:price, time:now, tp, sl, entryReason:reason, trailingActive:false, trailingTriggered:false, fingerprint:entryFP, lev:levInfo.lev, levLabel:levInfo.label };
     state.status = 'holding';
     state.readyDetail = null;
-    state.lastMsg = `${def.name}が${signal}でエントリー！ @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`;
+    state.lastMsg = `${def.name}が${signal}でエントリー！ @ $${price.toLocaleString('en',{maximumFractionDigits:0})} [${levInfo.label}]`;
     addBotTradeLog(def, 'entry', signal, price, reason);
     // Push notification: entry
-    sendBotNotification(def, 'entry', { dir:signal, price, reason });
+    sendBotNotification(def, 'entry', { dir:signal, price, reason, lev:levInfo.lev });
     // Report: entry
     if(typeof addReport === 'function'){
       const snap = captureMarketSnapshot(def.tf);
-      addReport(def, 'entry', snap, { dir:signal, reason, tp, sl });
+      addReport(def, 'entry', snap, { dir:signal, reason, tp, sl, lev:levInfo.lev });
     }
     // エントリーアニメーション
     const botCard = document.getElementById('bot-card-' + def.id);
@@ -6214,7 +6224,9 @@ function checkBotExit(def, state, price, now){
   }
 
   const isLong = pos.dir === 'LONG';
-  const pnlPct = isLong ? (price - pos.entry)/pos.entry*100 : (pos.entry - price)/pos.entry*100;
+  const rawPnlPct = isLong ? (price - pos.entry)/pos.entry*100 : (pos.entry - price)/pos.entry*100;
+  const posLev = pos.lev || 1; // レバレッジ（未設定時は1x）
+  const pnlPct = rawPnlPct * posLev; // レバレッジ適用後P&L
   const elapsed = (now - pos.time) / 60000; // minutes
 
   let exitReason = null;
@@ -6234,24 +6246,25 @@ function checkBotExit(def, state, price, now){
     const elapsedMin = Math.round(elapsed);
     state.trades.push({
       dir: pos.dir, entry: pos.entry, exit: price,
-      pnlPct: +pnlPct.toFixed(3), win,
+      pnlPct: +pnlPct.toFixed(3), win, lev: posLev,
       time: new Date(pos.time).toISOString(),
       exitTime: new Date(now).toISOString(),
       reason: exitReason,
     });
     if(win){ state.totalWins++; } else { state.totalLosses++; }
     state.totalPnlPct = +(state.totalPnlPct + pnlPct).toFixed(3);
+    const levTag = posLev > 1 ? ` [${posLev}x]` : '';
     state.lastMsg = win
-      ? `${def.name}が利確！ +${pnlPct.toFixed(2)}% @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`
-      : `${def.name}が損切り ${pnlPct.toFixed(2)}% @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`;
+      ? `${def.name}が利確！ +${pnlPct.toFixed(2)}%${levTag} @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`
+      : `${def.name}が損切り ${pnlPct.toFixed(2)}%${levTag} @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`;
     // Report: exit
     if(typeof addReport === 'function'){
       const snap = captureMarketSnapshot(def.tf);
       const reportType = exitType==='tp' ? 'tp' : (elapsed >= (p.timeoutMin||15) && exitType!=='tp' && exitType!=='sl') ? 'timeout' : 'sl';
       addReport(def, reportType, snap, {
-        dir: pos.dir, reason: exitReason + (pos.entryReason ? ` (エントリー根拠: ${pos.entryReason})` : ''),
+        dir: pos.dir, reason: exitReason + (pos.entryReason ? ` (エントリー根拠: ${pos.entryReason})` : '') + (posLev > 1 ? ` [レバレッジ: ${posLev}x]` : ''),
         pnlPct: +pnlPct.toFixed(3), entryPrice: pos.entry, exitPrice: price,
-        tp: pos.tp, sl: pos.sl, elapsed: elapsedMin,
+        tp: pos.tp, sl: pos.sl, elapsed: elapsedMin, lev: posLev,
       });
     }
     // パターン記憶: エントリー時のfingerprintと結果を記録
@@ -6376,7 +6389,8 @@ function sendBotNotification(def, type, opts){
 
   if(type === 'entry'){
     title = `${def.emoji} ${coinName} ポジション保有！`;
-    body = `${def.name}が${opts.dir}でエントリー @ ${priceFmt}\n${opts.reason||''}`;
+    const notifLev = opts.lev && opts.lev > 1 ? ` [${opts.lev}xレバ]` : '';
+    body = `${def.name}が${opts.dir}でエントリー @ ${priceFmt}${notifLev}\n${opts.reason||''}`;
   } else if(type === 'tp'){
     title = `${def.emoji} ${coinName} 利確！`;
     body = `${def.name}が利確 ${opts.pnlPct>=0?'+':''}${opts.pnlPct.toFixed(2)}% @ ${priceFmt}`;
@@ -6503,9 +6517,10 @@ function renderWorst2(){
     const pos = bs.position;
     let detail = '';
     if(pos){
-      const pnlPct = pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : (pos.entry-S.price)/pos.entry*100;
+      const pnlPct = (pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : (pos.entry-S.price)/pos.entry*100) * (pos.lev||1);
       const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
-      detail = `${pos.dir} @ $${pos.entry.toLocaleString('en',{maximumFractionDigits:0})} 含み<span style="color:${pnlCls};font-weight:700;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span>`;
+      const wLevTag = pos.lev > 1 ? ` <span style="color:#a855f7;font-size:.68rem;">${pos.lev}x</span>` : '';
+      detail = `${pos.dir} @ $${pos.entry.toLocaleString('en',{maximumFractionDigits:0})}${wLevTag} 含み<span style="color:${pnlCls};font-weight:700;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span>`;
     }
     const quote = pos ? (def.quotes?.holding||'') : (def.quotes?.watching||'');
     const worstAdminClick = isAdminMode ? `onclick="showAdminBotDetail('${def.id}')" style="cursor:pointer;"` : '';
@@ -6763,11 +6778,14 @@ function renderSingleBotCard(def, bs, isFull){
 
   if(pos){
     statusCls = pos.dir==='SHORT'?'holding-short':'holding';
+    const posLevDisp = pos.lev || 1;
     statusText = `${pos.dir} 保有中`;
     dirCls = pos.dir==='LONG'?'dir-long':'dir-short';
-    const pnlPct = pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : (pos.entry-S.price)/pos.entry*100;
+    const rawPnlPctDisp = pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : (pos.entry-S.price)/pos.entry*100;
+    const pnlPct = rawPnlPctDisp * posLevDisp;
     const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
-    detail = `${pos.dir} @ $${pos.entry.toLocaleString('en',{maximumFractionDigits:0})} → 含み損益: <span style="color:${pnlCls};font-weight:700;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span><br>利確: $${pos.tp.toLocaleString('en',{maximumFractionDigits:0})} / 損切: $${pos.sl.toLocaleString('en',{maximumFractionDigits:0})}`;
+    const levBadge = posLevDisp > 1 ? `<span style="color:${posLevDisp>=50?'#a855f7':posLevDisp>=10?'var(--red)':'var(--yellow)'};font-weight:700;font-size:.72rem;margin-left:4px;">${posLevDisp}x</span>` : '';
+    detail = `${pos.dir} @ $${pos.entry.toLocaleString('en',{maximumFractionDigits:0})}${levBadge} → 含み損益: <span style="color:${pnlCls};font-weight:700;">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</span><br>利確: $${pos.tp.toLocaleString('en',{maximumFractionDigits:0})} / 損切: $${pos.sl.toLocaleString('en',{maximumFractionDigits:0})}`;
     rationale = bs.lastMsg || '';
     quote = def.quotes ? def.quotes.holding : '';
   } else if(bs.status==='ready' && bs.readyDetail){
@@ -6802,7 +6820,8 @@ function renderSingleBotCard(def, bs, isFull){
 
   if(!isFull){
     // Compact card for non-top holding bots
-    const pnlPct = pos && pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : pos ? (pos.entry-S.price)/pos.entry*100 : 0;
+    const rawPnlCompact = pos && pos.dir==='LONG' ? (S.price-pos.entry)/pos.entry*100 : pos ? (pos.entry-S.price)/pos.entry*100 : 0;
+    const pnlPct = rawPnlCompact * (pos && pos.lev || 1);
     const pnlCls = pnlPct>=0?'var(--green)':'var(--red)';
     const rnk = getBotRank(bs);
     return `<div id="bot-card-${def.id}" class="ba-bot st-holding ${dirCls}" style="padding:8px 12px;${isAdminMode?'cursor:pointer;':''}" ${adminClick}>
@@ -7787,6 +7806,17 @@ function confidenceLabel(conf){
   return { text:`自信度 ${conf}% (低)`, cls:'low' };
 }
 
+// ── Confidence-based leverage selection ──
+// ボットの自信度に応じてレバレッジを自動選択
+function selectLeverage(confidence){
+  if(confidence >= 90) return { lev:100, label:'💀 MAX 100x', cls:'max' };
+  if(confidence >= 80) return { lev:50,  label:'🟣 超ハイレバ 50x', cls:'ultra' };
+  if(confidence >= 70) return { lev:10,  label:'🔴 ハイリスク 10x', cls:'high' };
+  if(confidence >= 55) return { lev:5,   label:'🟡 中リスク 5x', cls:'mid' };
+  if(confidence >= 40) return { lev:3,   label:'🔵 一般 3x', cls:'normal' };
+  return { lev:2, label:'🟢 安全 2x', cls:'safe' };
+}
+
 // ── Generate thought narrative ──
 function generateThought(def, type, snap, opts={}){
   const p = S.price;
@@ -7812,6 +7842,7 @@ function generateThought(def, type, snap, opts={}){
         `FR=${frPct}%、L/S=${snap.ls.toFixed(0)}%、F&G=${snap.fg}。` +
         (opts.reason ? `【決め手】${opts.reason}。` : '') +
         `TP=$${opts.tp?opts.tp.toLocaleString('en',{maximumFractionDigits:0}):'---'} / SL=$${opts.sl?opts.sl.toLocaleString('en',{maximumFractionDigits:0}):'---'}で${dir}エントリーを実行。` +
+        (opts.lev && opts.lev > 1 ? `レバレッジ${opts.lev}xを選択。` : '') +
         `${def.philosophy}`;
     }
     case 'tp': {
@@ -7858,6 +7889,7 @@ function addReport(def, type, snap, opts={}){
     tp: opts.tp || null,
     sl: opts.sl || null,
     elapsed: opts.elapsed || null,
+    lev: opts.lev || 1,
     confidence,
     thought,
     reason: opts.reason || '',
@@ -8203,7 +8235,8 @@ function renderReportEntries(){
     let resultLine = '';
     if(r.type==='tp'||r.type==='sl'||r.type==='timeout'){
       const pCls = r.pnlPct>=0 ? 'var(--green)' : 'var(--red)';
-      resultLine = `<div class="br-entry-result" style="color:${pCls}">結果: ${r.pnlPct>=0?'+':''}${r.pnlPct.toFixed(2)}% ${r.elapsed?`(${r.elapsed}分保有)`:''} ${r.type==='tp'?'✅ WIN':'❌ LOSE'}</div>`;
+      const levNote = r.lev && r.lev > 1 ? ` [${r.lev}xレバ適用]` : '';
+      resultLine = `<div class="br-entry-result" style="color:${pCls}">結果: ${r.pnlPct>=0?'+':''}${r.pnlPct.toFixed(2)}%${levNote} ${r.elapsed?`(${r.elapsed}分保有)`:''} ${r.type==='tp'?'✅ WIN':'❌ LOSE'}</div>`;
     }
 
     // Quote based on def
@@ -8217,6 +8250,7 @@ function renderReportEntries(){
         <span class="br-entry-action ${actionCls}">${actionText}</span>
         <span style="font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);">${r.botCat}</span>
         <span class="br-entry-confidence ${conf.cls}">${conf.text}</span>
+        ${r.lev && r.lev > 1 ? `<span style="font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:3px 8px;border-radius:3px;margin-left:4px;background:${r.lev>=50?'rgba(168,85,247,.15)':'rgba(255,214,10,.1)'};color:${r.lev>=100?'#f43f5e':r.lev>=50?'#a855f7':r.lev>=10?'var(--red)':'var(--yellow)'};border:1px solid ${r.lev>=50?'rgba(168,85,247,.3)':'rgba(255,214,10,.2)'};">${r.lev}x レバ</span>` : ''}
       </div>
       <div class="br-entry-thought">${r.thought}</div>
       <div class="br-entry-indicators">${indTags}</div>

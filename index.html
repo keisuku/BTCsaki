@@ -731,6 +731,21 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .regime-high_volatility{background:rgba(255,107,53,0.15);color:var(--orange);border:1px solid rgba(255,107,53,0.3);}
 .regime-unknown{background:rgba(90,122,138,0.15);color:var(--dim);border:1px solid rgba(90,122,138,0.3);}
 
+/* ══ FLEET STATUS BAR ══ */
+.ba-fleet-bar{margin:10px 0;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+.ba-fleet-title{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ba-fleet-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.ba-fleet-seg-wrap{display:flex;height:26px;border-radius:4px;overflow:hidden;background:var(--bg3);}
+.ba-fleet-seg{display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:.72rem;font-weight:700;transition:width .5s ease;min-width:0;overflow:hidden;}
+.ba-fleet-seg.seg-hold-long{background:rgba(0,255,136,.22);color:var(--green);}
+.ba-fleet-seg.seg-ready-long{background:rgba(255,214,10,.15);color:#e6c200;}
+.ba-fleet-seg.seg-watching{background:rgba(90,122,138,.12);color:var(--dim);}
+.ba-fleet-seg.seg-ready-short{background:rgba(255,45,85,.12);color:#ff8a9e;}
+.ba-fleet-seg.seg-hold-short{background:rgba(255,45,85,.22);color:var(--red);}
+.ba-fleet-legend{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center;}
+.ba-fleet-leg{display:flex;align-items:center;gap:4px;font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--dim);}
+.ba-fleet-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
 /* ══ USER PREDICTION BATTLE ══ */
 .pred-btn{padding:6px 16px;border:2px solid;border-radius:6px;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;font-family:'Share Tech Mono',monospace;background:transparent;}
 .pred-btn-long{color:var(--green);border-color:var(--green);}
@@ -1643,6 +1658,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     </div>
     <div id="predHistory" style="margin-top:8px;font-size:.72rem;color:var(--dim);"></div>
   </div>
+  <div id="baFleetBar" class="ba-fleet-bar"></div>
   <div class="ba-leaders" id="baLeaders"></div>
   <div class="ba-log-title">💀 養分枠 — 生涯成績ワースト2名（子botのみ）</div>
   <div class="ba-worst" id="baWorst"><div style="color:var(--dim);font-size:.8rem;">データ蓄積中...（最低3回トレード後に表示）</div></div>
@@ -5930,10 +5946,10 @@ function checkBotEntry(def, state, price, now){
         reason = `スコア${score} + SMAトレンド下降` + (inds.delta?` + ${inds.delta.badge}`:'');
       } else if(score >= (effectiveScoreEntry-8)){
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}で上昇準備中` };
+        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}で上昇準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else if(score <= (100-effectiveScoreEntry+8)){
         state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}で下落準備中` };
+        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}で下落準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -5951,10 +5967,10 @@ function checkBotEntry(def, state, price, now){
         reason = `RSI${rsi.toFixed(0)}(買われすぎ) + BB上限タッチ`;
       } else if(rsi <= p.rsiOS+5){
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`RSI${rsi.toFixed(0)}が売られすぎに接近` };
+        state.readyDetail = { dir:'LONG', target:price, reason:`RSI${rsi.toFixed(0)}が売られすぎに接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else if(rsi >= p.rsiOB-5){
         state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`RSI${rsi.toFixed(0)}が買われすぎに接近` };
+        state.readyDetail = { dir:'SHORT', target:price, reason:`RSI${rsi.toFixed(0)}が買われすぎに接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -5970,7 +5986,7 @@ function checkBotEntry(def, state, price, now){
         reason = `15分スコア${score} + トレンド下降` + (inds.vwap?` + VWAP${inds.vwap.cls==='bear'?'下方':'近傍'}`:'');
       } else if(score >= (effectiveScoreEntry-5)){
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`15分スコア${score}でLONG準備中` };
+        state.readyDetail = { dir:'LONG', target:price, reason:`15分スコア${score}でLONG準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -5988,7 +6004,7 @@ function checkBotEntry(def, state, price, now){
         reason = `RSI${rsi.toFixed(0)} + FR偏り${frPct.toFixed(3)}%`;
       } else if(Math.abs(frPct) >= p.frThresh * 0.7){
         state.status = 'ready';
-        state.readyDetail = { dir: frPct>0?'SHORT':'LONG', target:price, reason:`FR${frPct.toFixed(3)}%で歪み拡大中` };
+        state.readyDetail = { dir: frPct>0?'SHORT':'LONG', target:price, reason:`FR${frPct.toFixed(3)}%で歪み拡大中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6005,7 +6021,7 @@ function checkBotEntry(def, state, price, now){
         reason = `1H(${r1h.score})+4H(${r4h.score})方向一致=${signal}` + (inds.delta?` + ${inds.delta.badge}`:'');
       } else if(r1h.signal === r4h.signal && r1h.signal !== 'WAIT'){
         state.status = 'ready';
-        state.readyDetail = { dir:r1h.signal, target:price, reason:`1H+4H方向一致(${r1h.signal}) スコア不足` };
+        state.readyDetail = { dir:r1h.signal, target:price, reason:`1H+4H方向一致(${r1h.signal}) スコア不足`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6024,7 +6040,7 @@ function checkBotEntry(def, state, price, now){
         reason = `F&G=${fg}(極強欲) + L/S${ls.toFixed(0)}%(ロング過多)` + (bb?` + ${bb.badge}`:'');
       } else if(fg <= p.fgExtreme+5 || fg >= p.fgGreed-5){
         state.status = 'ready';
-        state.readyDetail = { dir: fg<=40?'LONG':'SHORT', target:price, reason:`F&G=${fg}で極値接近中` };
+        state.readyDetail = { dir: fg<=40?'LONG':'SHORT', target:price, reason:`F&G=${fg}で極値接近中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6041,10 +6057,10 @@ function checkBotEntry(def, state, price, now){
         reason = `スコア${score} + Delta売り優勢(${delta.badge})`;
       } else if(score >= (effectiveScoreEntry-8) && delta && delta.cls==='bull'){
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}+Delta買い優勢で準備中` };
+        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}+Delta買い優勢で準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else if(score <= (100-effectiveScoreEntry+8) && delta && delta.cls==='bear'){
         state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}+Delta売り優勢で準備中` };
+        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}+Delta売り優勢で準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6063,7 +6079,7 @@ function checkBotEntry(def, state, price, now){
         reason = `RSI${rsi.toFixed(0)}(買われすぎ) + ATR急拡大(${atrInd.badge})`;
       } else if(atrSpike && (rsi <= p.rsiOS+5 || rsi >= p.rsiOB-5)){
         state.status = 'ready';
-        state.readyDetail = { dir: rsi<=50?'LONG':'SHORT', target:price, reason:`ATR急拡大+RSI${rsi.toFixed(0)}で極値接近` };
+        state.readyDetail = { dir: rsi<=50?'LONG':'SHORT', target:price, reason:`ATR急拡大+RSI${rsi.toFixed(0)}で極値接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6086,7 +6102,7 @@ function checkBotEntry(def, state, price, now){
           const bullMatch = genes.bull.filter(g => INDICATOR_GENES[g] ? INDICATOR_GENES[g](r, p, inds) : false).length;
           if (bullMatch >= Math.ceil(genes.bull.length * 0.6)) {
             state.status = 'ready';
-            state.readyDetail = { dir: 'LONG', target: price, reason: `🧬${bullMatch}/${genes.bull.length}条件一致` };
+            state.readyDetail = { dir: 'LONG', target: price, reason: `🧬${bullMatch}/${genes.bull.length}条件一致`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
           } else {
             state.status = 'watching';
             state.readyDetail = null;
@@ -6105,7 +6121,7 @@ function checkBotEntry(def, state, price, now){
     // ── ポートフォリオ安全性チェック ──
     if (!isPortfolioSafe(signal)) {
       state.status = 'ready';
-      state.readyDetail = { dir: signal, target: price, reason: `${reason} (ポートフォリオ制限で待機)` };
+      state.readyDetail = { dir: signal, target: price, reason, confirmCount:0, confirmTotal:5, confirmSource:'portfolio' };
       signal = null;
     }
   }
@@ -6140,7 +6156,7 @@ function checkBotEntry(def, state, price, now){
     if (confirmCount < 3) {
       // 確認不足 → readyに格下げ、エントリーしない
       state.status = 'ready';
-      state.readyDetail = { dir: signal, target: price, reason: `${reason} (確認${confirmCount}/${totalChecks}で待機)` };
+      state.readyDetail = { dir: signal, target: price, reason, confirmCount, confirmTotal: totalChecks, confirmSource:'gate' };
       signal = null;
     }
   }
@@ -6513,6 +6529,43 @@ function renderWorst2(){
 // BOT ARENA UI RENDERING
 // ═══════════════════════════════════════════════
 
+function renderFleetStatusBar(){
+  const el = document.getElementById('baFleetBar');
+  if(!el) return;
+  let holdLong=0, readyLong=0, watching=0, readyShort=0, holdShort=0;
+  ALL_BOTS.forEach(d=>{
+    const bs = botStates[d.id];
+    if(!bs){ watching++; return; }
+    if(bs.position){
+      if(bs.position.dir==='LONG') holdLong++; else holdShort++;
+    } else if(bs.status==='ready' && bs.readyDetail){
+      if(bs.readyDetail.dir==='LONG') readyLong++; else readyShort++;
+    } else { watching++; }
+  });
+  const total = ALL_BOTS.length || 1;
+  const segs = [
+    {cls:'seg-hold-long', n:holdLong, lbl:'LONG保有', clr:'var(--green)'},
+    {cls:'seg-ready-long', n:readyLong, lbl:'LONG狙い', clr:'#e6c200'},
+    {cls:'seg-watching', n:watching, lbl:'様子見', clr:'var(--dim)'},
+    {cls:'seg-ready-short', n:readyShort, lbl:'SHORT狙い', clr:'#ff8a9e'},
+    {cls:'seg-hold-short', n:holdShort, lbl:'SHORT保有', clr:'var(--red)'},
+  ];
+  const barHtml = segs.filter(s=>s.n>0).map(s=>{
+    const pct = (s.n/total*100).toFixed(1);
+    const show = s.n/total >= 0.07;
+    return `<div class="ba-fleet-seg ${s.cls}" style="width:${pct}%">${show?s.n:''}</div>`;
+  }).join('');
+  const legHtml = segs.map(s=>
+    `<span class="ba-fleet-leg"><span class="ba-fleet-dot" style="background:${s.clr}"></span>${s.lbl} ${s.n}</span>`
+  ).join('');
+  const expo = getPortfolioExposure();
+  const pnlClr = expo.totalPnl>=0?'var(--green)':'var(--red)';
+  const pnlStr = `${expo.totalPnl>=0?'+':''}${expo.totalPnl.toFixed(2)}%`;
+  el.innerHTML = `<div class="ba-fleet-title">⚔️ fleet deployment — ${total}体 ｜ 含み損益 <span style="color:${pnlClr}">${pnlStr}</span></div>`+
+    `<div class="ba-fleet-seg-wrap">${barHtml}</div>`+
+    `<div class="ba-fleet-legend">${legHtml}</div>`;
+}
+
 function renderBotArena(){
   const coinNameEl = document.getElementById('baCoinName');
   if(coinNameEl) coinNameEl.textContent = currentCoin;
@@ -6532,9 +6585,9 @@ function renderBotArena(){
     subEl.innerHTML = `AI Trading Bot — ${currentCoin} ペーパートレードバトル（${ALL_BOTS.length}体稼働中 / カテゴリTop1表示）` +
       `<span class="regime-badge regime-${currentRegime}">${regimeLbl}</span> ` +
       `<span style="font-size:.56rem;color:var(--dim);margin-left:8px;">${wsStatus} | ` +
-      `L:${expo.longCount} S:${expo.shortCount} 含み:<span style="color:${pnlClr}">${expo.totalPnl>=0?'+':''}${expo.totalPnl.toFixed(2)}%</span> | ` +
       `${genInfo} 記憶:${patternCount}件</span>${fleetStatus}`;
   }
+  renderFleetStatusBar();
   renderConsensus();
   renderLeaderboard();
   renderWorst2();
@@ -6719,8 +6772,23 @@ function renderSingleBotCard(def, bs, isFull){
     quote = def.quotes ? def.quotes.holding : '';
   } else if(bs.status==='ready' && bs.readyDetail){
     statusCls = 'ready'; statusText = `${bs.readyDetail.dir} 狙い中`;
-    detail = `${bs.readyDetail.dir}エントリー準備中 @ $${bs.readyDetail.target.toLocaleString('en',{maximumFractionDigits:0})}付近`;
-    rationale = bs.readyDetail.reason;
+    const rd = bs.readyDetail;
+    const targetStr = '$' + rd.target.toLocaleString('en',{maximumFractionDigits:0});
+    if (rd.confirmSource === 'gate') {
+      const cc = rd.confirmCount || 0, ct = rd.confirmTotal || 5;
+      const dots = '●'.repeat(cc) + '○'.repeat(ct - cc);
+      const remain = ct - cc;
+      detail = `<span style="color:var(--yellow);font-weight:700;">条件チェック</span> <span style="font-family:'Share Tech Mono',monospace;letter-spacing:2px;">${dots}</span> (${cc}/${ct})`;
+      if (remain <= 1) detail += ` <span style="color:var(--green);font-size:.78rem;">— あと${remain}つで発動</span>`;
+      detail += `<br><span style="font-size:.76rem;color:var(--dim);">検知価格 ${targetStr}（※成行で発動・価格は参考値）</span>`;
+    } else if (rd.confirmSource === 'portfolio') {
+      detail = `<span style="color:var(--yellow);">⚠ ポートフォリオ制限で待機中</span>`;
+      detail += `<br><span style="font-size:.76rem;color:var(--dim);">検知価格 ${targetStr}（※制限解除後に再評価）</span>`;
+    } else {
+      detail = `<span style="color:var(--dim);">${rd.dir}シグナル接近中</span> — まだ条件未達`;
+      detail += `<br><span style="font-size:.76rem;color:var(--dim);">参考価格 ${targetStr}（※条件が揃えば成行で自動発動）</span>`;
+    }
+    rationale = rd.reason;
     quote = def.quotes ? def.quotes.ready : '';
   } else {
     detail = `次のシグナルを待機中... (${def.tf}足監視)`;

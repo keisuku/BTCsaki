@@ -3308,7 +3308,7 @@ async function fullFetch(){
   document.getElementById('apiSt').textContent='更新中...';
   try{
     await fetchPrice(); setDot('ds-price','ok');
-    await Promise.allSettled([fetchFR(), fetchLS(), fetchOI(), fetchDXY(), fetchBasisSpread()]);
+    await Promise.allSettled([fetchFR(), fetchLS(), fetchOI(), fetchDXY(), fetchBasisSpread(), fetchCrossAssetSignals()]);
     const results=await Promise.allSettled([
       fetchKlines('5m',100),fetchKlines('15m',100),
       fetchKlines('1h',100),fetchKlines('4h',100),fetchKlines('1d',60)
@@ -3997,6 +3997,176 @@ function getUpperTFDirection(tf) {
   return r ? r.signal : null;
 }
 
+// ═══════════════════════════════════════════════
+// PORTFOLIO RISK MANAGEMENT — ポートフォリオレベルリスク管理
+// ═══════════════════════════════════════════════
+
+function getPortfolioExposure() {
+  let longCount = 0, shortCount = 0, totalPnl = 0;
+  ALL_BOTS.forEach(d => {
+    const bs = botStates[d.id];
+    if (bs && bs.position) {
+      if (bs.position.dir === 'LONG') longCount++;
+      else shortCount++;
+      const pnl = bs.position.dir === 'LONG'
+        ? (S.price - bs.position.entry) / bs.position.entry * 100
+        : (bs.position.entry - S.price) / bs.position.entry * 100;
+      totalPnl += pnl;
+    }
+  });
+  return { longCount, shortCount, totalPnl, netExposure: longCount - shortCount, total: longCount + shortCount };
+}
+
+function countRecentSLs(withinMs) {
+  const cutoff = Date.now() - withinMs;
+  let count = 0;
+  ALL_BOTS.forEach(d => {
+    const bs = botStates[d.id];
+    if (!bs) return;
+    bs.trades.forEach(t => {
+      if (!t.win && t.exitTime && new Date(t.exitTime).getTime() > cutoff) count++;
+    });
+  });
+  return count;
+}
+
+function isPortfolioSafe(signal) {
+  // フリート一時停止中
+  if (S._fleetPaused && Date.now() < (S._fleetPauseUntil || 0)) return false;
+  if (S._fleetPaused && Date.now() >= (S._fleetPauseUntil || 0)) S._fleetPaused = false;
+
+  const exp = getPortfolioExposure();
+  // 同方向ポジション15体以上 → 新規禁止
+  if (signal === 'LONG' && exp.longCount >= 15) return false;
+  if (signal === 'SHORT' && exp.shortCount >= 15) return false;
+  // ポートフォリオ含み損合計 -3% 以上 → 新規停止
+  if (exp.totalPnl < -3.0) return false;
+  // 直近1時間でSL 5回以上 → 30分クールダウン
+  if (countRecentSLs(3600000) >= 5) return false;
+  return true;
+}
+
+function checkFleetHealth() {
+  const oneHourAgo = Date.now() - 3600000;
+  let totalSLs = 0, totalTrades = 0;
+  ALL_BOTS.forEach(d => {
+    const bs = botStates[d.id];
+    if (!bs) return;
+    const recent = bs.trades.filter(t => t.exitTime && new Date(t.exitTime).getTime() > oneHourAgo);
+    totalTrades += recent.length;
+    totalSLs += recent.filter(t => !t.win).length;
+  });
+  if (totalTrades >= 10 && totalSLs / totalTrades > 0.7) {
+    S._fleetPaused = true;
+    S._fleetPauseUntil = Date.now() + 1800000;
+    return false;
+  }
+  return true;
+}
+
+// ═══════════════════════════════════════════════
+// PATTERN MEMORY — パターン記憶システム
+// ═══════════════════════════════════════════════
+
+let patternDB = [];
+function getPatternDBKey() { return `patternDB_${currentCoin}_v1`; }
+function loadPatternDB() {
+  try { patternDB = JSON.parse(localStorage.getItem(getPatternDBKey())) || []; } catch(e) { patternDB = []; }
+}
+function savePatternDB() {
+  if (patternDB.length > 500) patternDB = patternDB.slice(-500);
+  localStorage.setItem(getPatternDBKey(), JSON.stringify(patternDB));
+}
+
+function createMarketFingerprint(tf) {
+  const r = botComputeTF(tf);
+  const kl = KL[tf]();
+  const atr = (kl && kl.length >= 15) ? calcATR(kl, 14) : 0;
+  const atrPct = S.price > 0 ? (atr / S.price) * 100 : 0;
+  return {
+    score: r ? r.score : 50,
+    rsi: r ? (r.rsi || 50) : 50,
+    regime: S._currentRegime || 'unknown',
+    fg: S.fg || 50,
+    fr: Math.round((S.fr || 0) * 10000),
+    ls: Math.round(S.ls || 50),
+    atrPct: +atrPct.toFixed(3),
+    hour: new Date().getUTCHours(),
+    dayOfWeek: new Date().getDay(),
+  };
+}
+
+function fingerprintDistance(a, b) {
+  // 正規化ユークリッド距離（各次元を[0,1]にスケール）
+  const ranges = { score:[0,100], rsi:[0,100], fg:[0,100], fr:[-50,50], ls:[0,100], atrPct:[0,5], hour:[0,23], dayOfWeek:[0,6] };
+  let sumSq = 0, dims = 0;
+  Object.keys(ranges).forEach(key => {
+    if (a[key] !== undefined && b[key] !== undefined) {
+      const [min, max] = ranges[key];
+      const range = max - min || 1;
+      const diff = ((a[key] - min) / range) - ((b[key] - min) / range);
+      sumSq += diff * diff;
+      dims++;
+    }
+  });
+  // レジーム一致ボーナス
+  if (a.regime && b.regime && a.regime === b.regime) sumSq -= 0.05;
+  return dims > 0 ? Math.sqrt(sumSq / dims) : 1;
+}
+
+function findSimilarPatterns(fp, strategyKey, dir) {
+  const matching = patternDB.filter(p => p.strategyKey === strategyKey && p.dir === dir);
+  if (matching.length < 3) return { patternScore: 50, matchCount: 0, avgPnl: 0 };
+
+  // 距離でソートし上位10件
+  const withDist = matching.map(p => ({ ...p, dist: fingerprintDistance(fp, p.fingerprint) }));
+  withDist.sort((a, b) => a.dist - b.dist);
+  const top = withDist.slice(0, 10);
+
+  const totalWeight = top.reduce((s, p) => s + (1 / (p.dist + 0.01)), 0);
+  let weightedWins = 0, weightedPnl = 0;
+  top.forEach(p => {
+    const w = (1 / (p.dist + 0.01)) / totalWeight;
+    if (p.win) weightedWins += w;
+    weightedPnl += p.pnlPct * w;
+  });
+
+  return {
+    patternScore: Math.round(weightedWins * 100),
+    matchCount: matching.length,
+    avgPnl: +weightedPnl.toFixed(3),
+  };
+}
+
+function recordPattern(strategyKey, dir, fingerprint, pnlPct, win) {
+  patternDB.push({
+    strategyKey, dir, fingerprint, pnlPct, win,
+    ts: Date.now(),
+  });
+  savePatternDB();
+}
+
+// ═══════════════════════════════════════════════
+// CROSS-ASSET INTELLIGENCE — クロスアセット相関
+// ═══════════════════════════════════════════════
+
+async function fetchCrossAssetSignals() {
+  try {
+    const otherPair = currentCoin === 'BTC' ? 'ETHUSDT' : 'BTCUSDT';
+    const klines = await safeFetch(`https://api.binance.com/api/v3/klines?symbol=${otherPair}&interval=5m&limit=30`);
+    if (klines && klines.length >= 14) {
+      const closes = klines.map(k => parseFloat(k[4]));
+      S._crossAssetRSI = calcRSI(closes, 14);
+      // 方向判定
+      const sma = calcSMA(closes, 10);
+      const lastClose = closes[closes.length - 1];
+      if (lastClose > sma * 1.002 && S._crossAssetRSI > 55) S._crossAssetSignal = 'LONG';
+      else if (lastClose < sma * 0.998 && S._crossAssetRSI < 45) S._crossAssetSignal = 'SHORT';
+      else S._crossAssetSignal = 'WAIT';
+    }
+  } catch(e) { /* silent */ }
+}
+
 // 動的ATRベースTP/SL計算
 function calcDynamicTPSL(price, dir, tf, params) {
   const klines = KL[tf]();
@@ -4496,6 +4666,128 @@ const BOT_CHILDREN = generateChildBots();
 // ALL_BOTS = mother (8) + children (8×5=40) = 48+ total (昇格bot追加で増加)
 let ALL_BOTS = [...BOT_DEFS, ...BOT_CHILDREN];
 
+// ═══════════════════════════════════════════════
+// STRATEGY GENOME — 戦略ゲノム & 実験bot自動生成
+// ═══════════════════════════════════════════════
+
+const INDICATOR_GENES = {
+  scoreBull:   (r,p,inds) => (r?.score||50) >= (p.scoreEntry||65),
+  scoreBear:   (r,p,inds) => (r?.score||50) <= (100-(p.scoreEntry||65)),
+  rsiOS:       (r,p,inds) => (r?.rsi||50) <= (p.rsiOS||28),
+  rsiOB:       (r,p,inds) => (r?.rsi||50) >= (p.rsiOB||72),
+  trendBull:   (r,p,inds) => inds?.trend?.cls === 'bull',
+  trendBear:   (r,p,inds) => inds?.trend?.cls === 'bear',
+  bbLower:     (r,p,inds) => inds?.bb?.cls === 'bull',
+  bbUpper:     (r,p,inds) => inds?.bb?.cls === 'bear',
+  deltaBull:   (r,p,inds) => inds?.delta?.cls === 'bull',
+  deltaBear:   (r,p,inds) => inds?.delta?.cls === 'bear',
+  vwapBull:    (r,p,inds) => inds?.vwap?.cls === 'bull',
+  vwapBear:    (r,p,inds) => inds?.vwap?.cls === 'bear',
+  fgFear:      (r,p,inds) => (S.fg||50) <= (p.fgExtreme||25),
+  fgGreed:     (r,p,inds) => (S.fg||50) >= (p.fgGreed||75),
+  frDistortPos:(r,p,inds) => (S.fr||0)*100 >= (p.frThresh||0.03),
+  frDistortNeg:(r,p,inds) => (S.fr||0)*100 <= -(p.frThresh||0.03),
+  lsSkewShort: (r,p,inds) => (S.ls||50) < (100-(p.lsThresh||62)),
+  lsSkewLong:  (r,p,inds) => (S.ls||50) > (p.lsThresh||62),
+};
+
+// 遺伝子ペア定義（LONG用→SHORT用の対応）
+const GENE_PAIRS = {
+  scoreBull:'scoreBear', scoreBear:'scoreBull',
+  rsiOS:'rsiOB', rsiOB:'rsiOS',
+  trendBull:'trendBear', trendBear:'trendBull',
+  bbLower:'bbUpper', bbUpper:'bbLower',
+  deltaBull:'deltaBear', deltaBear:'deltaBull',
+  vwapBull:'vwapBear', vwapBear:'vwapBull',
+  fgFear:'fgGreed', fgGreed:'fgFear',
+  frDistortPos:'frDistortNeg', frDistortNeg:'frDistortPos',
+  lsSkewShort:'lsSkewLong', lsSkewLong:'lsSkewShort',
+};
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateExperimentalBots() {
+  const expBots = [];
+  const tfs = ['5m','15m','1h','15m','5m','1h','15m','5m'];
+  const bullGenes = ['scoreBull','trendBull','deltaBull','vwapBull','bbLower','rsiOS','fgFear','lsSkewShort','frDistortNeg'];
+
+  for (let i = 0; i < 8; i++) {
+    const tf = tfs[i];
+    const numGenes = 2 + Math.floor(Math.random() * 2); // 2-3個
+    const selected = shuffleArray(bullGenes).slice(0, numGenes);
+    const bearGenes = selected.map(g => GENE_PAIRS[g]).filter(Boolean);
+    const id = `exp_${i}`;
+    const style = selected.includes('rsiOS') || selected.includes('fgFear') || selected.includes('bbLower') ? 'counter' : 'trend';
+    expBots.push({
+      id, name: `EXP-${String.fromCharCode(65+i)}`, emoji: '🧬',
+      tf, style, cat: `${tf}実験(${style==='trend'?'順':'逆'}張り)`,
+      strategy: 'experimental',
+      isExperimental: true,
+      genes: { bull: selected, bear: bearGenes },
+      desc: `実験bot: ${selected.join('+')}`,
+      philosophy: '未知の組み合わせから最適解を発見する。進化の先にある戦略を探索。',
+      quotes: {
+        watching: '新しい組み合わせを検証中...',
+        ready: '実験条件に近づいている。未知の領域へ。',
+        holding: '実験的エントリー実行中。データを収集。',
+        tp: '実験成功！この遺伝子組み合わせは有効だ。',
+        sl: '実験失敗。データを記録し次の進化へ。',
+      },
+    });
+  }
+  return expBots;
+}
+
+// ── 実験bot用デフォルトパラメータ ──
+function getExperimentalDefaultParams() {
+  return {
+    scoreEntry: 65, rsiOB: 72, rsiOS: 28, fgExtreme: 25, fgGreed: 75,
+    lsThresh: 62, frThresh: 0.03, bbEntry: true,
+    tpPct: 0.35, slPct: 0.18, tpAtrMult: 1.8, slAtrMult: 0.9, trailAtrMult: 1.2,
+    timeoutMin: 20, cooldownMin: 5,
+  };
+}
+
+// ── 実験botの遺伝子再生成（GA突然変異用） ──
+function mutateExperimentalGenes(def) {
+  const bullGenes = ['scoreBull','trendBull','deltaBull','vwapBull','bbLower','rsiOS','fgFear','lsSkewShort','frDistortNeg'];
+  const numGenes = 2 + Math.floor(Math.random() * 2);
+  const selected = shuffleArray(bullGenes).slice(0, numGenes);
+  def.genes = { bull: selected, bear: selected.map(g => GENE_PAIRS[g]).filter(Boolean) };
+  def.desc = `実験bot: ${selected.join('+')}`;
+}
+
+// 実験bot生成 & ALL_BOTSに追加
+const EXPERIMENTAL_BOTS = generateExperimentalBots();
+ALL_BOTS = [...ALL_BOTS, ...EXPERIMENTAL_BOTS];
+
+// 実験bot用にlocalStorageから遺伝子を復元
+function restoreExperimentalGenes() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(`expGenes_${currentCoin}_v1`));
+    if (saved) {
+      EXPERIMENTAL_BOTS.forEach(def => {
+        if (saved[def.id]) {
+          def.genes = saved[def.id].genes;
+          def.desc = `実験bot: ${def.genes.bull.join('+')}`;
+        }
+      });
+    }
+  } catch(e) {}
+}
+function saveExperimentalGenes() {
+  const data = {};
+  EXPERIMENTAL_BOTS.forEach(def => { data[def.id] = { genes: def.genes }; });
+  localStorage.setItem(`expGenes_${currentCoin}_v1`, JSON.stringify(data));
+}
+
 // Bot parameters (tunable by PDCA)
 const BOT_DEFAULT_PARAMS = {
   john:  { scoreEntry:65, scoreExit:45, rsiBull:55, rsiBear:45, tpPct:0.30, slPct:0.15, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:15, cooldownMin:3 },
@@ -4547,6 +4839,8 @@ function initBotArena(){
     if(!botStates[def.id].params){
       if(def.isChild){
         botStates[def.id].params = generateChildParams(def.motherId, def.paramMod);
+      } else if(def.isExperimental){
+        botStates[def.id].params = getExperimentalDefaultParams();
       } else {
         botStates[def.id].params = JSON.parse(JSON.stringify(BOT_DEFAULT_PARAMS[def.id]));
       }
@@ -4575,6 +4869,14 @@ function initBotArena(){
   backfillDailyStats();
   schedulePDCA();
   scheduleMicroPDCA();
+  // 拡張機能の初期化
+  loadPatternDB();
+  loadPDCAMeta();
+  restoreExperimentalGenes();
+  // WebSocket接続（2秒遅延で安定化）
+  setTimeout(initWebSocket, 2000);
+  // 戦略劣化チェックを日次で実行
+  setTimeout(checkStrategyDecay, 5000);
 }
 
 // トレード履歴からdailyStatsの欠損日を復元する
@@ -4618,7 +4920,7 @@ function createBotState(id){
     totalWins: 0,
     totalLosses: 0,
     totalPnlPct: 0,
-    params: JSON.parse(JSON.stringify(BOT_DEFAULT_PARAMS[id])),
+    params: JSON.parse(JSON.stringify(BOT_DEFAULT_PARAMS[id] || getExperimentalDefaultParams())),
     lastMsg: '',
     status: 'watching',   // 'watching' | 'ready' | 'holding'
     lastTradeTime: 0,     // timestamp of last trade close (for cooldown)
@@ -5768,12 +6070,50 @@ function checkBotEntry(def, state, price, now){
       }
       break;
     }
+    case 'experimental': { // 実験bot — 遺伝子組み合わせによるエントリー
+      const genes = def.genes;
+      if (genes && genes.bull && genes.bear) {
+        const allBull = genes.bull.every(g => INDICATOR_GENES[g] ? INDICATOR_GENES[g](r, p, inds) : false);
+        const allBear = genes.bear.every(g => INDICATOR_GENES[g] ? INDICATOR_GENES[g](r, p, inds) : false);
+        if (allBull) {
+          signal = 'LONG';
+          reason = `🧬実験: ${genes.bull.join('+')}全条件一致`;
+        } else if (allBear) {
+          signal = 'SHORT';
+          reason = `🧬実験: ${genes.bear.join('+')}全条件一致`;
+        } else {
+          // 条件の半分以上が一致 → ready
+          const bullMatch = genes.bull.filter(g => INDICATOR_GENES[g] ? INDICATOR_GENES[g](r, p, inds) : false).length;
+          if (bullMatch >= Math.ceil(genes.bull.length * 0.6)) {
+            state.status = 'ready';
+            state.readyDetail = { dir: 'LONG', target: price, reason: `🧬${bullMatch}/${genes.bull.length}条件一致` };
+          } else {
+            state.status = 'watching';
+            state.readyDetail = null;
+          }
+        }
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
   }
 
-  // Execute entry if signal found — マルチコンファメーション
+  // Execute entry if signal found — マルチコンファメーション + ポートフォリオ安全性
   if(signal){
-    // セカンダリ確認（2/3以上で発動）
+    // ── ポートフォリオ安全性チェック ──
+    if (!isPortfolioSafe(signal)) {
+      state.status = 'ready';
+      state.readyDetail = { dir: signal, target: price, reason: `${reason} (ポートフォリオ制限で待機)` };
+      signal = null;
+    }
+  }
+
+  if(signal){
+    // セカンダリ確認（3/5以上で発動）
     let confirmCount = 0;
+    const totalChecks = 5;
     const klines = KL[def.tf]();
 
     // ① 上位TF一致
@@ -5789,10 +6129,18 @@ function checkBotEntry(def, state, price, now){
     // ③ ボラティリティ適正範囲
     if (klines && checkVolatilityFilter(klines)) confirmCount++;
 
-    if (confirmCount < 2) {
+    // ④ パターン記憶（類似パターンの勝率40%以上で通過）
+    const fp = createMarketFingerprint(def.tf);
+    const similar = findSimilarPatterns(fp, strategyKey, signal);
+    if (similar.matchCount < 5 || similar.patternScore >= 40) confirmCount++;
+
+    // ⑤ クロスアセット確認（BTC/ETH相関）
+    if (S._crossAssetSignal === signal || S._crossAssetSignal === 'WAIT' || !S._crossAssetSignal) confirmCount++;
+
+    if (confirmCount < 3) {
       // 確認不足 → readyに格下げ、エントリーしない
       state.status = 'ready';
-      state.readyDetail = { dir: signal, target: price, reason: `${reason} (確認${confirmCount}/3で待機)` };
+      state.readyDetail = { dir: signal, target: price, reason: `${reason} (確認${confirmCount}/${totalChecks}で待機)` };
       signal = null;
     }
   }
@@ -5800,7 +6148,8 @@ function checkBotEntry(def, state, price, now){
   if(signal){
     // 動的ATRベースTP/SL
     const { tp, sl } = calcDynamicTPSL(price, signal, def.tf, p);
-    state.position = { dir:signal, entry:price, time:now, tp, sl, entryReason:reason, trailingActive:false, trailingTriggered:false };
+    const entryFP = createMarketFingerprint(def.tf);
+    state.position = { dir:signal, entry:price, time:now, tp, sl, entryReason:reason, trailingActive:false, trailingTriggered:false, fingerprint:entryFP };
     state.status = 'holding';
     state.readyDetail = null;
     state.lastMsg = `${def.name}が${signal}でエントリー！ @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`;
@@ -5888,6 +6237,11 @@ function checkBotExit(def, state, price, now){
         pnlPct: +pnlPct.toFixed(3), entryPrice: pos.entry, exitPrice: price,
         tp: pos.tp, sl: pos.sl, elapsed: elapsedMin,
       });
+    }
+    // パターン記憶: エントリー時のfingerprintと結果を記録
+    if (pos.fingerprint) {
+      const stratKey = def.strategy || def.id;
+      recordPattern(stratKey, pos.dir, pos.fingerprint, +pnlPct.toFixed(3), win);
     }
     state.position = null;
     state.status = 'watching';
@@ -6027,6 +6381,8 @@ function sendBotNotification(def, type, opts){
 // ── Run all bots (mother/child dormancy system) ──
 function botEvalAll(){
   if(!S.price) return;
+  // フリートヘルスチェック（全体の負け率70%超で30分停止）
+  checkFleetHealth();
   // レジーム検出 & bot閾値調整
   applyRegimeModifiers();
   // Stage 1: Evaluate all mother bots
@@ -6166,7 +6522,18 @@ function renderBotArena(){
   if(subEl){
     const regimeLabels = { uptrend:'📈 上昇トレンド', downtrend:'📉 下降トレンド', range:'↔️ レンジ相場', high_volatility:'⚡ 高ボラティリティ', unknown:'— 判定中' };
     const regimeLbl = regimeLabels[currentRegime] || '— 判定中';
-    subEl.innerHTML = `AI Trading Bot — ${currentCoin} ペーパートレードバトル（${ALL_BOTS.length}体稼働中 / カテゴリTop1表示）<span class="regime-badge regime-${currentRegime}">${regimeLbl}</span>`;
+    // ポートフォリオ状態
+    const expo = getPortfolioExposure();
+    const pnlClr = expo.totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const fleetStatus = S._fleetPaused ? ' <span style="color:var(--red);font-weight:700;">⛔ フリート一時停止中</span>' : '';
+    const wsStatus = _wsConnected ? '<span style="color:var(--green);">⚡WS</span>' : '<span style="color:var(--dim);">REST</span>';
+    const patternCount = patternDB ? patternDB.length : 0;
+    const genInfo = gaGeneration > 0 ? `世代${gaGeneration}` : '';
+    subEl.innerHTML = `AI Trading Bot — ${currentCoin} ペーパートレードバトル（${ALL_BOTS.length}体稼働中 / カテゴリTop1表示）` +
+      `<span class="regime-badge regime-${currentRegime}">${regimeLbl}</span> ` +
+      `<span style="font-size:.56rem;color:var(--dim);margin-left:8px;">${wsStatus} | ` +
+      `L:${expo.longCount} S:${expo.shortCount} 含み:<span style="color:${pnlClr}">${expo.totalPnl>=0?'+':''}${expo.totalPnl.toFixed(2)}%</span> | ` +
+      `${genInfo} 記憶:${patternCount}件</span>${fleetStatus}`;
   }
   renderConsensus();
   renderLeaderboard();
@@ -6544,136 +6911,230 @@ function schedulePDCA(){
   }, Math.max(delay, 60000)); // at least 1 min delay
 }
 
+// ═══════════════════════════════════════════════
+// GA EVOLUTION ENGINE — 遺伝的アルゴリズム進化エンジン
+// ═══════════════════════════════════════════════
+
+let gaGeneration = parseInt(localStorage.getItem(`gaGen_${currentCoin}`) || '0');
+let gaMutationRate = parseFloat(localStorage.getItem(`gaMutRate_${currentCoin}`) || '0.05');
+
+// ── 適応度関数 ──
+function calcFitness(bs) {
+  const total = bs.totalWins + bs.totalLosses;
+  if (total < 2) return 0;
+  const winRate = bs.totalWins / total;
+  const pnl = bs.totalPnlPct;
+
+  // シャープ比プロキシ（直近20トレード）
+  const recentPnls = bs.trades.slice(-20).map(t => t.pnlPct);
+  let sharpeProxy = 0;
+  if (recentPnls.length >= 3) {
+    const avg = recentPnls.reduce((s,v) => s+v, 0) / recentPnls.length;
+    const variance = recentPnls.reduce((s,v) => s + (v-avg)*(v-avg), 0) / recentPnls.length;
+    const std = Math.sqrt(variance) || 0.001;
+    sharpeProxy = avg / std;
+  }
+
+  return (pnl * 0.4) + (winRate * 100 * 0.3) + (Math.max(-3, Math.min(3, sharpeProxy)) * 10 * 0.3);
+}
+
+// ── トーナメント選択 ──
+function tournamentSelect(candidates, fitnesses, tournSize) {
+  const indices = [];
+  for (let i = 0; i < tournSize; i++) {
+    indices.push(Math.floor(Math.random() * candidates.length));
+  }
+  let bestIdx = indices[0];
+  for (let i = 1; i < indices.length; i++) {
+    if (fitnesses[indices[i]] > fitnesses[bestIdx]) bestIdx = indices[i];
+  }
+  return candidates[bestIdx];
+}
+
+// ── BLX-α交叉 ──
+function blxAlphaCrossover(parentA, parentB, alpha) {
+  const child = {};
+  Object.keys(parentA).forEach(key => {
+    const a = parentA[key], b = parentB[key];
+    if (typeof a === 'number' && typeof b === 'number') {
+      const min = Math.min(a, b);
+      const max = Math.max(a, b);
+      const range = max - min || 0.01;
+      child[key] = +(min - alpha * range + Math.random() * (1 + 2 * alpha) * range).toFixed(4);
+    } else if (typeof a === 'boolean') {
+      child[key] = Math.random() < 0.5 ? a : b;
+    } else {
+      child[key] = a;
+    }
+  });
+  return child;
+}
+
+// ── パラメータ境界クランプ ──
+function clampParams(p) {
+  const bounds = {
+    scoreEntry:[50,90], rsiOB:[60,90], rsiOS:[10,40], fgExtreme:[5,45], fgGreed:[55,95],
+    lsThresh:[52,80], frThresh:[0.005,0.1], atrMultiple:[0.5,3.0],
+    tpPct:[0.05,2.5], slPct:[0.03,1.2], tpAtrMult:[0.5,4.0], slAtrMult:[0.3,2.5], trailAtrMult:[0.5,3.0],
+    timeoutMin:[3,180], cooldownMin:[1,60],
+  };
+  Object.entries(bounds).forEach(([key,[min,max]]) => {
+    if (p[key] !== undefined) {
+      p[key] = +Math.max(min, Math.min(max, p[key])).toFixed(4);
+      if (key === 'timeoutMin' || key === 'cooldownMin') p[key] = Math.round(p[key]);
+    }
+  });
+  return p;
+}
+
 function runDailyPDCA(){
   const today = new Date().toISOString().slice(0,10);
+  gaGeneration++;
+  localStorage.setItem(`gaGen_${currentCoin}`, gaGeneration);
 
-  // Build dynamic categories from ALL bots (tf + style)
+  // レジーム適応型突然変異率
+  const regime = S._currentRegime || 'unknown';
+  if (regime === 'high_volatility') gaMutationRate = Math.min(0.20, gaMutationRate * 1.5);
+  else if (regime === 'range') gaMutationRate = Math.max(0.02, gaMutationRate * 0.8);
+  else gaMutationRate = 0.05;
+  localStorage.setItem(`gaMutRate_${currentCoin}`, gaMutationRate);
+
+  // カテゴリ別GA進化
   const catMap = {};
-  ALL_BOTS.forEach(d=>{
+  ALL_BOTS.forEach(d => {
     const key = `${d.tf}_${d.style}`;
     if(!catMap[key]) catMap[key] = [];
     catMap[key].push(d.id);
   });
 
-  Object.values(catMap).forEach(ids=>{
-    // Calculate today's performance for each bot in category
-    const botPerf = ids.map(id=>{
+  // GA前の全体適応度（メタPDCA用）
+  const fitnessBefore = {};
+  ALL_BOTS.forEach(d => {
+    const bs = botStates[d.id];
+    if (bs) fitnessBefore[d.id] = calcFitness(bs);
+  });
+
+  Object.values(catMap).forEach(ids => {
+    // 日次パフォーマンス記録
+    ids.forEach(id => {
       const bs = botStates[id];
-      if(!bs) return { id, wins:0, losses:0, pnl:0, total:0 };
-      const todayTrades = bs.trades.filter(t=>t.exitTime&&t.exitTime.startsWith(today));
-      const wins = todayTrades.filter(t=>t.win).length;
-      const losses = todayTrades.filter(t=>!t.win).length;
-      const pnl = todayTrades.reduce((s,t)=>s+t.pnlPct,0);
-      return { id, wins, losses, pnl, total: wins+losses };
+      if (!bs) return;
+      const todayTrades = bs.trades.filter(t => t.exitTime && t.exitTime.startsWith(today));
+      const wins = todayTrades.filter(t => t.win).length;
+      const losses = todayTrades.filter(t => !t.win).length;
+      const pnl = todayTrades.reduce((s,t) => s + t.pnlPct, 0);
+      bs.dailyStats.push({ date: today, wins, losses, pnlPct: +pnl.toFixed(3), tradeCount: wins + losses });
     });
 
-    // Store daily stats
-    botPerf.forEach(bp=>{
-      const bs = botStates[bp.id];
-      if(bs) bs.dailyStats.push({ date:today, wins:bp.wins, losses:bp.losses, pnlPct:+bp.pnl.toFixed(3), tradeCount:bp.total });
+    // マザーbot + 進化不可botを除外
+    const evolvableIds = ids.filter(id => !MOTHER_BOT_IDS.includes(id));
+    if (evolvableIds.length < 2) return;
+
+    // 適応度計算
+    const fitnesses = evolvableIds.map(id => {
+      const bs = botStates[id];
+      return bs ? calcFitness(bs) : 0;
     });
 
-    // Sort by cumulative P&L (買った額が多い順), then win rate
-    const sorted = [...botPerf].sort((a,b)=>{
-      const bsA = botStates[a.id], bsB = botStates[b.id];
-      const pnlA = bsA ? bsA.totalPnlPct : 0;
-      const pnlB = bsB ? bsB.totalPnlPct : 0;
-      if(pnlB !== pnlA) return pnlB - pnlA;
-      const rA = a.total>0 ? a.wins/a.total : 0;
-      const rB = b.total>0 ? b.wins/b.total : 0;
-      return rB - rA;
-    });
-    if(sorted.length < 2) return;
+    // エリート選択: Top 2のパラメータは保護
+    const sortedByFitness = evolvableIds.map((id, i) => ({ id, fitness: fitnesses[i] }))
+      .sort((a,b) => b.fitness - a.fitness);
+    const eliteIds = new Set(sortedByFitness.slice(0, 2).map(s => s.id));
 
-    // ── マザーbotは改善対象外（パラメータ固定） ──
-    // 良い成績のマザーbotから子botに知識を伝達する方式
-    // 特にJOHN（初期設定を崩さない）
+    // ワースト2: 完全リセット（新探索）
+    const worst2 = sortedByFitness.slice(-2).map(s => s.id);
+    const worst2Set = new Set(worst2);
 
-    // Find best-performing mother bot in this category as teacher
-    const motherPerf = sorted.filter(s => MOTHER_BOT_IDS.includes(s.id));
-    const bestMother = motherPerf.length > 0 ? motherPerf[0] : null;
+    // GA進化
+    evolvableIds.forEach((childId, idx) => {
+      const bs = botStates[childId];
+      if (!bs) return;
 
-    // Only child bots are eligible for PDCA improvement
-    const childPerf = sorted.filter(s => !MOTHER_BOT_IDS.includes(s.id));
-    if(childPerf.length < 2) return;
-
-    const teachCount = Math.min(3, Math.floor(childPerf.length / 2));
-    const childWinners = childPerf.slice(0, teachCount);
-    const childLosers = childPerf.slice(-teachCount);
-
-    // ワースト2名はPDCA改善をスキップ、SLを拡大して養分化
-    const worst2Ids = new Set(getWorst2Bots().map(w=>w.id));
-
-    // Log that mother bots are preserved
-    if(bestMother){
-      const motherDef = ALL_BOTS.find(d=>d.id===bestMother.id);
-      if(motherDef && botStates[bestMother.id]){
-        const msg = `【マザーbot固定】${motherDef.name}のパラメータは保護されています。子botへの知識伝達元として使用。`;
-        botStates[bestMother.id].pdcaLog.push({ time:Date.now(), msg });
+      // エリートは保護
+      if (eliteIds.has(childId)) {
+        bs.pdcaLog.push({ time: Date.now(), msg: `【GA世代${gaGeneration}】エリート保護 (適応度: ${fitnesses[idx].toFixed(1)})` });
+        return;
       }
-    }
 
-    childLosers.forEach((loser, li)=>{
-      // マザーbotは絶対に改善対象にしない（二重チェック）
-      if(MOTHER_BOT_IDS.includes(loser.id)) return;
-
-      // 養分枠: PDCA改善スキップ、SL拡大
-      if(worst2Ids.has(loser.id)){
-        const lp = botStates[loser.id]?.params;
-        if(lp){
-          const oldSl = lp.slPct;
-          lp.slPct = Math.min(1.0, +(oldSl * 1.5).toFixed(3));
-          const msg = `【養分枠】PDCA改善スキップ。SL拡大: ${oldSl}→${lp.slPct}（傷口拡大中）`;
-          botStates[loser.id].pdcaLog.push({ time:Date.now(), msg });
+      // ワースト2: ランダム初期化
+      if (worst2Set.has(childId)) {
+        const def = ALL_BOTS.find(d => d.id === childId);
+        if (def) {
+          // 実験botなら遺伝子も再生成
+          if (def.isExperimental) {
+            mutateExperimentalGenes(def);
+            bs.params = getExperimentalDefaultParams();
+          } else {
+            const motherKey = def.strategy || def.motherId || def.id;
+            const baseParams = BOT_DEFAULT_PARAMS[motherKey];
+            if (baseParams) {
+              bs.params = JSON.parse(JSON.stringify(baseParams));
+              // ランダム摂動
+              Object.keys(bs.params).forEach(k => {
+                if (typeof bs.params[k] === 'number') {
+                  bs.params[k] *= (0.7 + Math.random() * 0.6);
+                  bs.params[k] = +bs.params[k].toFixed(4);
+                }
+              });
+              clampParams(bs.params);
+            }
+          }
+          bs.pdcaLog.push({ time: Date.now(), msg: `【GA世代${gaGeneration}】ワースト枠 → 完全リセット＆ランダム探索` });
         }
         return;
       }
 
-      // Teacher: prefer best mother bot, fallback to best child
-      const teacher = bestMother || childWinners[Math.min(li, childWinners.length-1)];
-      if(teacher.id === loser.id) return;
-      const winParams = botStates[teacher.id]?.params;
-      const loseParams = botStates[loser.id]?.params;
-      if(!winParams || !loseParams) return;
-      const adjustments = [];
+      // トーナメント選択で親2体を選出
+      const parentA = tournamentSelect(evolvableIds, fitnesses, 3);
+      const parentB = tournamentSelect(evolvableIds, fitnesses, 3);
+      const paramsA = botStates[parentA]?.params;
+      const paramsB = botStates[parentB]?.params;
+      if (!paramsA || !paramsB) return;
 
-      ['tpPct','slPct','timeoutMin','cooldownMin'].forEach(key=>{
-        if(winParams[key] !== undefined && loseParams[key] !== undefined){
-          const old = loseParams[key];
-          const diff = winParams[key] - loseParams[key];
-          const exploration = (Math.random()-0.5) * 0.1 * Math.abs(winParams[key]);
-          const newVal = +(old + diff * 0.2 + exploration).toFixed(3);
-          if(key==='tpPct') loseParams[key] = Math.max(0.05, Math.min(2.0, newVal));
-          else if(key==='slPct') loseParams[key] = Math.max(0.05, Math.min(1.0, newVal));
-          else if(key==='timeoutMin') loseParams[key] = Math.max(5, Math.min(120, Math.round(newVal)));
-          else if(key==='cooldownMin') loseParams[key] = Math.max(1, Math.min(30, Math.round(newVal)));
-          if(loseParams[key] !== old) adjustments.push(`${key}: ${old}→${loseParams[key]}`);
+      // 70%の確率で交叉、30%はParentAのコピー
+      let newParams;
+      if (Math.random() < 0.7) {
+        newParams = blxAlphaCrossover(paramsA, paramsB, 0.3);
+      } else {
+        newParams = JSON.parse(JSON.stringify(paramsA));
+      }
+
+      // 突然変異
+      Object.keys(newParams).forEach(key => {
+        if (typeof newParams[key] === 'number' && Math.random() < gaMutationRate) {
+          const magnitude = Math.abs(newParams[key]) * 0.15 || 0.01;
+          newParams[key] += (Math.random() - 0.5) * 2 * magnitude;
+          newParams[key] = +newParams[key].toFixed(4);
         }
       });
 
-      ['scoreEntry','rsiOB','rsiOS','fgExtreme','fgGreed','lsThresh','frThresh','atrMultiple','tpAtrMult','slAtrMult','trailAtrMult'].forEach(key=>{
-        if(winParams[key] !== undefined && loseParams[key] !== undefined){
-          const old = loseParams[key];
-          const diff = winParams[key] - loseParams[key];
-          const exploration = (Math.random()-0.5) * 0.05 * Math.abs(winParams[key]||1);
-          loseParams[key] = +(old + diff * 0.15 + exploration).toFixed(3);
-          if(loseParams[key] !== old) adjustments.push(`${key}: ${old}→${loseParams[key]}`);
-        }
-      });
+      clampParams(newParams);
+      const oldParams = JSON.stringify(bs.params);
+      bs.params = newParams;
+      const newParamsStr = JSON.stringify(bs.params);
 
-      if(adjustments.length > 0){
-        const loserDef = ALL_BOTS.find(d=>d.id===loser.id);
-        const teacherDef = ALL_BOTS.find(d=>d.id===teacher.id);
-        const src = MOTHER_BOT_IDS.includes(teacher.id) ? '【マザーbot参考】' : '';
-        const msg = `${src}${teacherDef?.name||teacher.id}の成績を参考に調整: ${adjustments.join(', ')}`;
-        if(botStates[loser.id]) botStates[loser.id].pdcaLog.push({ time:Date.now(), msg });
+      if (oldParams !== newParamsStr) {
+        const defA = ALL_BOTS.find(d => d.id === parentA);
+        const defB = ALL_BOTS.find(d => d.id === parentB);
+        bs.pdcaLog.push({ time: Date.now(),
+          msg: `【GA世代${gaGeneration}】交叉: ${defA?.name||parentA}×${defB?.name||parentB} 変異率:${(gaMutationRate*100).toFixed(0)}%` });
       }
     });
   });
 
+  // 実験bot遺伝子保存
+  saveExperimentalGenes();
+
+  // メタPDCA記録
+  const fitnessAfter = {};
+  ALL_BOTS.forEach(d => {
+    const bs = botStates[d.id];
+    if (bs) fitnessAfter[d.id] = calcFitness(bs);
+  });
+  recordGAGeneration(fitnessBefore, fitnessAfter, regime);
+
   saveBotArena();
   if(botArenaVisible) renderBotArena();
-  // Generate daily review report
   if(typeof generateDailyReview === 'function') generateDailyReview();
 }
 
@@ -6726,6 +7187,158 @@ function scheduleMicroPDCA() {
 }
 
 window.runMicroPDCA = runMicroPDCA;
+
+// ═══════════════════════════════════════════════
+// META-PDCA — 自己評価ループ（GA効果測定 & 変異率自動調整）
+// ═══════════════════════════════════════════════
+
+let pdcaMeta = { generations: [], strategyDecay: {} };
+function loadPDCAMeta() {
+  try { pdcaMeta = JSON.parse(localStorage.getItem(`pdcaMeta_${currentCoin}_v1`)) || { generations: [], strategyDecay: {} }; } catch(e) { pdcaMeta = { generations: [], strategyDecay: {} }; }
+}
+function savePDCAMeta() {
+  if (pdcaMeta.generations.length > 100) pdcaMeta.generations = pdcaMeta.generations.slice(-100);
+  localStorage.setItem(`pdcaMeta_${currentCoin}_v1`, JSON.stringify(pdcaMeta));
+}
+
+function recordGAGeneration(fitnessBefore, fitnessAfter, regime) {
+  const ids = Object.keys(fitnessAfter);
+  const avgBefore = ids.reduce((s, id) => s + (fitnessBefore[id] || 0), 0) / (ids.length || 1);
+  const avgAfter = ids.reduce((s, id) => s + (fitnessAfter[id] || 0), 0) / (ids.length || 1);
+  const improvement = avgBefore !== 0 ? (avgAfter - avgBefore) / Math.abs(avgBefore) : 0;
+
+  pdcaMeta.generations.push({
+    gen: gaGeneration, avgBefore: +avgBefore.toFixed(2), avgAfter: +avgAfter.toFixed(2),
+    improvement: +improvement.toFixed(4), regime, mutationRate: gaMutationRate, ts: Date.now(),
+  });
+
+  // 直近5世代の改善率平均を確認
+  const recent5 = pdcaMeta.generations.slice(-5);
+  if (recent5.length >= 5) {
+    const avgImprovement = recent5.reduce((s, g) => s + g.improvement, 0) / recent5.length;
+    if (avgImprovement <= 0) {
+      // 停滞 → 変異率を上げて探索強化
+      gaMutationRate = Math.min(0.25, gaMutationRate * 2);
+    } else if (avgImprovement > 0.05) {
+      // 好調 → 変異率を下げて収束促進
+      gaMutationRate = Math.max(0.02, gaMutationRate * 0.5);
+    }
+    localStorage.setItem(`gaMutRate_${currentCoin}`, gaMutationRate);
+  }
+
+  savePDCAMeta();
+}
+
+// ── 戦略半減期検出 ──
+function checkStrategyDecay() {
+  ALL_BOTS.forEach(def => {
+    const bs = botStates[def.id];
+    if (!bs || MOTHER_BOT_IDS.includes(def.id)) return;
+    const recent7d = bs.dailyStats.slice(-7);
+    if (recent7d.length < 7) return;
+
+    const totalTrades = recent7d.reduce((s, d) => s + d.tradeCount, 0);
+    const totalWins = recent7d.reduce((s, d) => s + d.wins, 0);
+    if (totalTrades < 5) return;
+
+    const winRate = totalWins / totalTrades;
+    if (winRate < 0.40) {
+      // 7日間勝率40%以下 → 戦略劣化フラグ
+      pdcaMeta.strategyDecay[def.id] = {
+        flagged: true, winRate: +(winRate * 100).toFixed(1), ts: Date.now(),
+      };
+      bs.pdcaLog.push({ time: Date.now(), msg: `【戦略劣化検知】7日間勝率${(winRate*100).toFixed(0)}% — 次回GAでリセット優先` });
+    } else if (pdcaMeta.strategyDecay[def.id]?.flagged) {
+      // 回復
+      delete pdcaMeta.strategyDecay[def.id];
+    }
+  });
+  savePDCAMeta();
+}
+
+// 戦略劣化チェックは日次GA後に実行
+// → runDailyPDCA()の最後で呼ぶか、schedulePDCA内で呼ぶ
+
+// ═══════════════════════════════════════════════
+// WEBSOCKET — リアルタイムデータストリーム
+// ═══════════════════════════════════════════════
+
+let _wsPrice = null;
+let _wsKline = null;
+let _lastWsBotEval = 0;
+let _wsConnected = false;
+
+function initWebSocket() {
+  if (typeof WebSocket === 'undefined') return;
+  try {
+    const pair = COINS[currentCoin].pair.toLowerCase();
+
+    // 価格ストリーム（個別トレード）
+    _wsPrice = new WebSocket(`wss://stream.binance.com:9443/ws/${pair}@aggTrade`);
+    _wsPrice.onopen = () => {
+      _wsConnected = true;
+      console.log('[WS] Price stream connected');
+    };
+    _wsPrice.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        S.price = parseFloat(d.p);
+        // 1秒以上経過でbot評価
+        const now = Date.now();
+        if (now - _lastWsBotEval > 1000) {
+          _lastWsBotEval = now;
+          _tfCache = {}; // TFキャッシュクリア
+          botEvalAndSave();
+        }
+      } catch(err) {}
+    };
+    _wsPrice.onclose = () => {
+      _wsConnected = false;
+      console.log('[WS] Price stream disconnected, reconnecting in 5s...');
+      setTimeout(initWebSocket, 5000);
+    };
+    _wsPrice.onerror = () => { _wsPrice.close(); };
+
+    // 5分足Klineストリーム
+    _wsKline = new WebSocket(`wss://stream.binance.com:9443/ws/${pair}@kline_5m`);
+    _wsKline.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        const k = d.k;
+        if (S.k5 && S.k5.length > 0) {
+          const latest = [k.t, k.o, k.h, k.l, k.c, k.v, k.T, k.q, k.n, k.V, k.Q, k.B];
+          // 同じ期間の足なら更新、新しい足ならpush
+          const lastK = S.k5[S.k5.length - 1];
+          if (lastK && lastK[0] === k.t) {
+            S.k5[S.k5.length - 1] = latest;
+          } else if (k.x) {
+            // 確定足 → 新しい足を追加
+            S.k5.push(latest);
+            if (S.k5.length > 120) S.k5 = S.k5.slice(-100);
+          }
+        }
+      } catch(err) {}
+    };
+    _wsKline.onclose = () => {
+      setTimeout(() => {
+        if (_wsConnected) { // priceストリームが生きていればklineも再接続
+          const pair2 = COINS[currentCoin].pair.toLowerCase();
+          _wsKline = new WebSocket(`wss://stream.binance.com:9443/ws/${pair2}@kline_5m`);
+        }
+      }, 5000);
+    };
+    _wsKline.onerror = () => { _wsKline.close(); };
+
+  } catch(e) {
+    console.warn('[WS] WebSocket initialization failed, using REST fallback');
+  }
+}
+
+function closeWebSockets() {
+  if (_wsPrice) { try { _wsPrice.close(); } catch(e){} _wsPrice = null; }
+  if (_wsKline) { try { _wsKline.close(); } catch(e){} _wsKline = null; }
+  _wsConnected = false;
+}
 
 // ═══════════════════════════════════════════════
 // USER PREDICTION BATTLE — ユーザー vs Bot予測対決

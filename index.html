@@ -766,6 +766,59 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-cons-bots{font-size:.78rem;color:var(--dim);margin:4px 0;}
 .ba-cons-msg{font-size:.74rem;opacity:.8;}
 
+/* ══ AI SECRETARY (AI秘書) ══ */
+.sec-wrap{padding:16px;margin:10px 0 16px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(135deg,rgba(167,139,250,.04),rgba(0,212,255,.02));position:relative;overflow:hidden;}
+.sec-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#7c3aed,var(--accent),#7c3aed);}
+.sec-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.sec-icon{font-size:1.3rem;}
+.sec-title{font-family:'Share Tech Mono',monospace;font-size:1.1rem;color:#c4b5fd;font-weight:900;letter-spacing:.06em;}
+.sec-badge{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 8px;border-radius:10px;background:rgba(0,255,136,.15);color:var(--green);animation:baPulse 2s infinite;font-weight:700;letter-spacing:.1em;}
+.sec-regime{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);padding:2px 8px;background:var(--bg3);border-radius:4px;}
+.sec-focus{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.sec-focus-label{font-size:.68rem;color:var(--dim);font-family:'Share Tech Mono',monospace;}
+.sec-focus select{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:4px 8px;border-radius:4px;background:var(--bg3);color:var(--text);border:1px solid var(--border);cursor:pointer;}
+.sec-message{font-size:.82rem;padding:10px 14px;background:var(--bg2);border-radius:6px;border-left:3px solid #7c3aed;margin:10px 0;line-height:1.6;color:var(--text);}
+.sec-horizons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0;}
+@media(max-width:900px){.sec-horizons{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:520px){.sec-horizons{grid-template-columns:1fr;}}
+.sec-hz-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;border-left:3px solid var(--dim);transition:all .3s;}
+.sec-hz-card.long{border-left-color:var(--green);}
+.sec-hz-card.short{border-left-color:var(--red);}
+.sec-hz-card.wait{border-left-color:var(--dim);}
+.sec-hz-focused{box-shadow:0 0 12px rgba(124,58,237,.35);border-color:rgba(124,58,237,.5)!important;}
+.sec-hz-label{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.sec-hz-sub{font-size:.6rem;opacity:.7;}
+.sec-hz-dir{font-size:1.1rem;font-weight:900;margin:4px 0;font-family:'Share Tech Mono',monospace;}
+.sec-hz-dir.long{color:var(--green);}
+.sec-hz-dir.short{color:var(--red);}
+.sec-hz-dir.wait{color:var(--dim);}
+.sec-hz-conf-wrap{display:flex;align-items:center;gap:6px;margin:6px 0;}
+.sec-hz-conf-bar{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.sec-hz-conf-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+.sec-hz-conf-fill.high{background:var(--green);}
+.sec-hz-conf-fill.mid{background:var(--yellow);}
+.sec-hz-conf-fill.low{background:var(--red);}
+.sec-hz-conf-text{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);min-width:32px;text-align:right;}
+.sec-hz-prices{margin:8px 0;font-family:'Share Tech Mono',monospace;font-size:.72rem;}
+.sec-hz-price-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;}
+.sec-hz-price-label{color:var(--dim);font-size:.62rem;letter-spacing:.08em;}
+.sec-hz-price-val{color:var(--text);}
+.sec-hz-price-row.tp .sec-hz-price-val{color:var(--green);}
+.sec-hz-price-row.sl .sec-hz-price-val{color:var(--red);}
+.sec-hz-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--dim);flex-wrap:wrap;gap:4px;}
+.sec-hz-agree{color:var(--accent);}
+.sec-hz-rr{color:var(--yellow);}
+.sec-hz-lev{padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.05);}
+.sec-summary{display:flex;align-items:center;gap:14px;padding:10px 14px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);flex-wrap:wrap;}
+.sec-sum-label{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--dim);}
+.sec-sum-dir{font-family:'Share Tech Mono',monospace;font-size:1rem;font-weight:900;}
+.sec-sum-dir.long{color:var(--green);}
+.sec-sum-dir.short{color:var(--red);}
+.sec-sum-dir.wait{color:var(--dim);}
+.sec-sum-conf{font-family:'Share Tech Mono',monospace;font-size:.78rem;}
+.sec-sum-lev{font-family:'Share Tech Mono',monospace;font-size:.72rem;padding:2px 8px;background:rgba(255,255,255,.05);border-radius:4px;}
+.sec-sum-conflict{font-size:.7rem;color:var(--yellow);margin-left:auto;}
+
 /* ══ WORST 2 (養分枠) ══ */
 .ba-worst{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;}
 .ba-worst-card{flex:1;min-width:260px;padding:12px;border:1px dashed #ff4444;border-radius:8px;background:linear-gradient(135deg,rgba(255,68,68,0.08),rgba(0,0,0,0));}
@@ -1650,6 +1703,33 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <button onclick="closeAdminBotDetail()" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--dim);font-size:1.4rem;cursor:pointer;">✕</button>
       <div id="adminBotDetailContent"></div>
     </div>
+  </div>
+  <div id="aiSecretary" class="sec-wrap">
+    <div class="sec-header">
+      <span class="sec-icon">👩‍💼</span>
+      <span class="sec-title">AI秘書</span>
+      <span class="sec-badge">LIVE</span>
+      <span class="sec-regime" id="secRegime"></span>
+      <div class="sec-focus">
+        <label class="sec-focus-label">フォーカス:</label>
+        <select id="secFocusMode" onchange="onSecretaryFocusChange()">
+          <option value="all">全体バランス</option>
+          <option value="scalp_trend">王道順張り 5〜30分</option>
+          <option value="scalp_counter">逆張りスキャル 5〜30分</option>
+          <option value="swing_trend">スイング順張り 1H〜</option>
+          <option value="swing_counter">スイング逆張り 1H〜</option>
+          <option value="ultra_short">超短期のみ (5分)</option>
+        </select>
+      </div>
+    </div>
+    <div class="sec-message" id="secMessage">分析中です...</div>
+    <div class="sec-horizons">
+      <div class="sec-hz-card" id="secHz_ultra"></div>
+      <div class="sec-hz-card" id="secHz_short"></div>
+      <div class="sec-hz-card" id="secHz_medium"></div>
+      <div class="sec-hz-card" id="secHz_long"></div>
+    </div>
+    <div class="sec-summary" id="secSummary"></div>
   </div>
   <div id="baConsensus" style="display:none;"></div>
   <div id="predictionPanel">
@@ -3392,6 +3472,7 @@ async function init(){
   setTimeout(calcPosition, 1000);
   // 総合ページをデフォルトで表示
   if(overviewVisible) initOverview();
+  initSecretaryFocus();
   }
 }
 init();
@@ -6603,6 +6684,7 @@ function renderBotArena(){
       `${genInfo} 記憶:${patternCount}件</span>${fleetStatus}`;
   }
   renderFleetStatusBar();
+  renderSecretary();
   renderConsensus();
   renderLeaderboard();
   renderWorst2();
@@ -7816,6 +7898,366 @@ function selectLeverage(confidence){
   if(confidence >= 40) return { lev:3,   label:'🔵 一般 3x', cls:'normal' };
   return { lev:2, label:'🟢 安全 2x', cls:'safe' };
 }
+
+// ══════════════════════════════════════════════════════════════
+// ██  AI SECRETARY (AI秘書) — 全Bot統合判定エンジン
+// ══════════════════════════════════════════════════════════════
+
+const SECRETARY_HORIZONS = {
+  ultra:  { label:'超短期', sub:'1-5分',   tfs:['5m'],       primaryTf:'5m',  tpAtrMult:1.2, slAtrMult:0.6, weight:1.0 },
+  short:  { label:'短期',   sub:'5-30分',  tfs:['5m','15m'], primaryTf:'15m', tpAtrMult:1.8, slAtrMult:0.8, weight:1.5 },
+  medium: { label:'中期',   sub:'1-4時間', tfs:['15m','1h'], primaryTf:'1h',  tpAtrMult:2.5, slAtrMult:1.0, weight:2.0 },
+  long:   { label:'長期',   sub:'4H-1D',   tfs:['1h'],       primaryTf:'1h',  tpAtrMult:3.0, slAtrMult:1.2, weight:2.5 },
+};
+
+const FOCUS_MODE_CONFIG = {
+  all:            { tfs:null,          style:null,      boostHz:null },
+  scalp_trend:    { tfs:['5m','15m'], style:'trend',   boostHz:'short' },
+  scalp_counter:  { tfs:['5m','15m'], style:'counter', boostHz:'short' },
+  swing_trend:    { tfs:['1h'],       style:'trend',   boostHz:'medium' },
+  swing_counter:  { tfs:['1h'],       style:'counter', boostHz:'medium' },
+  ultra_short:    { tfs:['5m'],       style:null,      boostHz:'ultra' },
+};
+
+let _secLastRender = 0;
+
+function computeHorizonSignal(hzKey) {
+  const hz = SECRETARY_HORIZONS[hzKey];
+  if (!hz || !S.price) return { dir:'WAIT', confidence:30, entry:0, tp:0, sl:0, agreeing:0, total:0, rrRatio:0 };
+
+  const focusMode = (document.getElementById('secFocusMode')||{}).value || 'all';
+  const focusCfg = FOCUS_MODE_CONFIG[focusMode] || FOCUS_MODE_CONFIG.all;
+
+  // Filter bots relevant to this horizon's timeframes
+  const relevantBots = ALL_BOTS.filter(d => hz.tfs.includes(d.tf));
+  let longWeight = 0, shortWeight = 0, totalWeight = 0;
+  let longCount = 0, shortCount = 0;
+
+  for (const def of relevantBots) {
+    const bs = botStates[def.id];
+    if (!bs) continue;
+
+    // Performance multiplier: bots with better P&L get more vote weight
+    const perfMult = 1.0 + Math.tanh((bs.totalPnlPct || 0) / 5) * 0.5;
+
+    // Focus mode style boost
+    let styleMult = 1.0;
+    if (focusCfg.style && def.style === focusCfg.style) styleMult = 1.5;
+
+    const w = perfMult * styleMult;
+
+    if (bs.status === 'holding' && bs.position) {
+      if (bs.position.dir === 'LONG')  { longWeight += w; longCount++; }
+      else                             { shortWeight += w; shortCount++; }
+      totalWeight += w;
+    } else if (bs.status === 'ready' && bs.readyDetail) {
+      const halfW = w * 0.5;
+      if (bs.readyDetail.dir === 'LONG')  { longWeight += halfW; longCount++; }
+      else                                { shortWeight += halfW; shortCount++; }
+      totalWeight += halfW;
+    }
+  }
+
+  // TF score aggregation (40% weight)
+  let tfScoreSum = 0, tfCount = 0;
+  for (const tf of hz.tfs) {
+    const sc = S.tfScore ? S.tfScore[tf] : undefined;
+    if (sc !== undefined) { tfScoreSum += sc; tfCount++; }
+  }
+  // For long horizon, also consider 4h and 1d TF scores
+  if (hzKey === 'long') {
+    for (const tf of ['4h','1d']) {
+      const sc = S.tfScore ? S.tfScore[tf] : undefined;
+      if (sc !== undefined) { tfScoreSum += sc; tfCount++; }
+    }
+  }
+  const avgTfScore = tfCount > 0 ? tfScoreSum / tfCount : 50;
+
+  // Combine bot consensus (60%) + TF score (40%)
+  const botBias = totalWeight > 0 ? (longWeight / totalWeight) * 100 : 50;
+  const combined = botBias * 0.6 + avgTfScore * 0.4;
+
+  let dir = 'WAIT';
+  if (combined > 55) dir = 'LONG';
+  else if (combined < 45) dir = 'SHORT';
+
+  // Confidence computation (6 factors)
+  let confidence = 50;
+
+  // Factor 1: Bot agreement ratio (max +25)
+  if (totalWeight > 0) {
+    const agreeWeight = dir === 'LONG' ? longWeight : dir === 'SHORT' ? shortWeight : Math.max(longWeight, shortWeight);
+    confidence += (agreeWeight / totalWeight) * 25;
+  }
+
+  // Factor 2: TF score strength (max +15)
+  confidence += Math.abs(avgTfScore - 50) / 50 * 15;
+
+  // Factor 3: Indicator alignment (max +10)
+  try {
+    const snap = captureMarketSnapshot(hz.primaryTf);
+    if (snap && snap.indicators) {
+      let bullC = 0, bearC = 0, totalI = 0;
+      for (const k in snap.indicators) {
+        const ind = snap.indicators[k];
+        if (ind.cls === 'bull') bullC++;
+        else if (ind.cls === 'bear') bearC++;
+        totalI++;
+      }
+      if (totalI > 0) {
+        const aligned = dir === 'LONG' ? bullC : dir === 'SHORT' ? bearC : 0;
+        confidence += (aligned / totalI) * 10;
+      }
+    }
+  } catch(e) {}
+
+  // Factor 4: Cross-TF agreement (max +10)
+  let crossBonus = 0;
+  const allHzKeys = ['ultra','short','medium','long'];
+  const idx = allHzKeys.indexOf(hzKey);
+  for (const offset of [-1, 1]) {
+    const adjKey = allHzKeys[idx + offset];
+    if (!adjKey) continue;
+    const adjTfs = SECRETARY_HORIZONS[adjKey].tfs;
+    let adjSum = 0, adjN = 0;
+    for (const tf of adjTfs) {
+      const sc = S.tfScore ? S.tfScore[tf] : undefined;
+      if (sc !== undefined) { adjSum += sc; adjN++; }
+    }
+    if (adjN > 0) {
+      const adjAvg = adjSum / adjN;
+      const adjDir = adjAvg > 55 ? 'LONG' : adjAvg < 45 ? 'SHORT' : 'WAIT';
+      if (adjDir === dir && dir !== 'WAIT') crossBonus += 5;
+    }
+  }
+  confidence += crossBonus;
+
+  // Factor 5: Regime alignment (max +5)
+  if ((currentRegime === 'uptrend' && dir === 'LONG') || (currentRegime === 'downtrend' && dir === 'SHORT')) {
+    confidence += 5;
+  }
+
+  // Factor 6: FR/macro alignment (max +5)
+  if ((dir === 'SHORT' && S.fr > 0.0003) || (dir === 'LONG' && S.fr < -0.0001)) {
+    confidence += 5;
+  }
+
+  confidence = Math.max(10, Math.min(95, Math.round(confidence)));
+
+  // Entry / TP / SL
+  const entry = S.price;
+  let tp = entry, sl = entry;
+  try {
+    const tpsl = calcDynamicTPSL(entry, dir === 'SHORT' ? 'SHORT' : 'LONG', hz.primaryTf, {
+      tpPct: 0.5, slPct: 0.3, tpAtrMult: hz.tpAtrMult, slAtrMult: hz.slAtrMult
+    });
+    if (tpsl) { tp = tpsl.tp; sl = tpsl.sl; }
+  } catch(e) {}
+
+  const rrRatio = Math.abs(sl - entry) > 0 ? Math.abs(tp - entry) / Math.abs(sl - entry) : 0;
+  const agreeing = dir === 'LONG' ? longCount : dir === 'SHORT' ? shortCount : 0;
+
+  return { dir, confidence, entry, tp, sl, agreeing, total: relevantBots.length, rrRatio };
+}
+
+function computeSecretarySignal() {
+  const horizons = {};
+  for (const hzKey of ['ultra','short','medium','long']) {
+    horizons[hzKey] = computeHorizonSignal(hzKey);
+  }
+
+  // Overall: weighted average across horizons
+  let weightedScore = 0, totalW = 0;
+  for (const hzKey in horizons) {
+    const hz = SECRETARY_HORIZONS[hzKey];
+    const data = horizons[hzKey];
+    const dirScore = data.dir === 'LONG' ? 70 : data.dir === 'SHORT' ? 30 : 50;
+    weightedScore += dirScore * hz.weight * (data.confidence / 100);
+    totalW += hz.weight;
+  }
+  const overallScore = totalW > 0 ? weightedScore / totalW : 50;
+  const overallDir = overallScore > 55 ? 'LONG' : overallScore < 45 ? 'SHORT' : 'WAIT';
+  const overallConf = Math.round(
+    (horizons.ultra.confidence + horizons.short.confidence + horizons.medium.confidence + horizons.long.confidence) / 4
+  );
+  const overallLev = selectLeverage(overallConf);
+
+  // Detect cross-horizon conflict
+  const dirs = Object.values(horizons).map(h => h.dir).filter(d => d !== 'WAIT');
+  const hasConflict = dirs.length >= 2 && new Set(dirs).size > 1;
+
+  // Focus highlight
+  const focusMode = (document.getElementById('secFocusMode')||{}).value || 'all';
+  const focusCfg = FOCUS_MODE_CONFIG[focusMode] || FOCUS_MODE_CONFIG.all;
+  const focusHighlight = focusCfg.boostHz || null;
+
+  return {
+    horizons,
+    overall: { dir: overallDir, confidence: overallConf, leverage: overallLev },
+    regime: typeof currentRegime !== 'undefined' ? currentRegime : 'unknown',
+    hasConflict,
+    message: generateSecretaryMessage({ horizons, overall:{ dir:overallDir, confidence:overallConf }, hasConflict, focusHighlight }),
+    focusHighlight
+  };
+}
+
+function generateSecretaryMessage(result) {
+  const focus = result.focusHighlight;
+  // Pick the best horizon to talk about
+  let hz;
+  if (focus && result.horizons[focus]) {
+    hz = result.horizons[focus];
+  } else {
+    // Find horizon with highest confidence
+    let best = null, bestConf = -1;
+    for (const k in result.horizons) {
+      if (result.horizons[k].confidence > bestConf) { bestConf = result.horizons[k].confidence; best = k; }
+    }
+    hz = result.horizons[best];
+  }
+
+  if (result.hasConflict) {
+    return '⚡ 短期と長期で方向が異なっています。時間軸の選択が重要です。フォーカスモードで注目する時間軸を絞ることをお勧めします。';
+  }
+
+  const dir = result.overall.dir;
+  const conf = result.overall.confidence;
+
+  if (dir === 'LONG' && conf >= 70) {
+    return `📈 ${hz.agreeing}/${hz.total}体のBotが上昇を示唆しています。自信度${conf}%。エントリーを検討されてはいかがでしょうか。複数の時間軸で買いシグナルが揃っています。`;
+  }
+  if (dir === 'LONG' && conf >= 45) {
+    return `📊 やや上目線ですが、まだ確信には至りません（自信度${conf}%）。もう少し様子を見ましょう。`;
+  }
+  if (dir === 'SHORT' && conf >= 70) {
+    return `📉 ${hz.agreeing}/${hz.total}体のBotが下落を警告しています（自信度${conf}%）。ショートの準備をお勧めします。`;
+  }
+  if (dir === 'SHORT' && conf >= 45) {
+    return `📊 下落の兆候がありますが、確度は低めです（自信度${conf}%）。ポジションサイズにご注意ください。`;
+  }
+  return '⏸ 現在、明確な方向感がありません。Botたちの意見が分かれています。無理なエントリーは禁物です。休むも相場。';
+}
+
+// ── Secretary rendering ──
+
+function renderSecretary() {
+  const el = document.getElementById('aiSecretary');
+  if (!el) return;
+
+  // Throttle: render at most once per 3 seconds
+  const now = Date.now();
+  if (now - _secLastRender < 3000) return;
+  _secLastRender = now;
+
+  // Check if sufficient data available
+  if (!S.price || !botStates || Object.keys(botStates).length === 0) {
+    document.getElementById('secMessage').textContent = '⏳ データ収集中です。しばらくお待ちください...';
+    return;
+  }
+
+  const result = computeSecretarySignal();
+
+  // Regime badge
+  const regimeLabels = { uptrend:'📈 上昇トレンド', downtrend:'📉 下降トレンド', range:'↔ レンジ', high_volatility:'⚡ 高ボラ', unknown:'--' };
+  const regimeEl = document.getElementById('secRegime');
+  if (regimeEl) regimeEl.textContent = regimeLabels[result.regime] || '--';
+
+  // Message
+  const msgEl = document.getElementById('secMessage');
+  if (msgEl) msgEl.textContent = result.message;
+
+  // Horizon cards
+  const hzKeys = ['ultra','short','medium','long'];
+  for (const hzKey of hzKeys) {
+    const card = document.getElementById('secHz_' + hzKey);
+    if (!card) continue;
+    const data = result.horizons[hzKey];
+    const isFocused = result.focusHighlight === hzKey;
+    renderHorizonCard(card, data, hzKey, isFocused);
+  }
+
+  // Summary bar
+  renderSecretarySummary(result);
+
+  // Hide old consensus
+  const oldCons = document.getElementById('baConsensus');
+  if (oldCons) oldCons.style.display = 'none';
+}
+
+function renderHorizonCard(card, data, hzKey, isFocused) {
+  const hz = SECRETARY_HORIZONS[hzKey];
+  const dirCls = data.dir === 'LONG' ? 'long' : data.dir === 'SHORT' ? 'short' : 'wait';
+  const dirArrow = data.dir === 'LONG' ? '▲' : data.dir === 'SHORT' ? '▼' : '—';
+  const confCls = data.confidence >= 70 ? 'high' : data.confidence >= 45 ? 'mid' : 'low';
+  const lev = selectLeverage(data.confidence);
+
+  const fmtP = (p) => {
+    if (!p || p === 0) return '--';
+    return '$' + p.toLocaleString('en', { maximumFractionDigits: p > 100 ? 0 : 2 });
+  };
+  const pctDiff = (a, b) => b > 0 ? ((Math.abs(a - b) / b) * 100).toFixed(2) : '0.00';
+
+  card.className = 'sec-hz-card ' + dirCls + (isFocused ? ' sec-hz-focused' : '');
+  card.innerHTML =
+    '<div class="sec-hz-label">' + hz.label + ' <span class="sec-hz-sub">' + hz.sub + '</span></div>' +
+    '<div class="sec-hz-dir ' + dirCls + '">' + dirArrow + ' ' + data.dir + '</div>' +
+    '<div class="sec-hz-conf-wrap">' +
+      '<div class="sec-hz-conf-bar"><div class="sec-hz-conf-fill ' + confCls + '" style="width:' + data.confidence + '%"></div></div>' +
+      '<span class="sec-hz-conf-text">' + data.confidence + '%</span>' +
+    '</div>' +
+    '<div class="sec-hz-prices">' +
+      '<div class="sec-hz-price-row"><span class="sec-hz-price-label">ENTRY</span><span class="sec-hz-price-val">' + fmtP(data.entry) + '</span></div>' +
+      '<div class="sec-hz-price-row tp"><span class="sec-hz-price-label">TP</span><span class="sec-hz-price-val">' + fmtP(data.tp) + ' <small>(' + pctDiff(data.tp, data.entry) + '%)</small></span></div>' +
+      '<div class="sec-hz-price-row sl"><span class="sec-hz-price-label">SL</span><span class="sec-hz-price-val">' + fmtP(data.sl) + ' <small>(' + pctDiff(data.sl, data.entry) + '%)</small></span></div>' +
+    '</div>' +
+    '<div class="sec-hz-meta">' +
+      '<span class="sec-hz-agree">' + data.agreeing + '/' + data.total + ' Bots</span>' +
+      '<span class="sec-hz-rr">RR ' + (data.rrRatio > 0 ? data.rrRatio.toFixed(1) : '--') + ':1</span>' +
+      '<span class="sec-hz-lev">' + lev.label + '</span>' +
+    '</div>';
+}
+
+function renderSecretarySummary(result) {
+  const el = document.getElementById('secSummary');
+  if (!el) return;
+  const o = result.overall;
+  const dirCls = o.dir === 'LONG' ? 'long' : o.dir === 'SHORT' ? 'short' : 'wait';
+  const dirArrow = o.dir === 'LONG' ? '▲' : o.dir === 'SHORT' ? '▼' : '—';
+
+  let html = '<span class="sec-sum-label">総合判定:</span>' +
+    '<span class="sec-sum-dir ' + dirCls + '">' + dirArrow + ' ' + o.dir + '</span>' +
+    '<span class="sec-sum-conf">自信度 ' + o.confidence + '%</span>' +
+    '<span class="sec-sum-lev">' + o.leverage.label + '</span>';
+
+  if (result.hasConflict) {
+    html += '<span class="sec-sum-conflict">⚡ 時間軸間コンフリクト</span>';
+  }
+  el.innerHTML = html;
+}
+
+function onSecretaryFocusChange() {
+  const sel = document.getElementById('secFocusMode');
+  if (!sel) return;
+  const coin = typeof currentCoin !== 'undefined' ? currentCoin : 'BTC';
+  try { localStorage.setItem('secretaryFocus_' + coin, sel.value); } catch(e) {}
+  // Force immediate re-render
+  _secLastRender = 0;
+  renderSecretary();
+}
+
+// Restore focus mode from localStorage on load
+function initSecretaryFocus() {
+  const coin = typeof currentCoin !== 'undefined' ? currentCoin : 'BTC';
+  try {
+    const saved = localStorage.getItem('secretaryFocus_' + coin);
+    if (saved) {
+      const sel = document.getElementById('secFocusMode');
+      if (sel) sel.value = saved;
+    }
+  } catch(e) {}
+}
+
+// ── End AI Secretary ──
 
 // ── Generate thought narrative ──
 function generateThought(def, type, snap, opts={}){

@@ -2032,6 +2032,32 @@ function calcRSI(closes, period=9){
 
 function calcSMA(arr, n){ return arr.length<n?arr[arr.length-1]:arr.slice(-n).reduce((a,b)=>a+b,0)/n; }
 
+function calcEMA(arr, period){
+  if(!arr||arr.length<period) return arr&&arr.length?arr[arr.length-1]:0;
+  const k=2/(period+1);
+  let ema=arr.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for(let i=period;i<arr.length;i++) ema=arr[i]*k+ema*(1-k);
+  return ema;
+}
+
+function calcMACD(closes, fast=12, slow=26, sig=9){
+  if(!closes||closes.length<slow+sig) return {macd:0,signal:0,hist:0};
+  const k_f=2/(fast+1), k_s=2/(slow+1), k_sig=2/(sig+1);
+  let emaF=closes.slice(0,fast).reduce((a,b)=>a+b,0)/fast;
+  let emaS=closes.slice(0,slow).reduce((a,b)=>a+b,0)/slow;
+  const macdLine=[];
+  for(let i=1;i<closes.length;i++){
+    emaF=closes[i]*k_f+emaF*(1-k_f);
+    emaS=closes[i]*k_s+emaS*(1-k_s);
+    if(i>=slow-1) macdLine.push(emaF-emaS);
+  }
+  if(macdLine.length<sig) return {macd:macdLine[macdLine.length-1]||0,signal:0,hist:0};
+  let emaSig=macdLine.slice(0,sig).reduce((a,b)=>a+b,0)/sig;
+  for(let i=sig;i<macdLine.length;i++) emaSig=macdLine[i]*k_sig+emaSig*(1-k_sig);
+  const macdVal=macdLine[macdLine.length-1];
+  return {macd:macdVal, signal:emaSig, hist:macdVal-emaSig};
+}
+
 function computeTF(tf){
   const kl=KL[tf](); if(!kl||kl.length<20)return{score:50,signal:'WAIT',inds:{}};
   const cl=kl.map(k=>parseFloat(k[4]));
@@ -2109,8 +2135,37 @@ function computeTF(tf){
     else { inds.delta={cls:'neut',val:`${(delta*100).toFixed(0)}%`,badge:'— 均衡',bCls:'bn',why:'買い売り拮抗'}; }
   }
 
-  const total=bull+bear||1;
-  const score=Math.round((bull/total)*100);
+  // MACD
+  const macdResult = calcMACD(cl);
+  if (macdResult.macd !== 0 || macdResult.signal !== 0) {
+    const macdH = macdResult.hist;
+    const macdPct = last > 0 ? (macdResult.macd / last) * 100 : 0;
+    if (macdH > 0 && macdResult.macd > 0) {
+      bull += 2; inds.macd={cls:'bull',val:`${macdPct.toFixed(3)}%`,badge:'▲ MACD強気',bCls:'bb',why:'MACDライン>0 & ヒストグラム正'};
+    } else if (macdH > 0 && macdResult.macd <= 0) {
+      bull += 1; inds.macd={cls:'bull',val:`${macdPct.toFixed(3)}%`,badge:'▲ MACD回復中',bCls:'bb',why:'ヒストグラム正転 — 反転兆候'};
+    } else if (macdH < 0 && macdResult.macd < 0) {
+      bear += 2; inds.macd={cls:'bear',val:`${macdPct.toFixed(3)}%`,badge:'▼ MACD弱気',bCls:'br',why:'MACDライン<0 & ヒストグラム負'};
+    } else if (macdH < 0 && macdResult.macd >= 0) {
+      bear += 1; inds.macd={cls:'bear',val:`${macdPct.toFixed(3)}%`,badge:'▼ MACD失速',bCls:'br',why:'ヒストグラム負転 — 勢い低下'};
+    } else {
+      inds.macd={cls:'neut',val:`${macdPct.toFixed(3)}%`,badge:'— MACD中立',bCls:'bn',why:'MACD方向感なし'};
+    }
+  }
+
+  // ── スコア算出 ──
+  // 旧方式 bull/(bull+bear) は中立indicator無視で100%になるバグあり
+  // 新方式: 全indicator数を考慮し、中立は50寄りに引き寄せる
+  const indicatorCount = Object.keys(inds).length || 1;
+  const neutralCount = indicatorCount - (bull > 0 ? 1 : 0) - (bear > 0 ? 1 : 0);
+  // 各indicatorが最大2ptの重みを持つと仮定 → 理論最大 = indicatorCount * 2
+  const maxWeight = indicatorCount * 2;
+  // bullを0-100にスケール: bull重み全体に対する割合
+  // 中立indicatorは暗黙的に50%(=中立)として扱われる
+  const rawBullPct = maxWeight > 0 ? (bull / maxWeight) * 100 : 50;
+  const rawBearPct = maxWeight > 0 ? (bear / maxWeight) * 100 : 50;
+  // score: 50が中立。bullが強いほど100に近づき、bearが強いほど0に近づく
+  const score = Math.max(0, Math.min(100, Math.round(50 + (rawBullPct - rawBearPct))));
   return{score,signal:score>=65?'LONG':score<=35?'SHORT':'WAIT',inds,rsi};
 }
 

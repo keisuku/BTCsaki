@@ -766,58 +766,61 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-cons-bots{font-size:.78rem;color:var(--dim);margin:4px 0;}
 .ba-cons-msg{font-size:.74rem;opacity:.8;}
 
-/* ══ AI SECRETARY (AI秘書) ══ */
-.sec-wrap{padding:16px;margin:10px 0 16px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(135deg,rgba(167,139,250,.04),rgba(0,212,255,.02));position:relative;overflow:hidden;}
-.sec-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#7c3aed,var(--accent),#7c3aed);}
-.sec-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-.sec-icon{font-size:1.3rem;}
-.sec-title{font-family:'Share Tech Mono',monospace;font-size:1.1rem;color:#c4b5fd;font-weight:900;letter-spacing:.06em;}
-.sec-badge{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 8px;border-radius:10px;background:rgba(0,255,136,.15);color:var(--green);animation:baPulse 2s infinite;font-weight:700;letter-spacing:.1em;}
-.sec-regime{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);padding:2px 8px;background:var(--bg3);border-radius:4px;}
+/* ══ AI COMMAND CENTER (AI司令塔) ══ */
+.sec-wrap{padding:14px 16px;margin:10px 0 16px;border:1px solid rgba(124,58,237,.25);border-radius:12px;background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(0,212,255,.03),rgba(0,0,0,.2));position:relative;overflow:hidden;}
+.sec-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#7c3aed,var(--accent),#7c3aed,transparent);}
+.sec-wrap::after{content:'';position:absolute;top:2px;left:0;right:0;height:40px;background:linear-gradient(180deg,rgba(124,58,237,.08),transparent);pointer-events:none;}
+.sec-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;position:relative;z-index:1;}
+.sec-icon{font-size:1.4rem;}
+.sec-title{font-family:'Share Tech Mono',monospace;font-size:1.15rem;color:#c4b5fd;font-weight:900;letter-spacing:.08em;text-shadow:0 0 20px rgba(124,58,237,.3);}
+.sec-badge{font-family:'Share Tech Mono',monospace;font-size:.55rem;padding:2px 8px;border-radius:10px;background:rgba(0,255,136,.15);color:var(--green);animation:baPulse 2s infinite;font-weight:700;letter-spacing:.12em;}
+.sec-regime{font-family:'Share Tech Mono',monospace;font-size:.66rem;color:var(--dim);padding:2px 8px;background:var(--bg3);border-radius:4px;}
 .sec-focus{margin-left:auto;display:flex;align-items:center;gap:6px;}
-.sec-focus-label{font-size:.68rem;color:var(--dim);font-family:'Share Tech Mono',monospace;}
-.sec-focus select{font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:4px 8px;border-radius:4px;background:var(--bg3);color:var(--text);border:1px solid var(--border);cursor:pointer;}
-.sec-message{font-size:.82rem;padding:10px 14px;background:var(--bg2);border-radius:6px;border-left:3px solid #7c3aed;margin:10px 0;line-height:1.6;color:var(--text);}
-.sec-horizons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0;}
+.sec-focus select{font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:3px 8px;border-radius:4px;background:var(--bg3);color:var(--text);border:1px solid var(--border);cursor:pointer;}
+.sec-horizons{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:6px 0;background:var(--bg2);border-radius:8px;overflow:hidden;border:1px solid var(--border);}
 @media(max-width:900px){.sec-horizons{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:520px){.sec-horizons{grid-template-columns:1fr;}}
-.sec-hz-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;border-left:3px solid var(--dim);transition:all .3s;}
-.sec-hz-card.long{border-left-color:var(--green);}
-.sec-hz-card.short{border-left-color:var(--red);}
-.sec-hz-card.wait{border-left-color:var(--dim);}
-.sec-hz-focused{box-shadow:0 0 12px rgba(124,58,237,.35);border-color:rgba(124,58,237,.5)!important;}
-.sec-hz-label{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
-.sec-hz-sub{font-size:.6rem;opacity:.7;}
-.sec-hz-dir{font-size:1.1rem;font-weight:900;margin:4px 0;font-family:'Share Tech Mono',monospace;}
+.sec-hz-col{padding:12px 10px;text-align:center;position:relative;transition:all .3s;background:transparent;}
+.sec-hz-col:not(:last-child){border-right:1px solid var(--border);}
+@media(max-width:900px){.sec-hz-col:not(:last-child){border-right:none;}.sec-hz-col{border-bottom:1px solid var(--border);}}
+.sec-hz-col.long{background:rgba(0,255,136,.03);}
+.sec-hz-col.short{background:rgba(255,45,85,.03);}
+.sec-hz-col.wait{background:transparent;}
+.sec-hz-focused{background:rgba(124,58,237,.08)!important;box-shadow:inset 0 0 20px rgba(124,58,237,.1);}
+.sec-hz-label{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px;}
+.sec-hz-sub{font-size:.55rem;opacity:.6;margin-left:2px;}
+.sec-hz-dir{font-size:.78rem;font-weight:700;margin:2px 0;font-family:'Share Tech Mono',monospace;letter-spacing:.05em;}
 .sec-hz-dir.long{color:var(--green);}
 .sec-hz-dir.short{color:var(--red);}
 .sec-hz-dir.wait{color:var(--dim);}
-.sec-hz-conf-wrap{display:flex;align-items:center;gap:6px;margin:6px 0;}
-.sec-hz-conf-bar{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.sec-hz-entry{font-family:'Share Tech Mono',monospace;font-size:1.35rem;font-weight:900;margin:4px 0 2px;letter-spacing:-.02em;line-height:1.1;}
+.sec-hz-entry.long{color:var(--green);text-shadow:0 0 16px rgba(0,255,136,.15);}
+.sec-hz-entry.short{color:var(--red);text-shadow:0 0 16px rgba(255,45,85,.15);}
+.sec-hz-entry.wait{color:var(--dim);font-size:1.1rem;}
+.sec-hz-tpsl{font-family:'Share Tech Mono',monospace;font-size:.64rem;line-height:1.5;margin:3px 0 6px;min-height:2.2em;}
+.sec-hz-tpsl .tp{color:rgba(0,255,136,.7);display:block;}
+.sec-hz-tpsl .sl{color:rgba(255,45,85,.6);display:block;}
+.sec-hz-conf-wrap{display:flex;align-items:center;gap:5px;margin:4px auto;max-width:120px;}
+.sec-hz-conf-bar{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
 .sec-hz-conf-fill{height:100%;border-radius:3px;transition:width .5s ease;}
-.sec-hz-conf-fill.high{background:var(--green);}
-.sec-hz-conf-fill.mid{background:var(--yellow);}
-.sec-hz-conf-fill.low{background:var(--red);}
-.sec-hz-conf-text{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--dim);min-width:32px;text-align:right;}
-.sec-hz-prices{margin:8px 0;font-family:'Share Tech Mono',monospace;font-size:.72rem;}
-.sec-hz-price-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;}
-.sec-hz-price-label{color:var(--dim);font-size:.62rem;letter-spacing:.08em;}
-.sec-hz-price-val{color:var(--text);}
-.sec-hz-price-row.tp .sec-hz-price-val{color:var(--green);}
-.sec-hz-price-row.sl .sec-hz-price-val{color:var(--red);}
-.sec-hz-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--dim);flex-wrap:wrap;gap:4px;}
-.sec-hz-agree{color:var(--accent);}
-.sec-hz-rr{color:var(--yellow);}
-.sec-hz-lev{padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.05);}
-.sec-summary{display:flex;align-items:center;gap:14px;padding:10px 14px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);flex-wrap:wrap;}
-.sec-sum-label{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--dim);}
-.sec-sum-dir{font-family:'Share Tech Mono',monospace;font-size:1rem;font-weight:900;}
-.sec-sum-dir.long{color:var(--green);}
-.sec-sum-dir.short{color:var(--red);}
-.sec-sum-dir.wait{color:var(--dim);}
-.sec-sum-conf{font-family:'Share Tech Mono',monospace;font-size:.78rem;}
-.sec-sum-lev{font-family:'Share Tech Mono',monospace;font-size:.72rem;padding:2px 8px;background:rgba(255,255,255,.05);border-radius:4px;}
-.sec-sum-conflict{font-size:.7rem;color:var(--yellow);margin-left:auto;}
+.sec-hz-conf-fill.high{background:var(--green);box-shadow:0 0 6px rgba(0,255,136,.3);}
+.sec-hz-conf-fill.mid{background:var(--yellow);box-shadow:0 0 6px rgba(255,214,10,.2);}
+.sec-hz-conf-fill.low{background:var(--red);box-shadow:0 0 6px rgba(255,45,85,.2);}
+.sec-hz-conf-pct{font-family:'Share Tech Mono',monospace;font-size:.68rem;font-weight:700;min-width:28px;text-align:right;}
+.sec-hz-conf-pct.high{color:var(--green);}
+.sec-hz-conf-pct.mid{color:var(--yellow);}
+.sec-hz-conf-pct.low{color:var(--red);}
+.sec-hz-meta{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--dim);margin-top:4px;letter-spacing:.02em;}
+.sec-footer{display:flex;align-items:center;gap:12px;padding:8px 14px;margin-top:6px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);flex-wrap:wrap;font-family:'Share Tech Mono',monospace;}
+.sec-foot-msg{font-size:.76rem;color:var(--text);flex:1;min-width:200px;line-height:1.5;}
+.sec-foot-verdict{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.sec-foot-dir{font-size:.95rem;font-weight:900;}
+.sec-foot-dir.long{color:var(--green);}
+.sec-foot-dir.short{color:var(--red);}
+.sec-foot-dir.wait{color:var(--dim);}
+.sec-foot-conf{font-size:.72rem;color:var(--dim);}
+.sec-foot-lev{font-size:.66rem;padding:2px 8px;background:rgba(255,255,255,.05);border-radius:4px;color:var(--dim);}
+.sec-foot-conflict{font-size:.66rem;color:var(--yellow);}
 
 /* ══ WORST 2 (養分枠) ══ */
 .ba-worst{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;}
@@ -1706,30 +1709,28 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
   <div id="aiSecretary" class="sec-wrap">
     <div class="sec-header">
-      <span class="sec-icon">👩‍💼</span>
-      <span class="sec-title">AI秘書</span>
+      <span class="sec-icon">🧠</span>
+      <span class="sec-title">AI司令塔</span>
       <span class="sec-badge">LIVE</span>
       <span class="sec-regime" id="secRegime"></span>
       <div class="sec-focus">
-        <label class="sec-focus-label">フォーカス:</label>
         <select id="secFocusMode" onchange="onSecretaryFocusChange()">
           <option value="all">全体バランス</option>
-          <option value="scalp_trend">王道順張り 5〜30分</option>
-          <option value="scalp_counter">逆張りスキャル 5〜30分</option>
-          <option value="swing_trend">スイング順張り 1H〜</option>
-          <option value="swing_counter">スイング逆張り 1H〜</option>
-          <option value="ultra_short">超短期のみ (5分)</option>
+          <option value="scalp_trend">順張りスキャル</option>
+          <option value="scalp_counter">逆張りスキャル</option>
+          <option value="swing_trend">スイング順張り</option>
+          <option value="swing_counter">スイング逆張り</option>
+          <option value="ultra_short">超短期特化</option>
         </select>
       </div>
     </div>
-    <div class="sec-message" id="secMessage">分析中です...</div>
-    <div class="sec-horizons">
-      <div class="sec-hz-card" id="secHz_ultra"></div>
-      <div class="sec-hz-card" id="secHz_short"></div>
-      <div class="sec-hz-card" id="secHz_medium"></div>
-      <div class="sec-hz-card" id="secHz_long"></div>
+    <div class="sec-horizons" id="secHorizons">
+      <div class="sec-hz-col" id="secHz_ultra"></div>
+      <div class="sec-hz-col" id="secHz_short"></div>
+      <div class="sec-hz-col" id="secHz_medium"></div>
+      <div class="sec-hz-col" id="secHz_long"></div>
     </div>
-    <div class="sec-summary" id="secSummary"></div>
+    <div class="sec-footer" id="secFooter"></div>
   </div>
   <div id="baConsensus" style="display:none;"></div>
   <div id="predictionPanel">
@@ -8103,12 +8104,10 @@ function computeSecretarySignal() {
 
 function generateSecretaryMessage(result) {
   const focus = result.focusHighlight;
-  // Pick the best horizon to talk about
   let hz;
   if (focus && result.horizons[focus]) {
     hz = result.horizons[focus];
   } else {
-    // Find horizon with highest confidence
     let best = null, bestConf = -1;
     for (const k in result.horizons) {
       if (result.horizons[k].confidence > bestConf) { bestConf = result.horizons[k].confidence; best = k; }
@@ -8117,25 +8116,25 @@ function generateSecretaryMessage(result) {
   }
 
   if (result.hasConflict) {
-    return '⚡ 短期と長期で方向が異なっています。時間軸の選択が重要です。フォーカスモードで注目する時間軸を絞ることをお勧めします。';
+    return '時間軸間で方向が分裂。フォーカスモードで時間軸を絞れ。';
   }
 
   const dir = result.overall.dir;
   const conf = result.overall.confidence;
 
   if (dir === 'LONG' && conf >= 70) {
-    return `📈 ${hz.agreeing}/${hz.total}体のBotが上昇を示唆しています。自信度${conf}%。エントリーを検討されてはいかがでしょうか。複数の時間軸で買いシグナルが揃っています。`;
+    return `${hz.agreeing}/${hz.total}体が上昇を検知。複数時間軸で買いシグナル一致 — LONG推奨。`;
   }
   if (dir === 'LONG' && conf >= 45) {
-    return `📊 やや上目線ですが、まだ確信には至りません（自信度${conf}%）。もう少し様子を見ましょう。`;
+    return `上方向の兆候あり。確度不足、待機推奨。条件が揃うまで監視継続。`;
   }
   if (dir === 'SHORT' && conf >= 70) {
-    return `📉 ${hz.agreeing}/${hz.total}体のBotが下落を警告しています（自信度${conf}%）。ショートの準備をお勧めします。`;
+    return `${hz.agreeing}/${hz.total}体が下落を警告。売り圧力検知 — SHORT推奨。`;
   }
   if (dir === 'SHORT' && conf >= 45) {
-    return `📊 下落の兆候がありますが、確度は低めです（自信度${conf}%）。ポジションサイズにご注意ください。`;
+    return `下落の兆候あり。確度低め、ポジションサイズ要注意。`;
   }
-  return '⏸ 現在、明確な方向感がありません。Botたちの意見が分かれています。無理なエントリーは禁物です。休むも相場。';
+  return '方向感なし。Bot間で意見分裂中 — ノーポジション推奨。';
 }
 
 // ── Secretary rendering ──
@@ -8144,93 +8143,101 @@ function renderSecretary() {
   const el = document.getElementById('aiSecretary');
   if (!el) return;
 
-  // Throttle: render at most once per 3 seconds
   const now = Date.now();
   if (now - _secLastRender < 3000) return;
   _secLastRender = now;
 
-  // Check if sufficient data available
   if (!S.price || !botStates || Object.keys(botStates).length === 0) {
-    document.getElementById('secMessage').textContent = '⏳ データ収集中です。しばらくお待ちください...';
+    const footer = document.getElementById('secFooter');
+    if (footer) footer.innerHTML = '<span class="sec-foot-msg">データ収集中...</span>';
     return;
   }
 
   const result = computeSecretarySignal();
 
   // Regime badge
-  const regimeLabels = { uptrend:'📈 上昇トレンド', downtrend:'📉 下降トレンド', range:'↔ レンジ', high_volatility:'⚡ 高ボラ', unknown:'--' };
+  const regimeLabels = { uptrend:'上昇トレンド', downtrend:'下降トレンド', range:'レンジ', high_volatility:'高ボラ', unknown:'--' };
   const regimeEl = document.getElementById('secRegime');
   if (regimeEl) regimeEl.textContent = regimeLabels[result.regime] || '--';
 
-  // Message
-  const msgEl = document.getElementById('secMessage');
-  if (msgEl) msgEl.textContent = result.message;
-
-  // Horizon cards
+  // Horizon columns
   const hzKeys = ['ultra','short','medium','long'];
   for (const hzKey of hzKeys) {
-    const card = document.getElementById('secHz_' + hzKey);
-    if (!card) continue;
-    const data = result.horizons[hzKey];
-    const isFocused = result.focusHighlight === hzKey;
-    renderHorizonCard(card, data, hzKey, isFocused);
+    const col = document.getElementById('secHz_' + hzKey);
+    if (!col) continue;
+    renderHorizonCard(col, result.horizons[hzKey], hzKey, result.focusHighlight === hzKey);
   }
 
-  // Summary bar
-  renderSecretarySummary(result);
+  // Footer (message + verdict)
+  renderSecretaryFooter(result);
 
   // Hide old consensus
   const oldCons = document.getElementById('baConsensus');
   if (oldCons) oldCons.style.display = 'none';
 }
 
-function renderHorizonCard(card, data, hzKey, isFocused) {
+function renderHorizonCard(col, data, hzKey, isFocused) {
   const hz = SECRETARY_HORIZONS[hzKey];
   const dirCls = data.dir === 'LONG' ? 'long' : data.dir === 'SHORT' ? 'short' : 'wait';
   const dirArrow = data.dir === 'LONG' ? '▲' : data.dir === 'SHORT' ? '▼' : '—';
   const confCls = data.confidence >= 70 ? 'high' : data.confidence >= 45 ? 'mid' : 'low';
-  const lev = selectLeverage(data.confidence);
 
   const fmtP = (p) => {
     if (!p || p === 0) return '--';
     return '$' + p.toLocaleString('en', { maximumFractionDigits: p > 100 ? 0 : 2 });
   };
   const pctDiff = (a, b) => b > 0 ? ((Math.abs(a - b) / b) * 100).toFixed(2) : '0.00';
+  const isWait = data.dir === 'WAIT';
 
-  card.className = 'sec-hz-card ' + dirCls + (isFocused ? ' sec-hz-focused' : '');
-  card.innerHTML =
-    '<div class="sec-hz-label">' + hz.label + ' <span class="sec-hz-sub">' + hz.sub + '</span></div>' +
+  col.className = 'sec-hz-col ' + dirCls + (isFocused ? ' sec-hz-focused' : '');
+
+  let tpslHtml = '';
+  if (!isWait && data.entry > 0) {
+    tpslHtml =
+      '<div class="sec-hz-tpsl">' +
+        '<span class="tp">TP ' + fmtP(data.tp) + ' (+' + pctDiff(data.tp, data.entry) + '%)</span>' +
+        '<span class="sl">SL ' + fmtP(data.sl) + ' (\u2212' + pctDiff(data.sl, data.entry) + '%)</span>' +
+      '</div>';
+  } else {
+    tpslHtml = '<div class="sec-hz-tpsl"><span style="color:var(--dim)">--</span></div>';
+  }
+
+  const metaParts = [];
+  if (!isWait) {
+    metaParts.push(data.agreeing + '/' + data.total);
+    if (data.rrRatio > 0) metaParts.push('RR' + data.rrRatio.toFixed(1));
+    const lev = selectLeverage(data.confidence);
+    metaParts.push(lev.lev + 'x');
+  }
+
+  col.innerHTML =
+    '<div class="sec-hz-label">' + hz.label + '<span class="sec-hz-sub">' + hz.sub + '</span></div>' +
     '<div class="sec-hz-dir ' + dirCls + '">' + dirArrow + ' ' + data.dir + '</div>' +
+    '<div class="sec-hz-entry ' + dirCls + '">' + (isWait ? '—' : fmtP(data.entry)) + '</div>' +
+    tpslHtml +
     '<div class="sec-hz-conf-wrap">' +
       '<div class="sec-hz-conf-bar"><div class="sec-hz-conf-fill ' + confCls + '" style="width:' + data.confidence + '%"></div></div>' +
-      '<span class="sec-hz-conf-text">' + data.confidence + '%</span>' +
+      '<span class="sec-hz-conf-pct ' + confCls + '">' + data.confidence + '%</span>' +
     '</div>' +
-    '<div class="sec-hz-prices">' +
-      '<div class="sec-hz-price-row"><span class="sec-hz-price-label">ENTRY</span><span class="sec-hz-price-val">' + fmtP(data.entry) + '</span></div>' +
-      '<div class="sec-hz-price-row tp"><span class="sec-hz-price-label">TP</span><span class="sec-hz-price-val">' + fmtP(data.tp) + ' <small>(' + pctDiff(data.tp, data.entry) + '%)</small></span></div>' +
-      '<div class="sec-hz-price-row sl"><span class="sec-hz-price-label">SL</span><span class="sec-hz-price-val">' + fmtP(data.sl) + ' <small>(' + pctDiff(data.sl, data.entry) + '%)</small></span></div>' +
-    '</div>' +
-    '<div class="sec-hz-meta">' +
-      '<span class="sec-hz-agree">' + data.agreeing + '/' + data.total + ' Bots</span>' +
-      '<span class="sec-hz-rr">RR ' + (data.rrRatio > 0 ? data.rrRatio.toFixed(1) : '--') + ':1</span>' +
-      '<span class="sec-hz-lev">' + lev.label + '</span>' +
-    '</div>';
+    (metaParts.length ? '<div class="sec-hz-meta">' + metaParts.join(' · ') + '</div>' : '');
 }
 
-function renderSecretarySummary(result) {
-  const el = document.getElementById('secSummary');
+function renderSecretaryFooter(result) {
+  const el = document.getElementById('secFooter');
   if (!el) return;
   const o = result.overall;
   const dirCls = o.dir === 'LONG' ? 'long' : o.dir === 'SHORT' ? 'short' : 'wait';
   const dirArrow = o.dir === 'LONG' ? '▲' : o.dir === 'SHORT' ? '▼' : '—';
 
-  let html = '<span class="sec-sum-label">総合判定:</span>' +
-    '<span class="sec-sum-dir ' + dirCls + '">' + dirArrow + ' ' + o.dir + '</span>' +
-    '<span class="sec-sum-conf">自信度 ' + o.confidence + '%</span>' +
-    '<span class="sec-sum-lev">' + o.leverage.label + '</span>';
+  let html = '<span class="sec-foot-msg">' + result.message + '</span>' +
+    '<div class="sec-foot-verdict">' +
+      '<span class="sec-foot-dir ' + dirCls + '">' + dirArrow + ' ' + o.dir + '</span>' +
+      '<span class="sec-foot-conf">' + o.confidence + '%</span>' +
+      '<span class="sec-foot-lev">' + o.leverage.label + '</span>' +
+    '</div>';
 
   if (result.hasConflict) {
-    html += '<span class="sec-sum-conflict">⚡ 時間軸間コンフリクト</span>';
+    html += '<span class="sec-foot-conflict">⚡ コンフリクト</span>';
   }
   el.innerHTML = html;
 }

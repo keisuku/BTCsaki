@@ -8045,8 +8045,65 @@ function computeHorizonSignal(hzKey) {
 
   confidence = Math.max(10, Math.min(95, Math.round(confidence)));
 
-  // Entry / TP / SL
-  const entry = S.price;
+  // ── Smart Entry Price (時間軸ごとに異なるエントリーライン) ──
+  // 3つのソースを統合: (1)保有Bot群の平均エントリー (2)待機Bot群のターゲット (3)ATRベース推奨レベル
+  const price = S.price;
+  let entry = price;
+
+  // Source 1 & 2: Collect real bot entry/target prices for this horizon
+  let botEntrySum = 0, botEntryW = 0;
+  let readyTargetSum = 0, readyTargetW = 0;
+  for (const def of relevantBots) {
+    const bs = botStates[def.id];
+    if (!bs) continue;
+    const perfMult = 1.0 + Math.tanh((bs.totalPnlPct || 0) / 5) * 0.5;
+    if (bs.status === 'holding' && bs.position && bs.position.entry) {
+      // Holding bot's actual entry price (strong signal)
+      if ((dir === 'LONG' && bs.position.dir === 'LONG') || (dir === 'SHORT' && bs.position.dir === 'SHORT')) {
+        botEntrySum += bs.position.entry * perfMult;
+        botEntryW += perfMult;
+      }
+    } else if (bs.status === 'ready' && bs.readyDetail && bs.readyDetail.target) {
+      if (bs.readyDetail.dir === dir) {
+        readyTargetSum += bs.readyDetail.target * perfMult * 0.5;
+        readyTargetW += perfMult * 0.5;
+      }
+    }
+  }
+
+  // Source 3: ATR-based optimal entry (pullback/bounce level)
+  const klines = KL[hz.primaryTf] ? KL[hz.primaryTf]() : null;
+  const atr = calcATR(klines, 14);
+  // Each horizon uses a different fraction of ATR for entry offset
+  const entryAtrFrac = { ultra:0.15, short:0.35, medium:0.65, long:1.0 };
+  const atrOffset = atr * (entryAtrFrac[hzKey] || 0.3);
+  // ATR-based entry: LONG = buy the dip (below current), SHORT = sell the rip (above current)
+  const atrEntry = dir === 'LONG' ? price - atrOffset : dir === 'SHORT' ? price + atrOffset : price;
+
+  // Blend the three sources with priority weights
+  if (botEntryW > 0 && readyTargetW > 0) {
+    // Both holding and ready bots exist: blend all three
+    const avgBotEntry = botEntrySum / botEntryW;
+    const avgReadyTarget = readyTargetSum / readyTargetW;
+    entry = avgBotEntry * 0.4 + avgReadyTarget * 0.25 + atrEntry * 0.35;
+  } else if (botEntryW > 0) {
+    // Only holding bots: blend bot entries with ATR level
+    const avgBotEntry = botEntrySum / botEntryW;
+    entry = avgBotEntry * 0.5 + atrEntry * 0.5;
+  } else if (readyTargetW > 0) {
+    // Only ready bots: blend ready targets with ATR level
+    const avgReadyTarget = readyTargetSum / readyTargetW;
+    entry = avgReadyTarget * 0.4 + atrEntry * 0.6;
+  } else {
+    // No bot data: use ATR-based entry
+    entry = atrEntry;
+  }
+
+  // Sanity: entry shouldn't deviate too far from current price (max 2x ATR)
+  const maxDeviation = atr * 2;
+  entry = Math.max(price - maxDeviation, Math.min(price + maxDeviation, entry));
+
+  // ── TP / SL (relative to smart entry, not current price) ──
   let tp = entry, sl = entry;
   try {
     const tpsl = calcDynamicTPSL(entry, dir === 'SHORT' ? 'SHORT' : 'LONG', hz.primaryTf, {

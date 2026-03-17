@@ -766,6 +766,19 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-cons-bots{font-size:.78rem;color:var(--dim);margin:4px 0;}
 .ba-cons-msg{font-size:.74rem;opacity:.8;}
 
+/* ══ BA PRICE CHART (ボットアリーナ価格チャート) ══ */
+.ba-chart-wrap{margin:8px 0;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;position:relative;}
+.ba-chart-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+.ba-chart-price{font-family:'Share Tech Mono',monospace;font-size:1.3rem;font-weight:900;color:var(--text);}
+.ba-chart-chg{font-family:'Share Tech Mono',monospace;font-size:.78rem;font-weight:700;}
+.ba-chart-chg.up{color:var(--green);}
+.ba-chart-chg.down{color:var(--red);}
+.ba-chart-tf{margin-left:auto;display:flex;gap:2px;}
+.ba-chart-tf button{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:2px 7px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--dim);cursor:pointer;}
+.ba-chart-tf button.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700;}
+.ba-chart-canvas{width:100%;height:120px;display:block;border-radius:4px;}
+@media(max-width:520px){.ba-chart-canvas{height:90px;}}
+
 /* ══ AI COMMAND CENTER (AI司令塔) ══ */
 .sec-wrap{padding:14px 16px;margin:10px 0 16px;border:1px solid rgba(124,58,237,.25);border-radius:12px;background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(0,212,255,.03),rgba(0,0,0,.2));position:relative;overflow:hidden;}
 .sec-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#7c3aed,var(--accent),#7c3aed,transparent);}
@@ -1706,6 +1719,19 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <button onclick="closeAdminBotDetail()" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--dim);font-size:1.4rem;cursor:pointer;">✕</button>
       <div id="adminBotDetailContent"></div>
     </div>
+  </div>
+  <div id="baChartWrap" class="ba-chart-wrap">
+    <div class="ba-chart-header">
+      <span class="ba-chart-price" id="baChartPrice">--</span>
+      <span class="ba-chart-chg" id="baChartChg">--</span>
+      <div class="ba-chart-tf" id="baChartTfBtns">
+        <button data-ctf="5m" onclick="switchBaChartTf('5m')">5分</button>
+        <button data-ctf="15m" class="active" onclick="switchBaChartTf('15m')">15分</button>
+        <button data-ctf="1h" onclick="switchBaChartTf('1h')">1H</button>
+        <button data-ctf="4h" onclick="switchBaChartTf('4h')">4H</button>
+      </div>
+    </div>
+    <canvas id="baChartCanvas" class="ba-chart-canvas"></canvas>
   </div>
   <div id="aiSecretary" class="sec-wrap">
     <div class="sec-header">
@@ -6740,6 +6766,7 @@ function renderBotArena(){
       `${genInfo} 記憶:${patternCount}件</span>${fleetStatus}`;
   }
   renderFleetStatusBar();
+  drawBaChart();
   renderSecretary();
   renderConsensus();
   renderLeaderboard();
@@ -8377,6 +8404,156 @@ function initSecretaryFocus() {
 }
 
 // ── End AI Secretary ──
+
+// ══════════════════════════════════════════════════════════════
+// ██  Bot Arena Price Chart — ローソク足ミニチャート
+// ══════════════════════════════════════════════════════════════
+
+let baChartTf = '15m';
+
+function switchBaChartTf(tf) {
+  baChartTf = tf;
+  document.querySelectorAll('#baChartTfBtns button').forEach(b =>
+    b.classList.toggle('active', b.dataset.ctf === tf));
+  drawBaChart();
+}
+
+function drawBaChart() {
+  const canvas = document.getElementById('baChartCanvas');
+  if (!canvas) return;
+
+  // Update price display
+  const priceEl = document.getElementById('baChartPrice');
+  const chgEl = document.getElementById('baChartChg');
+  if (priceEl && S.price) {
+    priceEl.textContent = '$' + S.price.toLocaleString('en', { maximumFractionDigits: S.price > 100 ? 2 : 4 });
+  }
+  if (chgEl && S.price && S.p24h) {
+    const chg = ((S.price - S.p24h) / S.p24h * 100);
+    chgEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+    chgEl.className = 'ba-chart-chg ' + (chg >= 0 ? 'up' : 'down');
+  }
+
+  const kl = KL[baChartTf] ? KL[baChartTf]() : null;
+  if (!kl || kl.length < 10) return;
+
+  // Use last 60 candles (or fewer)
+  const candles = kl.slice(-60);
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  const pad = { l: 48, r: 6, t: 4, b: 16 };
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+  const n = candles.length;
+  const candleW = Math.max(1, Math.floor(cw / n * 0.7));
+  const gap = cw / n;
+
+  // Find price range
+  let minP = Infinity, maxP = -Infinity;
+  for (const k of candles) {
+    const lo = parseFloat(k[3]), hi = parseFloat(k[2]);
+    if (lo < minP) minP = lo;
+    if (hi > maxP) maxP = hi;
+  }
+  const range = maxP - minP || 1;
+  // Add 2% padding
+  minP -= range * 0.02;
+  maxP += range * 0.02;
+  const fullRange = maxP - minP;
+
+  const priceY = p => pad.t + ch * (1 - (p - minP) / fullRange);
+
+  // Background
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (ch * i / 4);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(W - pad.r, y);
+    ctx.stroke();
+  }
+
+  // Draw candles
+  for (let i = 0; i < n; i++) {
+    const k = candles[i];
+    const o = parseFloat(k[1]), hi = parseFloat(k[2]), lo = parseFloat(k[3]), cl = parseFloat(k[4]);
+    const x = pad.l + i * gap + gap / 2;
+    const isBull = cl >= o;
+    const color = isBull ? '#00ff88' : '#ff2d55';
+    const dimColor = isBull ? 'rgba(0,255,136,0.5)' : 'rgba(255,45,85,0.5)';
+
+    // Wick
+    ctx.strokeStyle = dimColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, priceY(hi));
+    ctx.lineTo(x, priceY(lo));
+    ctx.stroke();
+
+    // Body
+    const yTop = priceY(Math.max(o, cl));
+    const yBot = priceY(Math.min(o, cl));
+    const bodyH = Math.max(1, yBot - yTop);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(x - candleW / 2, yTop, candleW, bodyH);
+    ctx.globalAlpha = 1;
+  }
+
+  // Current price line
+  if (S.price >= minP && S.price <= maxP) {
+    const y = priceY(S.price);
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = 'rgba(0,212,255,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(W - pad.r, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Price label on right
+    ctx.fillStyle = '#00d4ff';
+    ctx.font = '9px "Share Tech Mono"';
+    ctx.textAlign = 'left';
+    ctx.fillText('$' + S.price.toLocaleString('en', { maximumFractionDigits: 0 }), W - pad.r - 46, y - 3);
+  }
+
+  // Y-axis labels
+  ctx.fillStyle = '#5a7a8a';
+  ctx.font = '8px "Share Tech Mono"';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const p = minP + (fullRange * i / 4);
+    ctx.fillText('$' + Math.round(p).toLocaleString(), pad.l - 3, priceY(p) + 3);
+  }
+
+  // X-axis time labels (5 evenly spaced)
+  ctx.fillStyle = '#5a7a8a';
+  ctx.font = '8px "Share Tech Mono"';
+  ctx.textAlign = 'center';
+  const timeSteps = Math.min(5, n);
+  for (let i = 0; i < timeSteps; i++) {
+    const idx = Math.floor(i * (n - 1) / (timeSteps - 1));
+    const ts = parseInt(candles[idx][0]);
+    const d = new Date(ts);
+    const label = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+    const x = pad.l + idx * gap + gap / 2;
+    ctx.fillText(label, x, H - 3);
+  }
+}
+
+// ── End Bot Arena Price Chart ──
 
 // ── Generate thought narrative ──
 function generateThought(def, type, snap, opts={}){

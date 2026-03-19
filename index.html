@@ -4,6 +4,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#7c3aed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
 <title>BTC先物 スキャルシグナル</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700;900&display=swap');
@@ -6527,6 +6531,21 @@ function toggleNightNotif(){
 }
 
 // Request browser notification permission
+// ── Service Worker registration & notification via SW ──
+let _swRegistration = null;
+
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        _swRegistration = reg;
+        console.log('[SW] registered, scope:', reg.scope);
+      })
+      .catch(err => console.warn('[SW] registration failed:', err));
+  }
+}
+registerServiceWorker();
+
 function requestNotifPermission(){
   if(!('Notification' in window)) return;
   if(Notification.permission === 'default'){
@@ -6534,7 +6553,7 @@ function requestNotifPermission(){
   }
 }
 
-// Send a push notification
+// Send notification via Service Worker (works in background)
 function sendBotNotification(def, type, opts){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
   if(isNotifBlockedByNight()) return;
@@ -6562,13 +6581,28 @@ function sendBotNotification(def, type, opts){
     body = `${def.name}が損切り ${opts.pnlPct.toFixed(2)}% @ ${priceFmt}`;
   }
 
-  try{
-    const n = new Notification(title, {
-      body, icon: '📊', tag: `${coinName}_${def.id}_${type}_${Date.now()}`,
-      requireInteraction: false,
+  const tag = `${coinName}_${def.id}_${type}_${Date.now()}`;
+
+  // Try Service Worker notification first (works in background)
+  if (_swRegistration && _swRegistration.active) {
+    _swRegistration.active.postMessage({
+      type: 'SHOW_NOTIFICATION',
+      title, body, tag
     });
-    setTimeout(()=> n.close(), 10000);
-  }catch(e){}
+  } else if (_swRegistration) {
+    // SW registered but not active yet — use showNotification directly
+    try {
+      _swRegistration.showNotification(title, {
+        body, tag, vibrate: [200, 100, 200], requireInteraction: false
+      });
+    } catch(e) {
+      // Fallback to basic Notification
+      try { const n = new Notification(title, { body, tag }); setTimeout(() => n.close(), 10000); } catch(e2) {}
+    }
+  } else {
+    // No SW — fallback to basic Notification API
+    try { const n = new Notification(title, { body, tag }); setTimeout(() => n.close(), 10000); } catch(e) {}
+  }
 }
 
 // ── Run all bots (mother/child dormancy system) ──

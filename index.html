@@ -4724,11 +4724,12 @@ function loadPromotedBots(){
           tf: parentDef.tf,
           style: parentDef.style,
           cat: parentDef.cat,
-          strategy: pb.id,
+          strategy: v.variantStrategy || pb.id,
           motherId: pb.id,
           isChild: true,
           variantLabel: v.label,
-          paramMod: v.paramMod,
+          variantStrategy: v.variantStrategy,
+          paramMod: v.paramMod || {},
           desc: (parentDef.desc||'') + '(' + v.label + ')',
           philosophy: parentDef.philosophy,
           quotes: parentDef.quotes,
@@ -4791,11 +4792,12 @@ function promoteChildToMother(childId){
         tf: def.tf,
         style: def.style,
         cat: def.cat,
-        strategy: childId,
+        strategy: v.variantStrategy || childId,
         motherId: childId,
         isChild: true,
         variantLabel: v.label,
-        paramMod: v.paramMod,
+        variantStrategy: v.variantStrategy,
+        paramMod: v.paramMod || {},
         desc: (def.desc||'') + '(' + v.label + ')',
         philosophy: def.philosophy,
         quotes: def.quotes,
@@ -4803,7 +4805,7 @@ function promoteChildToMother(childId){
       });
       // Initialize bot state
       botStates[newChildId] = createBotState(newChildId);
-      botStates[newChildId].params = generateChildParams(childId, v.paramMod);
+      botStates[newChildId].params = generateChildParams(childId, v.paramMod, v.variantStrategy, def.tf);
     }
   });
 
@@ -4817,14 +4819,51 @@ function promoteChildToMother(childId){
   alert(`${def.emoji} ${def.name} をマザーbotに昇格しました！\n5つの新しい子バリアントが追加されました。`);
 }
 
-// ── Child variant definitions ──
+// ── Child variant definitions — 各バリアントは完全に独立した戦略 ──
 const CHILD_VARIANTS = [
-  { suffix:'_agg',  label:'攻撃型',   paramMod:{ scoreEntry:-10, rsiOB:-3, rsiOS:+3, fgExtreme:+5, fgGreed:-5, tpPct:1.5, slPct:1.3 }},
-  { suffix:'_con',  label:'堅実型',   paramMod:{ scoreEntry:+10, rsiOB:+3, rsiOS:-3, fgExtreme:-5, fgGreed:+5, tpPct:0.7, slPct:0.7 }},
-  { suffix:'_fast', label:'高速型',   paramMod:{ timeoutMin:0.5, cooldownMin:0.5 }},
-  { suffix:'_slow', label:'中期型',   paramMod:{ timeoutMin:2.0, cooldownMin:2.0 }},
-  { suffix:'_risk', label:'高リスク', paramMod:{ tpPct:2.0, slPct:1.5 }},
+  { suffix:'_agg',  label:'ブレイクアウト型', variantStrategy:'breakout' },
+  { suffix:'_con',  label:'平均回帰型',       variantStrategy:'meanrev' },
+  { suffix:'_fast', label:'スキャルピング型', variantStrategy:'deltascalp' },
+  { suffix:'_slow', label:'マルチTF合成型',   variantStrategy:'multitf' },
+  { suffix:'_risk', label:'逆張りマクロ型',   variantStrategy:'sentiment' },
 ];
+
+// ── 各バリアント戦略の独立パラメータ（母botから継承しない）──
+const VARIANT_BASE_PARAMS = {
+  breakout: {
+    // BBバンドブレイク + ボラ拡大で参入、大きなTPを狙う
+    bbBreakConfirm: true, atrAboveAvg: true,
+    tpPct:0.70, slPct:0.25, tpAtrMult:2.8, slAtrMult:1.0, trailAtrMult:1.5,
+    timeoutMin:25, cooldownMin:6
+  },
+  meanrev: {
+    // RSI極値 + BB端 + 反転の兆候で逆張り、素早く利確
+    rsiOB:78, rsiOS:22, bbExtreme:true,
+    tpPct:0.18, slPct:0.12, tpAtrMult:0.8, slAtrMult:0.5, trailAtrMult:0.8,
+    timeoutMin:10, cooldownMin:2
+  },
+  deltascalp: {
+    // デルタ(買売量差)+ 出来高サージで瞬間参入、極小利幅
+    deltaThreshPct:60, volSurgeMult:1.4,
+    tpPct:0.10, slPct:0.07, tpAtrMult:0.6, slAtrMult:0.3, trailAtrMult:0.6,
+    timeoutMin:5, cooldownMin:1
+  },
+  multitf: {
+    // 2〜3タイムフレームが方向一致した時のみ参入、高勝率
+    scoreEntry:58, alignMin:2,
+    tpPct:0.55, slPct:0.20, tpAtrMult:2.2, slAtrMult:1.0, trailAtrMult:1.3,
+    timeoutMin:50, cooldownMin:10
+  },
+  sentiment: {
+    // F&G極値 + LS偏り + FR乖離で大逆張り、大きなリターン
+    fgExtreme:20, fgGreed:80, lsThresh:62, frThresh:0.035,
+    tpPct:1.00, slPct:0.40, tpAtrMult:2.5, slAtrMult:1.2, trailAtrMult:1.5,
+    timeoutMin:120, cooldownMin:20
+  },
+};
+
+// TFによるタイムスケール倍率（5mベース）
+const TF_TIME_SCALE = { '5m':1, '15m':1.8, '1h':4, '4h':8 };
 
 // ── Generate child bots from mother bots ──
 function generateChildBots(){
@@ -4838,11 +4877,13 @@ function generateChildBots(){
         tf: mother.tf,
         style: mother.style,
         cat: mother.cat,
-        strategy: mother.id,
+        strategy: v.variantStrategy, // 母botの戦略ではなく独立戦略
         motherId: mother.id,
         isChild: true,
         variantLabel: v.label,
-        paramMod: v.paramMod,
+        variantSuffix: v.suffix,
+        variantStrategy: v.variantStrategy,
+        paramMod: v.paramMod || {},
         desc: mother.desc + '(' + v.label + ')',
         philosophy: mother.philosophy,
         quotes: mother.quotes,
@@ -4989,27 +5030,39 @@ const BOT_DEFAULT_PARAMS = {
   atr:   { atrMultiple:1.5, rsiOB:72, rsiOS:28, tpPct:0.55, slPct:0.30, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:60, cooldownMin:10 },
 };
 
-// Generate child bot default params from mother params + variant modifiers
-function generateChildParams(motherId, paramMod){
-  const base = JSON.parse(JSON.stringify(BOT_DEFAULT_PARAMS[motherId]));
-  Object.entries(paramMod).forEach(([key, mod])=>{
-    if(base[key] !== undefined){
-      if(key === 'timeoutMin' || key === 'cooldownMin'){
-        base[key] = Math.max(1, Math.round(base[key] * mod));
-      } else if(key === 'tpPct' || key === 'slPct'){
-        base[key] = +(base[key] * mod).toFixed(3);
-      } else {
-        base[key] = +(base[key] + mod).toFixed(3);
+// Generate child bot default params — バリアント戦略ベースの独立パラメータ
+function generateChildParams(motherId, paramMod, variantStrategy, motherTf){
+  // バリアント戦略が指定されている場合は独立パラメータを使用
+  if (variantStrategy && VARIANT_BASE_PARAMS[variantStrategy]) {
+    const base = JSON.parse(JSON.stringify(VARIANT_BASE_PARAMS[variantStrategy]));
+    // タイムフレームに応じてタイムアウト/クールダウンをスケール
+    const tfScale = TF_TIME_SCALE[motherTf] || 1;
+    if (base.timeoutMin) base.timeoutMin = Math.round(base.timeoutMin * tfScale);
+    if (base.cooldownMin) base.cooldownMin = Math.round(base.cooldownMin * tfScale);
+    return base;
+  }
+  // フォールバック: 旧方式（母botベース + modifier）
+  const base = JSON.parse(JSON.stringify(BOT_DEFAULT_PARAMS[motherId] || {}));
+  if (paramMod) {
+    Object.entries(paramMod).forEach(([key, mod])=>{
+      if(base[key] !== undefined){
+        if(key === 'timeoutMin' || key === 'cooldownMin'){
+          base[key] = Math.max(1, Math.round(base[key] * mod));
+        } else if(key === 'tpPct' || key === 'slPct'){
+          base[key] = +(base[key] * mod).toFixed(3);
+        } else {
+          base[key] = +(base[key] + mod).toFixed(3);
+        }
       }
-    }
-  });
+    });
+  }
   return base;
 }
 
 // Bot Arena state
 let botArenaVisible = false;
 let botStates = {};  // id -> state object
-function getBAStorageKey(){ return `botArena_${currentCoin}_v2`; }
+function getBAStorageKey(){ return `botArena_${currentCoin}_v3`; }
 
 function initBotArena(){
   // Load promoted bots first (adds to ALL_BOTS and MOTHER_BOT_IDS)
@@ -5027,7 +5080,7 @@ function initBotArena(){
     // Ensure params exist
     if(!botStates[def.id].params){
       if(def.isChild){
-        botStates[def.id].params = generateChildParams(def.motherId, def.paramMod);
+        botStates[def.id].params = generateChildParams(def.motherId, def.paramMod, def.variantStrategy, def.tf);
       } else if(def.isExperimental){
         botStates[def.id].params = getExperimentalDefaultParams();
       } else {
@@ -6259,6 +6312,187 @@ function checkBotEntry(def, state, price, now){
       }
       break;
     }
+    // ════════════════════════════════════════════════
+    // 独立バリアント戦略（母botとは完全に異なるロジック）
+    // ════════════════════════════════════════════════
+
+    case 'breakout': { // ブレイクアウト型 — BBバンド突破 + ボラ拡大で参入
+      const kl = KL[tf]();
+      if (!kl || kl.length < 20) { state.status = 'watching'; break; }
+      const bb = inds.bb;
+      const atrInd = inds.atr;
+      // ATRが平均以上（ボラティリティ拡大中）でなければ参入しない
+      const atrExpanding = atrInd && atrInd.cls !== 'neutral';
+      if (!bb || !atrExpanding) {
+        if (bb && !atrExpanding) {
+          state.status = 'ready';
+          state.readyDetail = { dir: bb.cls === 'bull' ? 'LONG' : 'SHORT', target: price, reason: 'ATRボラ拡大待ち', confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        } else {
+          state.status = 'watching';
+          state.readyDetail = null;
+        }
+        break;
+      }
+      // 直近3本でBB突破を確認
+      const recent3 = kl.slice(-3);
+      const lastClose = recent3[2][4];
+      const prevClose = recent3[1][4];
+      // BB上限突破 = LONG breakout
+      if (bb.cls === 'bear' && lastClose > prevClose && score >= 55) {
+        // 上方ブレイクアウト（BB上限付近で上昇中）
+        signal = 'LONG';
+        reason = `BB上方ブレイク + ATR拡大(${atrInd.badge}) + 上昇モメンタム`;
+      } else if (bb.cls === 'bull' && lastClose < prevClose && score <= 45) {
+        // 下方ブレイクアウト
+        signal = 'SHORT';
+        reason = `BB下方ブレイク + ATR拡大(${atrInd.badge}) + 下降モメンタム`;
+      } else if (score >= 65 && atrExpanding) {
+        // スコア高 + ボラ拡大 = トレンドブレイク
+        signal = 'LONG';
+        reason = `スコア${score}ブレイク + ATR拡大`;
+      } else if (score <= 35 && atrExpanding) {
+        signal = 'SHORT';
+        reason = `スコア${score}ブレイクダウン + ATR拡大`;
+      } else {
+        state.status = 'ready';
+        state.readyDetail = { dir: score > 50 ? 'LONG' : 'SHORT', target: price, reason: `ブレイク条件構築中(スコア${score})`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+      }
+      break;
+    }
+
+    case 'meanrev': { // 平均回帰型 — RSI極値 + BB端で逆張り
+      const rsi = r.rsi || 50;
+      const bb = inds.bb;
+      const trend = inds.trend;
+      // トレンドが強い時は参入しない（平均回帰が効かない）
+      const trendStrong = trend && (trend.cls === 'bull' && score > 72 || trend.cls === 'bear' && score < 28);
+      if (trendStrong) {
+        state.status = 'watching';
+        state.readyDetail = null;
+        break;
+      }
+      // RSI極値 + BB端タッチ
+      if (rsi <= (p.rsiOS||22) && bb && bb.cls === 'bull') {
+        signal = 'LONG';
+        reason = `RSI${rsi.toFixed(0)}極売られすぎ + BB下限タッチ → 平均回帰`;
+      } else if (rsi >= (p.rsiOB||78) && bb && bb.cls === 'bear') {
+        signal = 'SHORT';
+        reason = `RSI${rsi.toFixed(0)}極買われすぎ + BB上限タッチ → 平均回帰`;
+      // MACD divergence check: price making new low but MACD not
+      } else if (rsi <= (p.rsiOS||22) + 8) {
+        state.status = 'ready';
+        state.readyDetail = { dir: 'LONG', target: price, reason: `RSI${rsi.toFixed(0)}売られすぎ接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+      } else if (rsi >= (p.rsiOB||78) - 8) {
+        state.status = 'ready';
+        state.readyDetail = { dir: 'SHORT', target: price, reason: `RSI${rsi.toFixed(0)}買われすぎ接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
+    case 'deltascalp': { // デルタスキャル型 — 出来高デルタ + ボリュームサージ
+      const kl = KL[tf]();
+      if (!kl || kl.length < 10) { state.status = 'watching'; break; }
+      const delta = inds.delta;
+      // 直近5本の出来高平均と最新を比較
+      const vols = kl.slice(-6, -1).map(c => c[5]);
+      const avgVol = vols.reduce((a,b) => a+b, 0) / vols.length;
+      const lastVol = kl[kl.length-1][5];
+      const volSurge = avgVol > 0 ? lastVol / avgVol : 1;
+      const surgeThresh = p.volSurgeMult || 1.4;
+      // デルタが明確 + 出来高サージ
+      if (delta && delta.cls === 'bull' && volSurge >= surgeThresh) {
+        signal = 'LONG';
+        reason = `Delta買い優勢(${delta.badge}) + 出来高${volSurge.toFixed(1)}倍サージ`;
+      } else if (delta && delta.cls === 'bear' && volSurge >= surgeThresh) {
+        signal = 'SHORT';
+        reason = `Delta売り優勢(${delta.badge}) + 出来高${volSurge.toFixed(1)}倍サージ`;
+      } else if (delta && delta.cls !== 'neutral' && volSurge >= surgeThresh * 0.8) {
+        state.status = 'ready';
+        state.readyDetail = { dir: delta.cls === 'bull' ? 'LONG' : 'SHORT', target: price, reason: `Delta${delta.badge} + Vol${volSurge.toFixed(1)}x(サージ接近)`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
+    case 'multitf': { // マルチTF合成型 — 複数タイムフレーム合意で高精度参入
+      const tfList = ['5m', '15m', '1h', '4h'];
+      const currentIdx = tfList.indexOf(tf);
+      // 現在TF + 上位1〜2TFを分析
+      const tfsToCheck = tfList.slice(Math.max(0, currentIdx), Math.min(tfList.length, currentIdx + 3));
+      if (tfsToCheck.length < 2) { state.status = 'watching'; break; }
+      let longVotes = 0, shortVotes = 0, totalVotes = 0;
+      let scoreSum = 0;
+      const tfDetails = [];
+      for (const checkTf of tfsToCheck) {
+        const tfr = botComputeTF(checkTf);
+        if (!tfr) continue;
+        totalVotes++;
+        scoreSum += tfr.score;
+        if (tfr.signal === 'LONG') { longVotes++; tfDetails.push(`${checkTf}:L${tfr.score}`); }
+        else if (tfr.signal === 'SHORT') { shortVotes++; tfDetails.push(`${checkTf}:S${tfr.score}`); }
+        else { tfDetails.push(`${checkTf}:W${tfr.score}`); }
+      }
+      const alignMin = p.alignMin || 2;
+      const avgScore = totalVotes > 0 ? scoreSum / totalVotes : 50;
+      if (longVotes >= alignMin && avgScore >= (p.scoreEntry || 58)) {
+        signal = 'LONG';
+        reason = `${longVotes}TF合意LONG [${tfDetails.join(' ')}] 平均スコア${avgScore.toFixed(0)}`;
+      } else if (shortVotes >= alignMin && avgScore <= (100 - (p.scoreEntry || 58))) {
+        signal = 'SHORT';
+        reason = `${shortVotes}TF合意SHORT [${tfDetails.join(' ')}] 平均スコア${avgScore.toFixed(0)}`;
+      } else if (longVotes >= 1 || shortVotes >= 1) {
+        const pendingDir = longVotes > shortVotes ? 'LONG' : 'SHORT';
+        state.status = 'ready';
+        state.readyDetail = { dir: pendingDir, target: price, reason: `TF合意不足(${longVotes}L/${shortVotes}S/${totalVotes}TF)`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
+    case 'sentiment': { // センチメント逆張り型 — F&G + LS比率 + FRで大逆張り
+      const fg = S.fg;
+      const ls = S.ls;
+      const frPct = (S.fr || 0) * 100;
+      const fgLow = p.fgExtreme || 20;
+      const fgHigh = p.fgGreed || 80;
+      const lsTh = p.lsThresh || 62;
+      const frTh = p.frThresh || 0.035;
+      // 複合スコア: F&G極値 + LS偏り + FR乖離の組み合わせ
+      let sentimentScore = 0;
+      let sentimentDir = null;
+      let reasons = [];
+      // F&G: 極恐怖 → LONG、極強欲 → SHORT
+      if (fg <= fgLow) { sentimentScore += 2; sentimentDir = 'LONG'; reasons.push(`F&G=${fg}(極恐怖)`); }
+      else if (fg >= fgHigh) { sentimentScore += 2; sentimentDir = 'SHORT'; reasons.push(`F&G=${fg}(極強欲)`); }
+      else if (fg <= fgLow + 10) { sentimentScore += 1; sentimentDir = sentimentDir || 'LONG'; reasons.push(`F&G=${fg}(恐怖)`); }
+      else if (fg >= fgHigh - 10) { sentimentScore += 1; sentimentDir = sentimentDir || 'SHORT'; reasons.push(`F&G=${fg}(強欲)`); }
+      // LS比率: ショート過多 → LONG、ロング過多 → SHORT
+      if (ls < (100 - lsTh)) { sentimentScore += 1; sentimentDir = sentimentDir || 'LONG'; reasons.push(`LS${ls.toFixed(0)}%(S過多)`); }
+      else if (ls > lsTh) { sentimentScore += 1; sentimentDir = sentimentDir || 'SHORT'; reasons.push(`LS${ls.toFixed(0)}%(L過多)`); }
+      // FR乖離: マイナスFR → LONG（ショート払い過ぎ）、プラスFR → SHORT
+      if (frPct < -frTh) { sentimentScore += 1; sentimentDir = sentimentDir || 'LONG'; reasons.push(`FR${frPct.toFixed(3)}%(S偏り)`); }
+      else if (frPct > frTh) { sentimentScore += 1; sentimentDir = sentimentDir || 'SHORT'; reasons.push(`FR${frPct.toFixed(3)}%(L偏り)`); }
+
+      if (sentimentScore >= 3 && sentimentDir) {
+        signal = sentimentDir;
+        reason = `センチメント逆張り: ${reasons.join(' + ')}`;
+      } else if (sentimentScore >= 2 && sentimentDir) {
+        state.status = 'ready';
+        state.readyDetail = { dir: sentimentDir, target: price, reason: `センチメント構築中(${sentimentScore}/3): ${reasons.join('+')}`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
     case 'experimental': { // 実験bot — 遺伝子組み合わせによるエントリー
       const genes = def.genes;
       if (genes && genes.bull && genes.bear) {
@@ -7793,7 +8027,7 @@ function showAdminBotDetail(botId){
   const paramKeys = Object.keys(p);
   const paramsHtml = paramKeys.map(k=>{
     const defaultP = def.isChild
-      ? generateChildParams(def.motherId, def.paramMod)
+      ? generateChildParams(def.motherId, def.paramMod, def.variantStrategy, def.tf)
       : BOT_DEFAULT_PARAMS[def.id];
     const defaultVal = defaultP ? defaultP[k] : '—';
     const changed = defaultVal !== undefined && p[k] !== defaultVal;

@@ -4819,11 +4819,11 @@ function promoteChildToMother(childId){
 
 // ── Child variant definitions ──
 const CHILD_VARIANTS = [
-  { suffix:'_agg',  label:'攻撃型',   paramMod:{ scoreEntry:-10, rsiOB:-3, rsiOS:+3, fgExtreme:+5, fgGreed:-5, tpPct:1.5, slPct:1.3 }},
-  { suffix:'_con',  label:'堅実型',   paramMod:{ scoreEntry:+10, rsiOB:+3, rsiOS:-3, fgExtreme:-5, fgGreed:+5, tpPct:0.7, slPct:0.7 }},
-  { suffix:'_fast', label:'高速型',   paramMod:{ timeoutMin:0.5, cooldownMin:0.5 }},
-  { suffix:'_slow', label:'中期型',   paramMod:{ timeoutMin:2.0, cooldownMin:2.0 }},
-  { suffix:'_risk', label:'高リスク', paramMod:{ tpPct:2.0, slPct:1.5 }},
+  { suffix:'_agg',  label:'攻撃型',   paramMod:{ scoreEntry:-10, rsiOB:-3, rsiOS:+3, fgExtreme:+5, fgGreed:-5, tpPct:1.5, slPct:1.3 }, confirmReq:2, scoreNoise:3, staggerMs:0 },
+  { suffix:'_con',  label:'堅実型',   paramMod:{ scoreEntry:+10, rsiOB:+3, rsiOS:-3, fgExtreme:-5, fgGreed:+5, tpPct:0.7, slPct:0.7 }, confirmReq:4, scoreNoise:-3, staggerMs:90000 },
+  { suffix:'_fast', label:'高速型',   paramMod:{ timeoutMin:0.5, cooldownMin:0.5 }, confirmReq:2, scoreNoise:0, staggerMs:15000, needsMomentum:true },
+  { suffix:'_slow', label:'中期型',   paramMod:{ timeoutMin:2.0, cooldownMin:2.0 }, confirmReq:4, scoreNoise:-2, staggerMs:120000, needsPullback:true },
+  { suffix:'_risk', label:'高リスク', paramMod:{ tpPct:2.0, slPct:1.5 }, confirmReq:3, scoreNoise:5, staggerMs:45000 },
 ];
 
 // ── Generate child bots from mother bots ──
@@ -4842,7 +4842,13 @@ function generateChildBots(){
         motherId: mother.id,
         isChild: true,
         variantLabel: v.label,
+        variantSuffix: v.suffix,
         paramMod: v.paramMod,
+        confirmReq: v.confirmReq || 3,
+        scoreNoise: v.scoreNoise || 0,
+        staggerMs: v.staggerMs || 0,
+        needsMomentum: v.needsMomentum || false,
+        needsPullback: v.needsPullback || false,
         desc: mother.desc + '(' + v.label + ')',
         philosophy: mother.philosophy,
         quotes: mother.quotes,
@@ -6098,8 +6104,27 @@ function checkBotEntry(def, state, price, now){
   const r = botComputeTF(tf);
   if(!r) return;
 
-  const score = r.score;
+  // ── バリアント別スコアノイズ（各子botが微妙に異なる市場認識を持つ）──
+  const scoreNoise = def.scoreNoise || 0;
+  const score = Math.max(0, Math.min(100, r.score + scoreNoise));
   const inds = r.inds;
+
+  // ── バリアント別エントリー時差（同時エントリー防止）──
+  if (def.isChild && def.staggerMs > 0) {
+    // 母botの最後のトレード時刻からstaggerMs経過していなければ待機
+    const motherState = botStates[def.motherId];
+    if (motherState && motherState.position && motherState.position.time) {
+      const motherEntryAge = now - motherState.position.time;
+      if (motherEntryAge < def.staggerMs) {
+        // まだ時差待機中 → readyに留めて待つ
+        if (state.status !== 'ready') {
+          state.status = 'ready';
+          state.readyDetail = { dir: 'WAIT', target: price, reason: `母bot参入後${Math.ceil((def.staggerMs - motherEntryAge)/1000)}秒待機中`, confirmCount:0, confirmTotal:5, confirmSource:'stagger' };
+        }
+        return;
+      }
+    }
+  }
   let signal = null; // 'LONG' | 'SHORT' | null
   let reason = '';
   let readyMsg = '';
@@ -6300,9 +6325,41 @@ function checkBotEntry(def, state, price, now){
   }
 
   if(signal){
-    // セカンダリ確認（3/5以上で発動）
+    // ── バリアント別追加フィルタ ──
+    const klines = KL[def.tf]();
+
+    // 高速型: モメンタム確認（価格が方向に動いている必要）
+    if (def.needsMomentum && klines && klines.length >= 3) {
+      const recent = klines.slice(-3);
+      const momDir = recent[2][4] > recent[0][4] ? 'LONG' : 'SHORT'; // close比較
+      if (momDir !== signal) {
+        state.status = 'ready';
+        state.readyDetail = { dir: signal, target: price, reason: reason + ' (モメンタム不一致で待機)', confirmCount:0, confirmTotal:5, confirmSource:'momentum' };
+        signal = null;
+      }
+    }
+
+    // 中期型: プルバック確認（一度押し目/戻りを作ってから参入）
+    if (signal && def.needsPullback && klines && klines.length >= 5) {
+      const recent5 = klines.slice(-5);
+      const prevClose = recent5[3][4];
+      const lastClose = recent5[4][4];
+      // LONGなら直前足が陰線（押し目）であること
+      // SHORTなら直前足が陽線（戻り）であること
+      const isPullback = signal === 'LONG' ? (prevClose > lastClose) : (prevClose < lastClose);
+      if (!isPullback) {
+        state.status = 'ready';
+        state.readyDetail = { dir: signal, target: price, reason: reason + ' (押し目待ち)', confirmCount:0, confirmTotal:5, confirmSource:'pullback' };
+        signal = null;
+      }
+    }
+  }
+
+  if(signal){
+    // セカンダリ確認（バリアント別要求数で発動）
     let confirmCount = 0;
     const totalChecks = 5;
+    const confirmRequired = def.confirmReq || 3; // バリアント別確認要求数
     const klines = KL[def.tf]();
 
     // ① 上位TF一致
@@ -6326,7 +6383,7 @@ function checkBotEntry(def, state, price, now){
     // ⑤ クロスアセット確認（BTC/ETH相関）
     if (S._crossAssetSignal === signal || S._crossAssetSignal === 'WAIT' || !S._crossAssetSignal) confirmCount++;
 
-    if (confirmCount < 3) {
+    if (confirmCount < confirmRequired) {
       // 確認不足 → readyに格下げ、エントリーしない
       state.status = 'ready';
       state.readyDetail = { dir: signal, target: price, reason, confirmCount, confirmTotal: totalChecks, confirmSource:'gate' };

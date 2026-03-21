@@ -2056,16 +2056,21 @@ async function fetchFX(){
 }
 
 // Phase 4: ICE US Dollar Index — 正確な6通貨幾何加重平均
-// DXY = 50.14348112 × (USD/EUR)^0.576 × (USD/JPY)^0.136 × (USD/GBP)^0.119 × (USD/CAD)^0.091 × (USD/SEK)^0.042 × (USD/CHF)^0.036
+// 公式: DXY = 50.14348112 × EURUSD^(-0.576) × USDJPY^0.136 × GBPUSD^(-0.119) × USDCAD^0.091 × USDSEK^0.042 × USDCHF^0.036
+// open.er-api.com (base=USD) のratesは「1 USDあたりの各通貨量」を返す:
+//   rates.EUR = USDEUR (例: 0.92 → 1 USD = 0.92 EUR)
+//   EURUSD = 1/rates.EUR → EURUSD^(-0.576) = (1/rates.EUR)^(-0.576) = rates.EUR^(+0.576)
+//   同様にGBPUSD = 1/rates.GBP → GBPUSD^(-0.119) = rates.GBP^(+0.119)
+//   USDJPY = rates.JPY, USDCAD = rates.CAD, USDSEK = rates.SEK, USDCHF = rates.CHF → そのまま正の指数
 function calcICEDXY(rates) {
   if(!rates.EUR || !rates.JPY || !rates.GBP || !rates.CAD || !rates.SEK || !rates.CHF) return 0;
   return 50.14348112
-    * Math.pow(rates.EUR, -0.576)   // USD/EUR = 1/EUR
-    * Math.pow(rates.JPY, 0.136)    // USD/JPY = JPY
-    * Math.pow(rates.GBP, -0.119)   // USD/GBP = 1/GBP
-    * Math.pow(rates.CAD, 0.091)    // USD/CAD = CAD
-    * Math.pow(rates.SEK, 0.042)    // USD/SEK = SEK
-    * Math.pow(rates.CHF, -0.036);  // USD/CHF = 1/CHF (GBP/CHFはinverseで考える)
+    * Math.pow(rates.EUR, 0.576)    // EURUSD^(-0.576) = rates.EUR^(+0.576)
+    * Math.pow(rates.JPY, 0.136)    // USDJPY^(+0.136)
+    * Math.pow(rates.GBP, 0.119)    // GBPUSD^(-0.119) = rates.GBP^(+0.119)
+    * Math.pow(rates.CAD, 0.091)    // USDCAD^(+0.091)
+    * Math.pow(rates.SEK, 0.042)    // USDSEK^(+0.042)
+    * Math.pow(rates.CHF, 0.036);   // USDCHF^(+0.036)
 }
 
 async function fetchDXY(){
@@ -3286,15 +3291,18 @@ function renderExecutiveSummary(){
   });
   const confidence = totalInds > 0 ? Math.min(5, Math.round((activeInds / totalInds) * 5)) : 0;
   const confDots = '●'.repeat(confidence) + '○'.repeat(5 - confidence);
-  // 3. ボット合意率
+  // 3. ボット合意率 — botStatesはid->stateのフラットマップ
   let botAgree = 0, botTotal = 0;
-  if(typeof botStates !== 'undefined') {
-    const states = botStates[currentCoin] || {};
-    Object.values(states).forEach(st => {
+  if(typeof botStates !== 'undefined' && botStates) {
+    Object.values(botStates).forEach(st => {
       if(!st || st.status === 'watching') return;
       botTotal++;
-      if(st.status === 'holding' && st.dir === sig) botAgree++;
-      else if(st.status === 'ready' && st.readyDetail && st.readyDetail.dir === sig) botAgree++;
+      if(st.status === 'holding') {
+        const pos = st.position;
+        if(pos && pos.dir === sig) botAgree++;
+      } else if(st.status === 'ready' && st.readyDetail && st.readyDetail.dir === sig) {
+        botAgree++;
+      }
     });
   }
   // 4. データ鮮度

@@ -1061,6 +1061,11 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div>
 
 
+<!-- EXECUTIVE SUMMARY (Phase 6) -->
+<div id="execSummary" style="margin:8px 8px 0;padding:12px 14px;border:2px solid var(--accent);border-radius:10px;background:var(--bg2);font-family:'Share Tech Mono',monospace;">
+  <div style="font-size:.6rem;color:var(--dim);text-align:center;">Executive Briefing — データ読込中...</div>
+</div>
+
 <!-- SCALP MAIN -->
 
 <div class="sec">
@@ -1312,8 +1317,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div>
 
 <div class="fc" style="border-top:2px solid var(--accent);">
-  <div class="fc-t">BTC ETFフロー（直近5日・週次手動更新）</div>
-  <div id="etfRows">
+  <div class="fc-t">BTC ETFフロー（直近5日・手動更新）<span id="etfStaleBadge" style="display:none;margin-left:6px;padding:1px 6px;border-radius:3px;font-size:.55rem;font-weight:700;background:var(--red);color:#fff;animation:pulse 2s infinite;">⚠ データ古い</span></div>
+  <div id="etfRows" data-latest-date="2026-03-04">
     <div class="etf-row"><span class="etf-d">03/04 (火)</span><span class="etf-v green">+$312M</span></div>
     <div class="etf-row"><span class="etf-d">03/03 (月)</span><span class="etf-v red">-$180M</span></div>
     <div class="etf-row"><span class="etf-d">02/28 (金)</span><span class="etf-v green">+$420M</span></div>
@@ -1324,21 +1329,18 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     週合計: <span class="green" style="font-weight:bold;font-family:'Share Tech Mono',monospace;">+$407M</span>
     <span class="dim" style="margin-left:8px;">機関の純買い越し</span>
   </div>
-  <div style="font-size:.58rem;color:var(--dim);margin-top:5px;">※ The Block / Farside 参照。毎週月曜に手動更新。</div>
+  <div id="etfFreshnessNote" style="font-size:.58rem;color:var(--dim);margin-top:5px;">※ The Block / Farside 参照。毎週月曜に手動更新。</div>
 </div>
 
 <div class="fc" style="border-top:2px solid #a78bfa;">
-  <div class="fc-t">市場センチメント総合</div>
+  <div class="fc-t">ライブ市場データ</div>
   <div class="sg">
-    <div class="sb"><div class="sb-l">取引所BTC残高</div><div class="sb-v green">▼ 減少</div></div>
-    <div class="sb"><div class="sb-l">P/C比率</div><div class="sb-v yellow">0.82</div></div>
-    <div class="sb"><div class="sb-l">Googleトレンド</div><div class="sb-v yellow">上昇中</div></div>
-    <div class="sb"><div class="sb-l">マクロ</div><div class="sb-v accent">やや強気</div></div>
+    <div class="sb"><div class="sb-l">F&G指数</div><div class="sb-v" id="liveMetricFG" style="color:var(--orange)">--</div></div>
+    <div class="sb"><div class="sb-l">FR (8h)</div><div class="sb-v" id="liveMetricFR" style="color:var(--dim)">--</div></div>
+    <div class="sb"><div class="sb-l">L/S比率</div><div class="sb-v" id="liveMetricLS" style="color:var(--dim)">--</div></div>
+    <div class="sb"><div class="sb-l">OI変動</div><div class="sb-v" id="liveMetricOI" style="color:var(--dim)">--</div></div>
   </div>
-  <div style="font-size:.63rem;color:var(--dim);margin-top:10px;background:var(--bg3);padding:8px;border-radius:4px;line-height:1.5;">
-    スキャルはテクニカル<strong class="accent"> 95%</strong>、ファンダ<strong style="color:var(--orange)"> 5%</strong>が最適。<br>
-    ファンダは「指標発表時に乗らない」判断のみに活用。
-  </div>
+  <div style="font-size:.58rem;color:var(--dim);margin-top:6px;text-align:right;" id="liveMetricTs">最終取得: --</div>
 </div>
 
 <div class="fc" style="border-top:2px solid var(--green);">
@@ -1706,6 +1708,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     </div>
   </div>
 
+  <!-- Phase 8: クロスアセット相関マトリクス -->
+  <div id="ovCorrelation" style="margin:8px 0;padding:10px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);"></div>
+
 </div><!-- /overviewSection -->
 
 <!-- BOT ARENA SECTION -->
@@ -1903,6 +1908,11 @@ const S = {
   k5:[], k15:[], k1h:[], k4h:[], k1d:[],
   tfSig:{}, tfScore:{}, tfInds:{},
   rsi5:50, rsi15:50,
+  // Phase 2: データ鮮度追跡
+  _lastFetch: { price:0, klines:0, fr:0, ls:0, oi:0, fg:0, dxy:0 },
+  _fetchErrors: { count:0, lastErr:'' },
+  // Phase 4: 正確なDXY用の為替レート保存
+  _fxRates: {},
 };
 
 // Apply saved coin on load (if not BTC)
@@ -1956,27 +1966,35 @@ function setLoad(pct, msg){
 const PROXY = 'https://corsproxy.io/?'; // free CORS proxy for Futures endpoints
 
 async function safeFetch(url, useProxy=false, timeout=4000) {
-  const target = useProxy ? PROXY + encodeURIComponent(url) : url;
-  const r = await fetch(target, {signal: AbortSignal.timeout(timeout)});
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+  try {
+    const target = useProxy ? PROXY + encodeURIComponent(url) : url;
+    const r = await fetch(target, {signal: AbortSignal.timeout(timeout)});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    S._fetchErrors.count = 0; // reset on success
+    return r.json();
+  } catch(e) {
+    S._fetchErrors.count++;
+    S._fetchErrors.lastErr = e.message;
+    throw e;
+  }
 }
 
 async function fetchPrice(){
   const d = await safeFetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${COINS[currentCoin].pair}`);
   S.price = parseFloat(d.lastPrice);
   S.p24h  = S.price / (1 + parseFloat(d.priceChangePercent)/100);
+  S._lastFetch.price = Date.now();
 }
 
 async function fetchFR(){
   // Try direct first, fallback to proxy
   try {
     const d = await safeFetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${COINS[currentCoin].pair}&limit=1`);
-    if (d && d[0]) { S.fr = parseFloat(d[0].fundingRate); setDot('ds-fr','ok'); return; }
+    if (d && d[0]) { S.fr = parseFloat(d[0].fundingRate); S._lastFetch.fr = Date.now(); setDot('ds-fr','ok'); return; }
   } catch(_){}
   try {
     const d = await safeFetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${COINS[currentCoin].pair}&limit=1`, true);
-    if (d && d[0]) { S.fr = parseFloat(d[0].fundingRate); setDot('ds-fr','ok'); }
+    if (d && d[0]) { S.fr = parseFloat(d[0].fundingRate); S._lastFetch.fr = Date.now(); setDot('ds-fr','ok'); }
   } catch(e){
     // Estimate from mark vs spot (if unavailable)
     document.getElementById('fr-src-badge').textContent='推定';
@@ -1987,58 +2005,86 @@ async function fetchFR(){
 async function fetchLS(){
   try {
     const d = await safeFetch(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${COINS[currentCoin].pair}&period=5m&limit=1`);
-    if (d && d[0]) { const r=parseFloat(d[0].longShortRatio); S.ls=(r/(1+r))*100; return; }
+    if (d && d[0]) { const r=parseFloat(d[0].longShortRatio); S.ls=(r/(1+r))*100; S._lastFetch.ls = Date.now(); return; }
   } catch(_){}
   try {
     const d = await safeFetch(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${COINS[currentCoin].pair}&period=5m&limit=1`, true);
-    if (d && d[0]) { const r=parseFloat(d[0].longShortRatio); S.ls=(r/(1+r))*100; }
+    if (d && d[0]) { const r=parseFloat(d[0].longShortRatio); S.ls=(r/(1+r))*100; S._lastFetch.ls = Date.now(); }
   } catch(e){ S.ls=50; }
 }
 
 async function fetchOI(){
   try {
     const d = await safeFetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${COINS[currentCoin].pair}`);
-    const v=parseFloat(d.openInterest); if(S.oiVal>0)S.oiPrev=S.oiVal; S.oiVal=v; return;
+    const v=parseFloat(d.openInterest); if(S.oiVal>0)S.oiPrev=S.oiVal; S.oiVal=v; S._lastFetch.oi = Date.now(); return;
   } catch(_){}
   try {
     const d = await safeFetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${COINS[currentCoin].pair}`, true);
-    const v=parseFloat(d.openInterest); if(S.oiVal>0)S.oiPrev=S.oiVal; S.oiVal=v;
+    const v=parseFloat(d.openInterest); if(S.oiVal>0)S.oiPrev=S.oiVal; S.oiVal=v; S._lastFetch.oi = Date.now();
   } catch(e){}
 }
 
 async function fetchKlines(interval, limit=100){
-  return safeFetch(`https://api.binance.com/api/v3/klines?symbol=${COINS[currentCoin].pair}&interval=${interval}&limit=${limit}`);
+  const data = await safeFetch(`https://api.binance.com/api/v3/klines?symbol=${COINS[currentCoin].pair}&interval=${interval}&limit=${limit}`);
+  S._lastFetch.klines = Date.now();
+  return data;
 }
 
 async function fetchFG(){
   const d = await safeFetch('https://api.alternative.me/fng/?limit=1');
-  if(d.data && d.data[0]) S.fg=parseInt(d.data[0].value);
+  if(d.data && d.data[0]) { S.fg=parseInt(d.data[0].value); S._lastFetch.fg = Date.now(); }
 }
 
 async function fetchFX(){
   try {
     const d = await safeFetch('https://open.er-api.com/v6/latest/USD');
-    if(d.rates && d.rates.JPY) S.usdJpy=d.rates.JPY;
+    if(d.rates) {
+      S.usdJpy = d.rates.JPY || S.usdJpy;
+      S._fxRates = d.rates; // Phase 4: 全為替レート保存
+      S._lastFetch.dxy = Date.now();
+    }
   } catch(_){
     try {
       const d = await safeFetch('https://api.exchangerate-api.com/v4/latest/USD');
-      if(d.rates && d.rates.JPY) S.usdJpy=d.rates.JPY;
+      if(d.rates) {
+        S.usdJpy = d.rates.JPY || S.usdJpy;
+        S._fxRates = d.rates;
+        S._lastFetch.dxy = Date.now();
+      }
     } catch(e){ S.usdJpy=150.5; }
   }
 }
 
+// Phase 4: ICE US Dollar Index — 正確な6通貨幾何加重平均
+// DXY = 50.14348112 × (USD/EUR)^0.576 × (USD/JPY)^0.136 × (USD/GBP)^0.119 × (USD/CAD)^0.091 × (USD/SEK)^0.042 × (USD/CHF)^0.036
+function calcICEDXY(rates) {
+  if(!rates.EUR || !rates.JPY || !rates.GBP || !rates.CAD || !rates.SEK || !rates.CHF) return 0;
+  return 50.14348112
+    * Math.pow(rates.EUR, -0.576)   // USD/EUR = 1/EUR
+    * Math.pow(rates.JPY, 0.136)    // USD/JPY = JPY
+    * Math.pow(rates.GBP, -0.119)   // USD/GBP = 1/GBP
+    * Math.pow(rates.CAD, 0.091)    // USD/CAD = CAD
+    * Math.pow(rates.SEK, 0.042)    // USD/SEK = SEK
+    * Math.pow(rates.CHF, -0.036);  // USD/CHF = 1/CHF (GBP/CHFはinverseで考える)
+}
+
 async function fetchDXY(){
-  try{
-    // Use USD/EUR, USD/JPY, USD/GBP to approximate DXY
-    const d=await safeFetch('https://open.er-api.com/v6/latest/USD');
-    if(d.rates){
-      // Simplified DXY approximation: inverse-weighted basket
-      // DXY ≈ 50.14348 × (1/EUR)^0.576 × JPY^0.136 × (1/GBP)^0.119 × ...
-      // Simplified: just track EUR weight (57.6% of DXY)
-      const eur=d.rates.EUR||0.92;
-      S.dxy = Math.round((1/eur)*100*100)/100; // rough proxy
-    }
-  }catch(e){}
+  // DXYはfetchFXで取得したレートから正確計算
+  if(S._fxRates && S._fxRates.EUR) {
+    const dxy = calcICEDXY(S._fxRates);
+    if(dxy > 0) S.dxy = Math.round(dxy * 100) / 100;
+  } else {
+    // fallback: fetchFXがまだ呼ばれていない場合は取得
+    try{
+      const d=await safeFetch('https://open.er-api.com/v6/latest/USD');
+      if(d.rates){
+        S._fxRates = d.rates;
+        const dxy = calcICEDXY(d.rates);
+        if(dxy > 0) S.dxy = Math.round(dxy * 100) / 100;
+        S._lastFetch.dxy = Date.now();
+      }
+    }catch(e){}
+  }
 }
 
 function setDot(id, cls){
@@ -2187,16 +2233,18 @@ function computeTF(tf){
   // 旧方式 bull/(bull+bear) は中立indicator無視で100%になるバグあり
   // 新方式: 全indicator数を考慮し、中立は50寄りに引き寄せる
   const indicatorCount = Object.keys(inds).length || 1;
-  const neutralCount = indicatorCount - (bull > 0 ? 1 : 0) - (bear > 0 ? 1 : 0);
   // 各indicatorが最大2ptの重みを持つと仮定 → 理論最大 = indicatorCount * 2
   const maxWeight = indicatorCount * 2;
-  // bullを0-100にスケール: bull重み全体に対する割合
-  // 中立indicatorは暗黙的に50%(=中立)として扱われる
   const rawBullPct = maxWeight > 0 ? (bull / maxWeight) * 100 : 50;
   const rawBearPct = maxWeight > 0 ? (bear / maxWeight) * 100 : 50;
-  // score: 50が中立。bullが強いほど100に近づき、bearが強いほど0に近づく
-  const score = Math.max(0, Math.min(100, Math.round(50 + (rawBullPct - rawBearPct))));
-  return{score,signal:score>=65?'LONG':score<=35?'SHORT':'WAIT',inds,rsi};
+  // Phase 3: 信頼度ファクター — インジケーター少数発火時はスコアを50に引き寄せる
+  // activeCountが4未満の場合、スコアの振れ幅を縮小して誤シグナルを防ぐ
+  const activeCount = Object.values(inds).filter(i => i.cls !== 'neut').length;
+  const confidenceFactor = Math.min(1, activeCount / 4); // 4つ以上方向性があれば100%信頼
+  const rawScore = 50 + (rawBullPct - rawBearPct);
+  const dampedScore = Math.round(50 + (rawScore - 50) * confidenceFactor);
+  const score = Math.max(0, Math.min(100, dampedScore));
+  return{score,signal:score>=65?'LONG':score<=35?'SHORT':'WAIT',inds,rsi,activeCount,indicatorCount};
 }
 
 // ═══════════════════════════════════════════════
@@ -3094,6 +3142,212 @@ function renderProTechnical() {
 // ═══════════════════════════════════════════════
 // RENDER
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// Phase 1: ETFフロー鮮度チェック
+// ═══════════════════════════════════════════════
+function renderETFFreshness(){
+  const el = document.getElementById('etfRows');
+  const badge = document.getElementById('etfStaleBadge');
+  const note = document.getElementById('etfFreshnessNote');
+  if(!el || !badge) return;
+  const latestDate = el.dataset.latestDate;
+  if(!latestDate) return;
+  const latest = new Date(latestDate + 'T00:00:00Z');
+  const daysSince = Math.floor((Date.now() - latest.getTime()) / 86400000);
+  if(daysSince > 7) {
+    badge.style.display = 'inline';
+    badge.textContent = `⚠ ${daysSince}日前のデータ`;
+    if(note) note.innerHTML = `<span style="color:var(--red);font-weight:700;">⚠ 最終更新から${daysSince}日経過。手動更新が必要です。</span>`;
+    el.style.opacity = '0.5';
+  } else {
+    badge.style.display = 'none';
+    if(note) note.innerHTML = `※ The Block / Farside 参照。手動更新 (${daysSince}日前)。`;
+    el.style.opacity = '1';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// Phase 1: ライブメトリクスパネル更新
+// ═══════════════════════════════════════════════
+function renderLiveMetrics(){
+  const _el = id => document.getElementById(id);
+  const fgEl = _el('liveMetricFG');
+  if(fgEl) {
+    const fg = S.fg;
+    fgEl.textContent = `${fg} (${fg>=75?'極度の強欲':fg>=50?'強欲':fg>=25?'恐怖':'極度の恐怖'})`;
+    fgEl.style.color = fg>=75?'var(--red)':fg<=25?'var(--green)':fg>=50?'var(--orange)':'var(--accent)';
+  }
+  const frEl = _el('liveMetricFR');
+  if(frEl) {
+    const frPct = S.fr * 100;
+    frEl.textContent = `${frPct>=0?'+':''}${frPct.toFixed(4)}%`;
+    frEl.style.color = frPct>0.03?'var(--red)':frPct<-0.01?'var(--green)':'var(--yellow)';
+  }
+  const lsEl = _el('liveMetricLS');
+  if(lsEl) {
+    lsEl.textContent = `L${S.ls.toFixed(0)}% / S${(100-S.ls).toFixed(0)}%`;
+    lsEl.style.color = S.ls>62?'var(--red)':S.ls<38?'var(--green)':'var(--dim)';
+  }
+  const oiEl = _el('liveMetricOI');
+  if(oiEl) {
+    const oiChg = S.oiPrev>0 ? (S.oiVal-S.oiPrev)/S.oiPrev*100 : 0;
+    oiEl.textContent = `${oiChg>=0?'+':''}${oiChg.toFixed(1)}%`;
+    oiEl.style.color = Math.abs(oiChg)>3?'var(--orange)':'var(--dim)';
+  }
+  const tsEl = _el('liveMetricTs');
+  if(tsEl) {
+    const oldest = Math.min(S._lastFetch.fr||0, S._lastFetch.fg||0, S._lastFetch.ls||0, S._lastFetch.oi||0);
+    if(oldest > 0) tsEl.textContent = '最終取得: ' + new Date(oldest).toLocaleTimeString('ja-JP',{hour12:false});
+  }
+}
+
+// ═══════════════════════════════════════════════
+// Phase 2: データ鮮度インジケーター
+// ═══════════════════════════════════════════════
+function renderDataFreshness(){
+  const now = Date.now();
+  const thresholds = { price:30000, klines:30000, fr:600000, ls:600000, oi:600000, fg:7200000, dxy:1800000 };
+  const names = { price:'価格', klines:'K線', fr:'FR', ls:'L/S', oi:'OI', fg:'F&G', dxy:'FX/DXY' };
+  let staleCount = 0;
+  let staleNames = [];
+  for(const [key, maxAge] of Object.entries(thresholds)) {
+    const last = S._lastFetch[key] || 0;
+    if(last > 0 && (now - last) > maxAge) {
+      staleCount++;
+      staleNames.push(names[key]);
+    }
+  }
+  // Update freshness status in header
+  const freshnessEl = document.getElementById('dataFreshness');
+  if(freshnessEl) {
+    if(staleCount === 0 && S._lastFetch.price > 0) {
+      freshnessEl.innerHTML = '<span style="color:var(--green);">● 全API正常</span>';
+    } else if(staleCount > 0) {
+      freshnessEl.innerHTML = `<span style="color:var(--orange);">⚠ ${staleNames.join(', ')}が古い</span>`;
+    }
+    if(S._fetchErrors.count >= 3) {
+      freshnessEl.innerHTML = `<span style="color:var(--red);animation:pulse 2s infinite;">⚠ API接続不安定 (${S._fetchErrors.lastErr})</span>`;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// Phase 5: リスク指標計算
+// ═══════════════════════════════════════════════
+function calcRiskMetrics(trades) {
+  if(!trades || trades.length < 2) return { sharpe:0, sortino:0, maxDD:0, profitFactor:0, avgReturn:0, tradeCount:trades?trades.length:0 };
+  const returns = trades.map(t => t.pnlPct || 0);
+  const avg = returns.reduce((a,b) => a+b, 0) / returns.length;
+  const std = Math.sqrt(returns.reduce((a,r) => a + (r-avg)**2, 0) / returns.length);
+  // Sharpe Ratio (annualized proxy)
+  const sharpe = std > 0 ? (avg / std) * Math.sqrt(Math.min(returns.length, 252)) : 0;
+  // Sortino Ratio (downside deviation only)
+  const downside = returns.filter(r => r < 0);
+  const downStd = downside.length > 0 ? Math.sqrt(downside.reduce((a,r) => a + r**2, 0) / downside.length) : 0;
+  const sortino = downStd > 0 ? avg / downStd : (avg > 0 ? 99 : 0);
+  // Max Drawdown
+  let peak = 0, maxDD = 0, cum = 0;
+  for(const r of returns) {
+    cum += r;
+    if(cum > peak) peak = cum;
+    const dd = peak - cum;
+    if(dd > maxDD) maxDD = dd;
+  }
+  // Profit Factor
+  const grossProfit = returns.filter(r=>r>0).reduce((a,b)=>a+b, 0);
+  const grossLoss = Math.abs(returns.filter(r=>r<0).reduce((a,b)=>a+b, 0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? 99 : 0);
+  return { sharpe: Math.round(sharpe*100)/100, sortino: Math.round(sortino*100)/100, maxDD: Math.round(maxDD*100)/100, profitFactor: Math.round(profitFactor*100)/100, avgReturn: Math.round(avg*100)/100, tradeCount: returns.length };
+}
+
+// ═══════════════════════════════════════════════
+// Phase 6: エグゼクティブサマリー
+// ═══════════════════════════════════════════════
+function renderExecutiveSummary(){
+  const panel = document.getElementById('execSummary');
+  if(!panel) return;
+  // 1. 複合スコアとシグナル
+  const weights = {'5m':1,'15m':1.5,'1h':2,'4h':2.5,'1d':2};
+  let wSum=0, wTotal=0;
+  Object.keys(weights).forEach(tf=>{
+    wSum += (S.tfScore[tf]||50) * weights[tf];
+    wTotal += weights[tf];
+  });
+  const composite = Math.round(wSum / wTotal);
+  const sig = composite>=65?'LONG':composite<=35?'SHORT':'WAIT';
+  // 2. 信頼度（Phase 3）
+  let activeInds = 0, totalInds = 0;
+  Object.values(S.tfInds).forEach(inds => {
+    if(!inds) return;
+    Object.values(inds).forEach(ind => {
+      totalInds++;
+      if(ind.cls !== 'neut') activeInds++;
+    });
+  });
+  const confidence = totalInds > 0 ? Math.min(5, Math.round((activeInds / totalInds) * 5)) : 0;
+  const confDots = '●'.repeat(confidence) + '○'.repeat(5 - confidence);
+  // 3. ボット合意率
+  let botAgree = 0, botTotal = 0;
+  if(typeof botStates !== 'undefined') {
+    const states = botStates[currentCoin] || {};
+    Object.values(states).forEach(st => {
+      if(!st || st.status === 'watching') return;
+      botTotal++;
+      if(st.status === 'holding' && st.dir === sig) botAgree++;
+      else if(st.status === 'ready' && st.readyDetail && st.readyDetail.dir === sig) botAgree++;
+    });
+  }
+  // 4. データ鮮度
+  const now = Date.now();
+  const allFresh = S._lastFetch.price > 0 && (now - S._lastFetch.price) < 30000;
+  const freshStr = allFresh ? '● 正常' : (S._lastFetch.price > 0 ? '⚠ 遅延' : '○ 未取得');
+  const freshColor = allFresh ? 'var(--green)' : (S._lastFetch.price > 0 ? 'var(--orange)' : 'var(--dim)');
+  // 5. シグナル色
+  const sigColor = sig==='LONG'?'var(--green)':sig==='SHORT'?'var(--red)':'var(--yellow)';
+  const bgGrad = sig==='LONG'?'linear-gradient(135deg,rgba(0,255,136,.05),transparent)':sig==='SHORT'?'linear-gradient(135deg,rgba(255,45,85,.05),transparent)':'none';
+  panel.style.background = bgGrad;
+  panel.style.borderColor = sigColor;
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:1.1rem;font-weight:900;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">
+        ${COINS[currentCoin].name} <span style="color:var(--accent);">$${S.price.toLocaleString('en',{maximumFractionDigits:0})}</span>
+        <span style="color:${sigColor};font-size:.8rem;margin-left:8px;">${sig}</span>
+      </div>
+      <div style="font-size:.65rem;color:${freshColor};">${freshStr} <span id="dataFreshness"></span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px;">
+      <div style="text-align:center;">
+        <div style="font-size:1.5rem;font-weight:900;color:${sigColor};font-family:'Share Tech Mono',monospace;">${composite}</div>
+        <div style="font-size:.55rem;color:var(--dim);">複合スコア</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:.9rem;font-weight:700;color:var(--accent);letter-spacing:2px;">${confDots}</div>
+        <div style="font-size:.55rem;color:var(--dim);">信頼度 ${activeInds}/${totalInds}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1rem;font-weight:900;color:var(--accent);font-family:'Share Tech Mono',monospace;">${botTotal>0?Math.round(botAgree/botTotal*100):'-'}%</div>
+        <div style="font-size:.55rem;color:var(--dim);">ボット合意 ${botAgree}/${botTotal}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// Phase 8: クロスアセット相関計算
+// ═══════════════════════════════════════════════
+function calcPearsonCorrelation(x, y) {
+  const n = Math.min(x.length, y.length);
+  if(n < 10) return 0;
+  const xs = x.slice(-n), ys = y.slice(-n);
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let num=0, dx=0, dy=0;
+  for(let i=0; i<n; i++) {
+    const xi = xs[i]-mx, yi = ys[i]-my;
+    num += xi*yi; dx += xi*xi; dy += yi*yi;
+  }
+  return dx>0 && dy>0 ? num / Math.sqrt(dx*dy) : 0;
+}
+
 function renderAll(){
   Object.keys(TFCFG).forEach(tf=>{
     const kl=KL[tf]();
@@ -3111,6 +3365,10 @@ function renderAll(){
   document.getElementById('lastUpd').textContent='最終更新: '+new Date().toLocaleTimeString('ja-JP',{hour12:false});
   renderPriceRange();
   renderProTechnical();
+  renderDataFreshness();
+  renderLiveMetrics();
+  renderETFFreshness();
+  renderExecutiveSummary();
   // Defer chart update to avoid blocking real-time display
   if (_histChartTimer) clearTimeout(_histChartTimer);
   _histChartTimer = setTimeout(renderHistoryCharts, 50);
@@ -3132,10 +3390,22 @@ function renderPrice(){
   const oiChg=S.oiPrev>0?(S.oiVal-S.oiPrev)/S.oiPrev*100:0;
   const oiEl=_el('oiPill');
   if(oiEl){oiEl.textContent=(oiChg>=0?'+':'')+oiChg.toFixed(1)+'%';oiEl.style.color=Math.abs(oiChg)>3?'var(--orange)':'var(--dim)';}
-  const liqEst=Math.round(S.price*1.025);
-  const lqEl=_el('liqPill'); if(lqEl) lqEl.textContent='$'+liqEst.toLocaleString();
+  // レバレッジ別清算ゾーン（LONG方向: price*(1-1/lev), SHORT方向: price*(1+1/lev)）
+  const liqZones = [
+    {lev:100, label:'100x'}, {lev:50, label:'50x'},
+    {lev:25, label:'25x'},  {lev:10, label:'10x'}
+  ];
+  const liqLong10 = Math.round(S.price*(1-1/10));
+  const liqShort10 = Math.round(S.price*(1+1/10));
+  const lqEl=_el('liqPill');
+  if(lqEl) lqEl.innerHTML=`<span style="font-size:.55rem">L清算</span> $${liqLong10.toLocaleString()} <span style="color:var(--dim);font-size:.5rem">10x</span>`;
   const mxp=_el('mx-p'); if(mxp) mxp.textContent='$'+S.price.toLocaleString('en',{maximumFractionDigits:0});
-  const mxl=_el('mx-liq'); if(mxl) mxl.textContent='$'+liqEst.toLocaleString();
+  const mxl=_el('mx-liq');
+  if(mxl) mxl.innerHTML = liqZones.map(z => {
+    const liqL = Math.round(S.price*(1-1/z.lev));
+    const liqS = Math.round(S.price*(1+1/z.lev));
+    return `<div style="display:flex;justify-content:space-between;font-size:.55rem;"><span class="dim">${z.label}</span><span class="green">L: $${liqL.toLocaleString()}</span><span class="red">S: $${liqS.toLocaleString()}</span></div>`;
+  }).join('');
   const fgEl=_el('fgPill');
   if(fgEl){fgEl.textContent=S.fg+(S.fg>=75?' 極強欲':S.fg<=25?' 極恐怖':S.fg>=50?' 強欲':' 恐怖');fgEl.style.color=S.fg>=75?'var(--red)':S.fg<=25?'var(--green)':S.fg>=50?'var(--orange)':'var(--accent)';}
 }
@@ -3148,7 +3418,13 @@ function renderScalpHero(){
     document.getElementById(`sf-${tf}`).className=`sf ${sig}`;
     const se=document.getElementById(`ss-${tf}`);
     se.className=`sf-sig ${sig}`; se.textContent=sig;
-    document.getElementById(`sc-${tf}`).textContent=`スコア ${sc}/100`;
+    // Phase 3: 信頼度ドット表示
+    const inds = S.tfInds[tf] || {};
+    const activeInds = Object.values(inds).filter(i => i.cls !== 'neut').length;
+    const totalInds = Object.keys(inds).length;
+    const confLevel = totalInds > 0 ? Math.min(5, Math.round((activeInds / totalInds) * 5)) : 0;
+    const confStr = '●'.repeat(confLevel) + '○'.repeat(5 - confLevel);
+    document.getElementById(`sc-${tf}`).innerHTML=`スコア ${sc}/100 <span style="font-size:.55rem;color:var(--accent);letter-spacing:1px;margin-left:4px;">${confStr}</span>`;
     document.getElementById(`sfill-${tf}`).style.width=sc+'%';
     document.getElementById(`sfill-${tf}`).style.background=bc;
     const subs={LONG:'ロング優位 — 押し目5mエントリー候補',SHORT:'ショート優位 — 戻り5mショート候補',WAIT:'拮抗中 — 上位足確認後にエントリー'};
@@ -5512,6 +5788,66 @@ function renderOverview(){
   renderOvBot();
   renderOvStatus();
   renderOvDrillBadges();
+  renderOvCorrelation();
+}
+
+// ── Phase 8: クロスアセット相関マトリクス ──
+function renderOvCorrelation(){
+  const el = document.getElementById('ovCorrelation');
+  if(!el) return;
+  const coins = Object.keys(COINS);
+  // 各コインの5分足リターン系列を収集
+  const returnSeries = {};
+  coins.forEach(key => {
+    const ov = OV[key];
+    if(ov && ov.sparkData && ov.sparkData.length >= 10) {
+      const prices = ov.sparkData;
+      const returns = [];
+      for(let i=1; i<prices.length; i++) {
+        returns.push(prices[i] > 0 && prices[i-1] > 0 ? (prices[i] - prices[i-1]) / prices[i-1] : 0);
+      }
+      returnSeries[key] = returns;
+    }
+  });
+  // 相関マトリクス計算
+  let html = '<div style="font-size:.6rem;font-weight:700;color:var(--accent);margin-bottom:6px;">クロスアセット相関 (5分足リターン)</div>';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:.55rem;font-family:\'Share Tech Mono\',monospace;">';
+  html += '<tr><th style="padding:3px;border:1px solid var(--border);"></th>';
+  coins.forEach(c => html += `<th style="padding:3px;border:1px solid var(--border);color:var(--accent);">${c}</th>`);
+  html += '</tr>';
+  coins.forEach(c1 => {
+    html += `<tr><td style="padding:3px;border:1px solid var(--border);color:var(--accent);font-weight:700;">${c1}</td>`;
+    coins.forEach(c2 => {
+      if(c1 === c2) {
+        html += '<td style="padding:3px;border:1px solid var(--border);text-align:center;color:var(--dim);">1.00</td>';
+      } else if(returnSeries[c1] && returnSeries[c2]) {
+        const corr = calcPearsonCorrelation(returnSeries[c1], returnSeries[c2]);
+        const absCorr = Math.abs(corr);
+        const color = absCorr > 0.7 ? 'var(--red)' : absCorr > 0.4 ? 'var(--orange)' : 'var(--green)';
+        html += `<td style="padding:3px;border:1px solid var(--border);text-align:center;color:${color};font-weight:${absCorr>0.7?'700':'400'};">${corr.toFixed(2)}</td>`;
+      } else {
+        html += '<td style="padding:3px;border:1px solid var(--border);text-align:center;color:var(--dim);">--</td>';
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</table>';
+  // 高相関警告
+  const warnings = [];
+  for(let i=0; i<coins.length; i++) {
+    for(let j=i+1; j<coins.length; j++) {
+      if(returnSeries[coins[i]] && returnSeries[coins[j]]) {
+        const corr = calcPearsonCorrelation(returnSeries[coins[i]], returnSeries[coins[j]]);
+        if(Math.abs(corr) > 0.7) {
+          warnings.push(`${coins[i]}-${coins[j]} r=${corr.toFixed(2)}`);
+        }
+      }
+    }
+  }
+  if(warnings.length > 0) {
+    html += `<div style="font-size:.5rem;color:var(--red);margin-top:4px;">⚠ 高相関: ${warnings.join(', ')} — 分散効果が低い</div>`;
+  }
+  el.innerHTML = html;
 }
 
 // ── Clock ──
@@ -6166,6 +6502,69 @@ function checkBotEntry(def, state, price, now){
   const regimeBonus = state._regimeBonus || 0;
   const effectiveScoreEntry = Math.max(50, Math.min(90, (p.scoreEntry || 65) + regimeBonus));
 
+  // ═══════════════════════════════════════════════
+  // Phase 7a: Ready状態の確認カウント強化
+  // シグナルが同じ方向を持続する場合、confirmCount++して確認エントリー
+  // ═══════════════════════════════════════════════
+  if(state.status === 'ready' && state.readyDetail && state.readyDetail.confirmCount !== undefined) {
+    const rd = state.readyDetail;
+    const currentDir = score >= 60 ? 'LONG' : score <= 40 ? 'SHORT' : null;
+    if(currentDir === rd.dir) {
+      rd.confirmCount = (rd.confirmCount || 0) + 1;
+      if(rd.confirmCount >= (rd.confirmTotal || 5)) {
+        signal = rd.dir;
+        reason = rd.reason + ` (${rd.confirmTotal}回連続確認で自動エントリー)`;
+        state.readyDetail = null;
+        // Phase 7a: 確認カウントによるエントリーはここで確定し、switch内のロジックをスキップ
+      }
+    } else if(currentDir && currentDir !== rd.dir) {
+      // シグナルが逆転 → ready解除
+      rd.confirmCount = 0;
+      state.status = 'watching';
+      state.readyDetail = null;
+    }
+    // currentDir === null (中立) → カウント維持するが増やさない
+  }
+
+  // Phase 7a: 確認カウントでエントリー確定済みならswitch内ロジックをスキップ
+  if(signal) {
+    // エントリー処理に進む（下のswitch以降で処理される）
+  } else {
+
+  // ═══════════════════════════════════════════════
+  // Phase 7b: マルチTF確認ゲート（共通）
+  // 上位TFが逆方向なら新規エントリーを抑制
+  // ═══════════════════════════════════════════════
+  const tfHierarchy = {'5m':'15m', '15m':'1h', '1h':'4h', '4h':'1d'};
+  const parentTF = tfHierarchy[tf];
+  let parentConflict = false;
+  if(parentTF && S.tfSig[parentTF]) {
+    const parentSig = S.tfSig[parentTF];
+    // 上位足がアクティブシグナル(LONG/SHORT)を出していて、自TFと逆方向の場合
+    if(parentSig === 'LONG' && score <= 35) parentConflict = true;
+    if(parentSig === 'SHORT' && score >= 65) parentConflict = true;
+  }
+
+  // ═══════════════════════════════════════════════
+  // Phase 7c: ボラティリティフィルター（共通）
+  // ATRが通常の2.5倍以上で異常ボラ → ATR戦略以外は新規エントリー抑制
+  // ═══════════════════════════════════════════════
+  let volFilterBlock = false;
+  const strategyKey_check = def.strategy || def.id;
+  if(strategyKey_check !== 'atr' && strategyKey_check !== 'breakout') {
+    const kl = KL[tf]();
+    if(kl && kl.length >= 30) {
+      // 簡易ATR: 直近14本の平均レンジ
+      const ranges = kl.slice(-14).map(c => parseFloat(c[2]) - parseFloat(c[3]));
+      const atr14 = ranges.reduce((a,b)=>a+b,0) / ranges.length;
+      // 直近1本のレンジ
+      const lastRange = parseFloat(kl[kl.length-1][2]) - parseFloat(kl[kl.length-1][3]);
+      if(atr14 > 0 && lastRange > atr14 * 2.5) {
+        volFilterBlock = true;
+      }
+    }
+  }
+
   const strategyKey = def.strategy || def.id;
   switch(strategyKey){
     case 'john': { // 5m trend follow
@@ -6614,6 +7013,21 @@ function checkBotEntry(def, state, price, now){
     }
   }
 
+  // Phase 7b: マルチTFゲート — 上位足と逆方向ならシグナルをキャンセル
+  if(signal && parentConflict) {
+    state.status = 'ready';
+    state.readyDetail = { dir: signal, target: price, reason: reason + ' (上位足逆方向のため待機)', confirmCount:0, confirmTotal:5, confirmSource:'parent_tf' };
+    signal = null;
+  }
+  // Phase 7c: ボラティリティフィルター — 異常ボラ時はエントリー抑制
+  if(signal && volFilterBlock) {
+    state.status = 'ready';
+    state.readyDetail = { dir: signal, target: price, reason: reason + ' (異常ボラのため待機)', confirmCount:0, confirmTotal:5, confirmSource:'vol_filter' };
+    signal = null;
+  }
+
+  } // Phase 7a: else block end
+
   // Execute entry if signal found — マルチコンファメーション + ポートフォリオ安全性
   if(signal){
     // ── ポートフォリオ安全性チェック ──
@@ -6743,6 +7157,10 @@ function checkBotExit(def, state, price, now){
       exitTime: new Date(now).toISOString(),
       reason: exitReason,
     });
+    // Phase 5: リスク指標計算用のトレード履歴（最大100件保持）
+    if(!state._tradeHistory) state._tradeHistory = [];
+    state._tradeHistory.push({ pnlPct: +pnlPct.toFixed(3), win, lev: posLev, ts: now });
+    if(state._tradeHistory.length > 100) state._tradeHistory = state._tradeHistory.slice(-100);
     if(win){ state.totalWins++; } else { state.totalLosses++; }
     state.totalPnlPct = +(state.totalPnlPct + pnlPct).toFixed(3);
     const levTag = posLev > 1 ? ` [${posLev}x]` : '';
@@ -7378,6 +7796,19 @@ function renderSingleBotCard(def, bs, isFull){
       <span>累計:${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</span>
       <span>本日:${ts.count}回(${ts.pnl>=0?'+':''}${ts.pnl.toFixed(2)}%)</span>
     </div>
+    ${(()=>{
+      const trades = bs._tradeHistory || [];
+      if(trades.length < 2) return '';
+      const rm = calcRiskMetrics(trades);
+      const shColor = rm.sharpe > 1 ? 'var(--green)' : rm.sharpe > 0 ? 'var(--yellow)' : 'var(--red)';
+      const pfColor = rm.profitFactor > 1.5 ? 'var(--green)' : rm.profitFactor > 1 ? 'var(--yellow)' : 'var(--red)';
+      return '<div class="ba-bot-mini-stats" style="margin-top:2px;font-size:.58rem;color:var(--dim);">' +
+        '<span style="color:'+shColor+';">Sharpe:'+rm.sharpe.toFixed(2)+'</span>' +
+        '<span style="color:'+pfColor+';">PF:'+rm.profitFactor.toFixed(2)+'</span>' +
+        '<span>MaxDD:'+rm.maxDD.toFixed(1)+'%</span>' +
+        '<span>Sortino:'+rm.sortino.toFixed(2)+'</span>' +
+      '</div>';
+    })()}
   </div>`;
 }
 

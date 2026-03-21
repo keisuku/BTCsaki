@@ -4692,6 +4692,10 @@ const BOT_DEFS = [
     desc:'1時間足ATR急拡大逆張りトレーダー', philosophy:'ボラティリティの急拡大は反転のサイン。嵐の後の静けさを狙う。',
     quotes:{ watching:'ATRの変化を監視中...', ready:'ボラ急拡大を検知。反転準備。',
              holding:'急拡大からの収束に賭ける。', tp:'ボラ急拡大の逆張り成功。', sl:'ボラがさらに拡大。一旦退く。' }},
+  { id:'riku', name:'RIKU',   emoji:'⚡', tf:'5m',  style:'range',   cat:'高速レンジスキャル',
+    desc:'レンジの天井と床を瞬殺で取る高速スキャルパー', philosophy:'レンジは俺の庭。天井で叩き、床で拾う。壁が見えるんだよ。',
+    quotes:{ watching:'レンジ形成を検知中...壁を探してる。', ready:'レンジの壁に到達。ここだ...！',
+             holding:'反発開始。壁からの跳ね返りを掴んだ。', tp:'天井→床、床→天井。完璧なレンジスキャル。', sl:'壁をブレイクされた。レンジ崩壊、即撤退。' }},
 ];
 
 // ── Mother bot IDs (for child dormancy mechanism) ──
@@ -5028,6 +5032,7 @@ const BOT_DEFAULT_PARAMS = {
   yuki:  { fgExtreme:25, fgGreed:75, lsThresh:62, bbEntry:true, tpPct:0.70, slPct:0.35, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:90, cooldownMin:15 },
   delta: { scoreEntry:62, deltaConfirm:true, tpPct:0.40, slPct:0.20, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:25, cooldownMin:5 },
   atr:   { atrMultiple:1.5, rsiOB:72, rsiOS:28, tpPct:0.55, slPct:0.30, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:60, cooldownMin:10 },
+  riku:  { rangeLookback:20, rangeMaxPct:0.50, entryZone:22, rsiLow:38, rsiHigh:62, tpPct:0.12, slPct:0.08, tpAtrMult:0.7, slAtrMult:0.35, trailAtrMult:0.5, timeoutMin:4, cooldownMin:1 },
 };
 
 // Generate child bot default params — バリアント戦略ベースの独立パラメータ
@@ -6312,6 +6317,92 @@ function checkBotEntry(def, state, price, now){
       }
       break;
     }
+
+    case 'riku': { // ⚡ 高速レンジスキャルパー — レンジの天井と床を瞬殺で取る
+      const kl = KL[tf]();
+      if (!kl || kl.length < 25) { state.status = 'watching'; break; }
+      const lookback = p.rangeLookback || 20;
+      const recent = kl.slice(-lookback);
+
+      // ── レンジ算出（直近N本のHigh/Lowからレンジ幅を計算）──
+      const highs = recent.map(c => c[2]);
+      const lows  = recent.map(c => c[3]);
+      const rangeHigh = Math.max(...highs);
+      const rangeLow  = Math.min(...lows);
+      const rangeSize = rangeHigh - rangeLow;
+      const rangePct  = rangeSize / price * 100;
+
+      // レンジが広すぎる = トレンド発生中 → 参入しない
+      const maxRangePct = p.rangeMaxPct || 0.50;
+      if (rangePct > maxRangePct || rangeSize <= 0) {
+        state.status = 'watching';
+        state.readyDetail = null;
+        break;
+      }
+
+      // ── 現在価格のレンジ内位置（0%=底, 100%=天井）──
+      const rangePos = (price - rangeLow) / rangeSize * 100;
+
+      // ── サポート/レジスタンスの強度（同じ価格帯に何回タッチしたか）──
+      const zonePct = 0.15; // 価格帯判定幅
+      const supportZone  = rangeLow  * (1 + zonePct/100);
+      const resistZone   = rangeHigh * (1 - zonePct/100);
+      let supportTouches = 0, resistTouches = 0;
+      recent.forEach(c => {
+        if (c[3] <= supportZone) supportTouches++;
+        if (c[2] >= resistZone)  resistTouches++;
+      });
+
+      // ── 直近ローソク足の方向（反転の兆候を確認）──
+      const last3 = kl.slice(-3);
+      const lastClose  = last3[2][4];
+      const lastOpen   = last3[2][1];
+      const prevClose  = last3[1][4];
+      const lastBullish = lastClose > lastOpen;
+      const lastBearish = lastClose < lastOpen;
+
+      const rsi = r.rsi || 50;
+      const bb = inds.bb;
+      const entryZone = p.entryZone || 22;
+      const rsiLow  = p.rsiLow  || 38;
+      const rsiHigh = p.rsiHigh || 62;
+
+      // ── レンジ下限ゾーン: 反発LONG ──
+      if (rangePos <= entryZone && rsi <= rsiLow && lastBullish && supportTouches >= 2) {
+        signal = 'LONG';
+        reason = `レンジ底${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) + RSI${rsi.toFixed(0)} + 陽線反発 + S${supportTouches}回タッチ`;
+      }
+      // ── レンジ上限ゾーン: 反落SHORT ──
+      else if (rangePos >= (100 - entryZone) && rsi >= rsiHigh && lastBearish && resistTouches >= 2) {
+        signal = 'SHORT';
+        reason = `レンジ天井${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) + RSI${rsi.toFixed(0)} + 陰線反落 + R${resistTouches}回タッチ`;
+      }
+      // ── BB端 + レンジ端の合致でボーナス確信（BBが動的サポレジとして機能）──
+      else if (rangePos <= entryZone && bb && bb.cls === 'bull' && rsi <= rsiLow + 5) {
+        signal = 'LONG';
+        reason = `レンジ底${rangePos.toFixed(0)}% + BB下限タッチ + RSI${rsi.toFixed(0)}`;
+      }
+      else if (rangePos >= (100 - entryZone) && bb && bb.cls === 'bear' && rsi >= rsiHigh - 5) {
+        signal = 'SHORT';
+        reason = `レンジ天井${rangePos.toFixed(0)}% + BB上限タッチ + RSI${rsi.toFixed(0)}`;
+      }
+      // ── Ready状態（ゾーン接近中）──
+      else if (rangePos <= entryZone + 10) {
+        state.status = 'ready';
+        state.readyDetail = { dir:'LONG', target:rangeLow, reason:`レンジ下限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+      }
+      else if (rangePos >= (100 - entryZone - 10)) {
+        state.status = 'ready';
+        state.readyDetail = { dir:'SHORT', target:rangeHigh, reason:`レンジ上限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+      }
+      else {
+        // レンジ中央部 → 何もしない（壁に近づくまで待つ）
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
     // ════════════════════════════════════════════════
     // 独立バリアント戦略（母botとは完全に異なるロジック）
     // ════════════════════════════════════════════════

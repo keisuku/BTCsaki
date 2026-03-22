@@ -123,22 +123,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .src-badge.ok{background:rgba(0,255,136,.08);color:var(--green);border-color:rgba(0,255,136,.2);}
 .src-badge.warn{background:rgba(255,214,10,.08);color:var(--yellow);border-color:rgba(255,214,10,.2);}
 
-/* SCORE HISTORY CHART PANEL */
-.score-history-panel{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 12px 6px;}
-.shp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
-.shp-title{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--text);letter-spacing:.1em;display:flex;align-items:center;gap:8px;}
-.shp-tabs{display:flex;gap:4px;}
-.shp-tab{font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:3px 10px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .2s;}
-.shp-tab:hover{border-color:var(--accent);color:var(--text);}
-.shp-tab.active{background:rgba(0,212,255,.12);border-color:var(--accent);color:var(--accent);}
-.shp-charts{display:flex;flex-direction:column;gap:6px;}
-.shp-chart-wrap{position:relative;}
-.shp-chart-label{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);letter-spacing:.1em;margin-bottom:2px;}
-#scoreHistCanvas{width:100%;height:120px;display:block;border-radius:4px;background:var(--bg);}
-#priceMiniCanvas{width:100%;height:90px;display:block;border-radius:4px;background:var(--bg);}
-.shp-legend{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;}
-.shp-leg-item{font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--dim);display:flex;align-items:center;gap:4px;}
-.shp-leg-dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
 
 /* API STATUS BAR */
 .api-status-bar{display:flex;gap:6px;align-items:center;padding:3px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);}
@@ -788,14 +772,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-fleet-leg{display:flex;align-items:center;gap:3px;font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--dim);}
 .ba-fleet-dot{width:6px;height:6px;border-radius:2px;flex-shrink:0;}
 
-/* ══ USER PREDICTION BATTLE ══ */
-.pred-btn{padding:6px 16px;border:2px solid;border-radius:6px;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;font-family:'Share Tech Mono',monospace;background:transparent;}
-.pred-btn-long{color:var(--green);border-color:var(--green);}
-.pred-btn-long:hover{background:rgba(0,255,136,0.15);}
-.pred-btn-short{color:var(--red);border-color:var(--red);}
-.pred-btn-short:hover{background:rgba(255,45,85,0.15);}
-.pred-active{opacity:0.5;pointer-events:none;}
-#predictionPanel{margin:4px 0;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;}
 
 /* ══ CONSENSUS SIGNAL ══ */
 .ba-consensus{padding:12px 16px;margin:8px 0;border-radius:8px;border:2px solid;background:rgba(0,0,0,0.3);animation:consensusPulse 2s infinite;}
@@ -1068,36 +1044,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
 </div>
 
-<!-- SCORE HISTORY CHART -->
-
-<div class="score-history-panel" id="scoreHistPanel">
-  <div class="shp-header">
-    <span class="shp-title">スコア履歴チャート <span class="live-b">LIVE</span></span>
-    <div class="shp-tabs" id="shpTabs">
-      <button class="shp-tab active" data-tf="5m" onclick="switchHistTF('5m')">5分</button>
-      <button class="shp-tab" data-tf="15m" onclick="switchHistTF('15m')">15分</button>
-      <button class="shp-tab" data-tf="1h" onclick="switchHistTF('1h')">1時間</button>
-      <button class="shp-tab" data-tf="4h" onclick="switchHistTF('4h')">4時間</button>
-      <button class="shp-tab" data-tf="1d" onclick="switchHistTF('1d')">日足</button>
-    </div>
-  </div>
-  <div class="shp-charts">
-    <div class="shp-chart-wrap">
-      <div class="shp-chart-label">強気スコア (0-100)</div>
-      <canvas id="scoreHistCanvas"></canvas>
-    </div>
-    <div class="shp-chart-wrap">
-      <div class="shp-chart-label">価格 + シグナルゾーン</div>
-      <canvas id="priceMiniCanvas"></canvas>
-    </div>
-  </div>
-  <div class="shp-legend">
-    <span class="shp-leg-item"><span class="shp-leg-dot" style="background:var(--green)"></span>LONG (≥65)</span>
-    <span class="shp-leg-item"><span class="shp-leg-dot" style="background:var(--yellow)"></span>WAIT (36-64)</span>
-    <span class="shp-leg-item"><span class="shp-leg-dot" style="background:var(--red)"></span>SHORT (≤35)</span>
-    <span class="shp-leg-item"><span class="shp-leg-dot" style="background:var(--accent)"></span>価格ライン</span>
-  </div>
-</div>
 
 
 <!-- EXECUTIVE SUMMARY (Phase 6) -->
@@ -1780,6 +1726,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     </div>
     <canvas id="baChartCanvas" class="ba-chart-canvas"></canvas>
   </div>
+  <div class="ba-log-title">🔴 ライブトレード状況</div>
+  <div class="ba-bots" id="baBots"></div>
   <div id="aiSecretary" class="sec-wrap">
     <div class="sec-header">
       <span class="sec-icon">🧠</span>
@@ -1806,21 +1754,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <div class="sec-footer" id="secFooter"></div>
   </div>
   <div id="baConsensus" style="display:none;"></div>
-  <div id="predictionPanel">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <span style="font-size:.82rem;font-weight:700;color:var(--accent);">🎯 予測バトル</span>
-      <span style="font-size:.72rem;color:var(--dim);">次の1時間の方向を予測してbotに挑戦</span>
-      <button class="pred-btn pred-btn-long" id="predBtnLong" onclick="makeUserPrediction('LONG')">▲ LONG</button>
-      <button class="pred-btn pred-btn-short" id="predBtnShort" onclick="makeUserPrediction('SHORT')">▼ SHORT</button>
-      <span id="predStatus" style="font-size:.72rem;color:var(--dim);"></span>
-    </div>
-    <div id="predHistory" style="margin-top:8px;font-size:.72rem;color:var(--dim);"></div>
-  </div>
   <div class="ba-leaders" id="baLeaders"></div>
   <div class="ba-log-title">💀 養分枠 — 生涯成績ワースト2名（子botのみ）</div>
   <div class="ba-worst" id="baWorst"><div style="color:var(--dim);font-size:.8rem;">データ蓄積中...（最低3回トレード後に表示）</div></div>
-  <div class="ba-log-title">🔴 ライブトレード状況</div>
-  <div class="ba-bots" id="baBots"></div>
   <div class="ba-log-title">📋 本日のトレード履歴</div>
   <div class="ba-log" id="baLog"><div style="color:var(--dim);font-size:.8rem;">トレード履歴がまだありません...</div></div>
   <div class="ba-log-title">📈 7日間パフォーマンス</div>
@@ -2481,14 +2417,6 @@ function computeTF(tf){
   return{score,signal:score>=65?'LONG':score<=35?'SHORT':'WAIT',inds,rsi,activeCount,indicatorCount};
 }
 
-// ═══════════════════════════════════════════════
-// SCORE HISTORY CHART
-// ═══════════════════════════════════════════════
-let currentHistTF = '5m';
-const histScoreCache = {};  // tf -> [{time, score, signal, price}]
-const histScoreCacheKey = {}; // tf -> last kline timestamp for cache invalidation
-let _histChartTimer = null;
-
 // Batch RSI: compute RSI at every position in one pass → returns array[closes.length]
 function calcRSIAll(closes, period) {
   const out = new Array(closes.length).fill(50);
@@ -2571,364 +2499,6 @@ function calcDeltaAll(klines) {
   return out;
 }
 
-function computeHistoricalScores(tf) {
-  const kl = KL[tf]();
-  if (!kl || kl.length < 50) return [];
-  const c = TFCFG[tf];
-  const cl = kl.map(k => parseFloat(k[4]));
-  const results = [];
-  const minWin = 50;
-
-  // Precompute all indicators in one pass each — O(n) total
-  const rsiPeriod = c.fast ? 9 : 14;
-  const rsiAll = calcRSIAll(cl, rsiPeriod);
-  const sma20All = calcSMAAll(cl, 20);
-  const sma50All = calcSMAAll(cl, Math.min(50, cl.length));
-  const vwapAll = calcVWAPAll(kl);
-  const bbAll = calcBBAll(cl, sma20All, 20);
-  const deltaAll = c.fast ? calcDeltaAll(kl) : null;
-
-  for (let end = minWin; end <= kl.length; end++) {
-    const idx = end - 1;
-    const last = cl[idx];
-    let bull = 0, bear = 0;
-
-    // RSI
-    const rsi = rsiAll[idx];
-    if (rsi > 75) bear += 2;
-    else if (rsi > 60) bull += 1;
-    else if (rsi < 25) bull += 2;
-    else if (rsi < 40) bear += 1;
-
-    // Trend SMA
-    const sma20 = sma20All[idx];
-    const sma50 = sma50All[idx];
-    if (last > sma20 && sma20 > sma50) bull += 2 * c.trW;
-    else if (last > sma20) bull += c.trW;
-    else if (last < sma20 && sma20 < sma50) bear += 2 * c.trW;
-    else if (last < sma20) bear += c.trW;
-
-    // FR and L/S excluded from historical scores — these are current-only snapshots
-    // and applying them retroactively would produce misleading history charts
-
-    // VWAP
-    const vwap = vwapAll[idx];
-    if (vwap > 0) {
-      if (last > vwap * 1.002) bull += 1.5;
-      else if (last < vwap * 0.998) bear += 1.5;
-    }
-
-    // BB
-    const bb = bbAll[idx];
-    if (bb && bb.middle > 0) {
-      if (last > bb.upper) bear += 1.5;
-      else if (last < bb.lower) bull += 1.5;
-    }
-
-    // Delta (fast TFs only)
-    if (deltaAll && end >= 10) {
-      const delta = deltaAll[idx];
-      if (delta > 0.1) bull += 1.2;
-      else if (delta < -0.1) bear += 1.2;
-    }
-
-    const total = bull + bear || 1;
-    const score = Math.round((bull / total) * 100);
-    const signal = score >= 65 ? 'LONG' : score <= 35 ? 'SHORT' : 'WAIT';
-    results.push({
-      time: parseInt(kl[idx][0]),
-      score,
-      signal,
-      price: parseFloat(kl[idx][4])
-    });
-  }
-  return results;
-}
-
-function updateLastEntry(tf, kl) {
-  const cache = histScoreCache[tf];
-  if (!cache || !cache.length) return;
-  const last = cache[cache.length - 1];
-  last.price = parseFloat(kl[kl.length - 1][4]);
-  // Use already-computed score from renderAll() if available
-  if (S.tfScore[tf] !== undefined) {
-    last.score = S.tfScore[tf];
-    last.signal = S.tfSig[tf];
-  }
-}
-
-function appendNewEntry(tf, kl) {
-  const cache = histScoreCache[tf];
-  if (!cache) return;
-  cache.push({
-    time: parseInt(kl[kl.length - 1][0]),
-    score: S.tfScore[tf] || 50,
-    signal: S.tfSig[tf] || 'WAIT',
-    price: parseFloat(kl[kl.length - 1][4])
-  });
-}
-
-function switchHistTF(tf) {
-  currentHistTF = tf;
-  document.querySelectorAll('.shp-tab').forEach(b =>
-    b.classList.toggle('active', b.dataset.tf === tf));
-  if (histScoreCache[tf]) {
-    // Cache hit → draw immediately, no recompute
-    drawScoreChart('scoreHistCanvas', tf);
-    drawPriceMiniChart('priceMiniCanvas', tf);
-  } else {
-    // No cache → show loading, compute async
-    showChartLoading();
-    setTimeout(() => {
-      histScoreCache[tf] = computeHistoricalScores(tf);
-      const kl = KL[tf]();
-      if (kl && kl.length > 0) histScoreCacheKey[tf] = parseInt(kl[kl.length-1][0]);
-      drawScoreChart('scoreHistCanvas', tf);
-      drawPriceMiniChart('priceMiniCanvas', tf);
-    }, 0);
-  }
-}
-
-function showChartLoading() {
-  ['scoreHistCanvas','priceMiniCanvas'].forEach(id => {
-    const c = document.getElementById(id);
-    if (!c) return;
-    const rect = c.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    c.width = rect.width * dpr;
-    c.height = rect.height * dpr;
-    const ctx = c.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, rect.width, rect.height);
-    ctx.fillStyle = '#5a7a8a';
-    ctx.font = '12px "Share Tech Mono"';
-    ctx.textAlign = 'center';
-    ctx.fillText('読み込み中...', rect.width / 2, rect.height / 2);
-  });
-}
-
-function renderHistoryCharts() {
-  const tf = currentHistTF;
-  const kl = KL[tf]();
-  if (!kl || kl.length < 50) return;
-
-  const lastTs = parseInt(kl[kl.length - 1][0]);
-
-  if (histScoreCacheKey[tf] === lastTs && histScoreCache[tf]) {
-    // Same kline set — just update current candle's price/score
-    updateLastEntry(tf, kl);
-  } else if (histScoreCache[tf] && histScoreCacheKey[tf]) {
-    // New kline appended — add one entry (O(1))
-    appendNewEntry(tf, kl);
-    histScoreCacheKey[tf] = lastTs;
-  } else {
-    // First time or TF switch — full compute (O(n), runs once)
-    histScoreCache[tf] = computeHistoricalScores(tf);
-    histScoreCacheKey[tf] = lastTs;
-  }
-
-  drawScoreChart('scoreHistCanvas', tf);
-  drawPriceMiniChart('priceMiniCanvas', tf);
-}
-
-function drawScoreChart(canvasId, tf) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  const W = rect.width, H = rect.height;
-  const data = histScoreCache[tf] || [];
-  if (data.length < 2) {
-    ctx.fillStyle = '#5a7a8a';
-    ctx.font = '12px "Share Tech Mono"';
-    ctx.textAlign = 'center';
-    ctx.fillText('データ読み込み中...', W / 2, H / 2);
-    return;
-  }
-
-  const pad = { l: 36, r: 10, t: 8, b: 22 };
-  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
-
-  // Zone backgrounds
-  const zones = [
-    { y0: 0, y1: 35, color: 'rgba(255,45,85,0.08)' },   // SHORT
-    { y0: 35, y1: 65, color: 'rgba(255,214,10,0.05)' },  // WAIT
-    { y0: 65, y1: 100, color: 'rgba(0,255,136,0.08)' },  // LONG
-  ];
-  zones.forEach(z => {
-    const yt = pad.t + ch * (1 - z.y1 / 100);
-    const yb = pad.t + ch * (1 - z.y0 / 100);
-    ctx.fillStyle = z.color;
-    ctx.fillRect(pad.l, yt, cw, yb - yt);
-  });
-
-  // Threshold lines at 35 and 65
-  ctx.setLineDash([4, 4]);
-  ctx.lineWidth = 0.7;
-  [35, 65].forEach(v => {
-    const y = pad.t + ch * (1 - v / 100);
-    ctx.strokeStyle = v === 65 ? 'rgba(0,255,136,0.3)' : 'rgba(255,45,85,0.3)';
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
-  });
-  ctx.setLineDash([]);
-
-  // 50 center line
-  ctx.strokeStyle = 'rgba(90,122,138,0.2)';
-  ctx.lineWidth = 0.5;
-  const y50 = pad.t + ch * 0.5;
-  ctx.beginPath(); ctx.moveTo(pad.l, y50); ctx.lineTo(W - pad.r, y50); ctx.stroke();
-
-  // Score line with gradient coloring
-  ctx.lineWidth = 2;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  for (let i = 1; i < data.length; i++) {
-    const x0 = pad.l + (i - 1) / (data.length - 1) * cw;
-    const x1 = pad.l + i / (data.length - 1) * cw;
-    const y0 = pad.t + ch * (1 - data[i - 1].score / 100);
-    const y1 = pad.t + ch * (1 - data[i].score / 100);
-    const sc = data[i].score;
-    ctx.strokeStyle = sc >= 65 ? '#00ff88' : sc <= 35 ? '#ff2d55' : '#ffd60a';
-    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-  }
-
-  // Current score dot
-  const lastPt = data[data.length - 1];
-  const lx = pad.l + cw;
-  const ly = pad.t + ch * (1 - lastPt.score / 100);
-  ctx.fillStyle = lastPt.score >= 65 ? '#00ff88' : lastPt.score <= 35 ? '#ff2d55' : '#ffd60a';
-  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(lx, ly, 1.5, 0, Math.PI * 2); ctx.fill();
-
-  // Y-axis labels
-  ctx.fillStyle = '#5a7a8a';
-  ctx.font = '9px "Share Tech Mono"';
-  ctx.textAlign = 'right';
-  [0, 25, 50, 75, 100].forEach(v => {
-    ctx.fillText(v, pad.l - 4, pad.t + ch * (1 - v / 100) + 3);
-  });
-
-  // X-axis time labels (5 evenly spaced)
-  ctx.textAlign = 'center';
-  const labelCount = Math.min(5, data.length);
-  for (let i = 0; i < labelCount; i++) {
-    const idx = Math.round(i / (labelCount - 1) * (data.length - 1));
-    const x = pad.l + idx / (data.length - 1) * cw;
-    const d = new Date(data[idx].time);
-    const lbl = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-    ctx.fillText(lbl, x, H - 4);
-  }
-
-  // Current score text
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 10px "Share Tech Mono"';
-  ctx.textAlign = 'left';
-  ctx.fillText(lastPt.score, lx + 6, ly + 3);
-}
-
-function drawPriceMiniChart(canvasId, tf) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  const W = rect.width, H = rect.height;
-  const data = histScoreCache[tf] || [];
-  if (data.length < 2) {
-    ctx.fillStyle = '#5a7a8a';
-    ctx.font = '12px "Share Tech Mono"';
-    ctx.textAlign = 'center';
-    ctx.fillText('データ読み込み中...', W / 2, H / 2);
-    return;
-  }
-
-  const pad = { l: 56, r: 10, t: 8, b: 22 };
-  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
-  const prices = data.map(d => d.price);
-  const minP = Math.min(...prices), maxP = Math.max(...prices);
-  const range = maxP - minP || 1;
-
-  const priceY = p => pad.t + ch * (1 - (p - minP) / range);
-  const dataX = i => pad.l + i / (data.length - 1) * cw;
-
-  // Signal zone backgrounds on price chart
-  for (let i = 0; i < data.length - 1; i++) {
-    const x0 = dataX(i), x1 = dataX(i + 1);
-    const sig = data[i].signal;
-    if (sig === 'LONG') ctx.fillStyle = 'rgba(0,255,136,0.07)';
-    else if (sig === 'SHORT') ctx.fillStyle = 'rgba(255,45,85,0.07)';
-    else continue;
-    ctx.fillRect(x0, pad.t, x1 - x0, ch);
-  }
-
-  // Price line
-  ctx.strokeStyle = 'var(--accent)';
-  ctx.strokeStyle = '#00d4ff';
-  ctx.lineWidth = 1.5;
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  data.forEach((d, i) => {
-    const x = dataX(i), y = priceY(d.price);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-
-  // Signal change markers (triangles)
-  for (let i = 1; i < data.length; i++) {
-    if (data[i].signal !== data[i - 1].signal && data[i].signal !== 'WAIT') {
-      const x = dataX(i), y = priceY(data[i].price);
-      const isLong = data[i].signal === 'LONG';
-      ctx.fillStyle = isLong ? '#00ff88' : '#ff2d55';
-      ctx.beginPath();
-      if (isLong) {
-        // Up triangle
-        ctx.moveTo(x, y - 10); ctx.lineTo(x - 5, y - 3); ctx.lineTo(x + 5, y - 3);
-      } else {
-        // Down triangle
-        ctx.moveTo(x, y + 10); ctx.lineTo(x - 5, y + 3); ctx.lineTo(x + 5, y + 3);
-      }
-      ctx.fill();
-    }
-  }
-
-  // Y-axis price labels
-  ctx.fillStyle = '#5a7a8a';
-  ctx.font = '9px "Share Tech Mono"';
-  ctx.textAlign = 'right';
-  const pSteps = 4;
-  for (let i = 0; i <= pSteps; i++) {
-    const p = minP + (range * i / pSteps);
-    const y = priceY(p);
-    ctx.fillText('$' + Math.round(p).toLocaleString(), pad.l - 4, y + 3);
-  }
-
-  // X-axis time labels
-  ctx.textAlign = 'center';
-  const labelCount = Math.min(5, data.length);
-  for (let i = 0; i < labelCount; i++) {
-    const idx = Math.round(i / (labelCount - 1) * (data.length - 1));
-    const x = dataX(idx);
-    const d = new Date(data[idx].time);
-    const lbl = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-    ctx.fillText(lbl, x, H - 4);
-  }
-
-  // Current price label
-  const lastD = data[data.length - 1];
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 10px "Share Tech Mono"';
-  ctx.textAlign = 'left';
-  const curY = priceY(lastD.price);
-  ctx.fillText('$' + Math.round(lastD.price).toLocaleString(), dataX(data.length - 1) + 4, curY + 3);
-}
 
 // ═══════════════════════════════════════════════
 // PRO TECHNICAL ANALYSIS ENGINE — TOP5手法 + レンジ + プロ思考
@@ -3695,9 +3265,6 @@ function renderAll(){
   renderLiveMetrics();
   renderETFFreshness();
   renderExecutiveSummary();
-  // Defer chart update to avoid blocking real-time display
-  if (_histChartTimer) clearTimeout(_histChartTimer);
-  _histChartTimer = setTimeout(renderHistoryCharts, 50);
 }
 
 function renderPrice(){
@@ -8161,7 +7728,6 @@ function renderBotArena(){
   renderTradeLog();
   renderPerfBars();
   renderPDCALog();
-  if(typeof updatePredictionUI === 'function') updatePredictionUI();
   // Render latest daily summary if available
   const today = new Date().toISOString().slice(0,10);
   const todayReview = botDailyReviews.find(r=>r.date===today);
@@ -8997,113 +8563,6 @@ function closeWebSockets() {
   if (_wsKline) { try { _wsKline.close(); } catch(e){} _wsKline = null; }
   _wsConnected = false;
 }
-
-// ═══════════════════════════════════════════════
-// USER PREDICTION BATTLE — ユーザー vs Bot予測対決
-// ═══════════════════════════════════════════════
-
-let userPredictions = JSON.parse(localStorage.getItem(`userPredictions_${currentCoin}`) || '[]');
-
-function makeUserPrediction(dir) {
-  // 未解決の予測がある場合はブロック
-  if (userPredictions.some(p => !p.resolved)) {
-    return;
-  }
-  const pred = {
-    time: Date.now(),
-    price: S.price,
-    dir: dir,
-    resolved: false,
-    result: null,
-    pnlPct: 0,
-    exitPrice: 0,
-  };
-  userPredictions.push(pred);
-  saveUserPredictions();
-  updatePredictionUI();
-  // 1時間後に結果判定
-  setTimeout(() => resolvePrediction(pred), 3600000);
-}
-
-function resolvePrediction(pred) {
-  if (pred.resolved) return;
-  const currentPrice = S.price;
-  const pnlPct = pred.dir === 'LONG'
-    ? (currentPrice - pred.price) / pred.price * 100
-    : (pred.price - currentPrice) / pred.price * 100;
-  pred.resolved = true;
-  pred.result = pnlPct > 0 ? 'WIN' : 'LOSE';
-  pred.pnlPct = +pnlPct.toFixed(3);
-  pred.exitPrice = currentPrice;
-  saveUserPredictions();
-  updatePredictionUI();
-}
-
-function saveUserPredictions() {
-  // 直近20件のみ保持
-  if (userPredictions.length > 20) userPredictions = userPredictions.slice(-20);
-  localStorage.setItem(`userPredictions_${currentCoin}`, JSON.stringify(userPredictions));
-}
-
-function updatePredictionUI() {
-  const statusEl = document.getElementById('predStatus');
-  const histEl = document.getElementById('predHistory');
-  const btnLong = document.getElementById('predBtnLong');
-  const btnShort = document.getElementById('predBtnShort');
-  if (!statusEl || !histEl) return;
-
-  const activePred = userPredictions.find(p => !p.resolved);
-  if (activePred) {
-    const elapsed = Math.round((Date.now() - activePred.time) / 60000);
-    const curPnl = activePred.dir === 'LONG'
-      ? (S.price - activePred.price) / activePred.price * 100
-      : (activePred.price - S.price) / activePred.price * 100;
-    const pnlCls = curPnl >= 0 ? 'var(--green)' : 'var(--red)';
-    statusEl.innerHTML = `⏳ ${activePred.dir}予測中(${elapsed}分経過) 含み: <span style="color:${pnlCls};font-weight:700;">${curPnl >= 0 ? '+' : ''}${curPnl.toFixed(2)}%</span> (60分後に判定)`;
-    if (btnLong) btnLong.classList.add('pred-active');
-    if (btnShort) btnShort.classList.add('pred-active');
-  } else {
-    statusEl.textContent = '方向を選んで予測開始！';
-    if (btnLong) btnLong.classList.remove('pred-active');
-    if (btnShort) btnShort.classList.remove('pred-active');
-  }
-
-  // 履歴表示
-  const resolved = userPredictions.filter(p => p.resolved).slice(-5).reverse();
-  if (resolved.length > 0) {
-    const wins = userPredictions.filter(p => p.resolved && p.result === 'WIN').length;
-    const total = userPredictions.filter(p => p.resolved).length;
-    const userWR = total > 0 ? (wins / total * 100).toFixed(0) : '--';
-    histEl.innerHTML = `<span style="color:var(--accent);">あなたの戦績: ${wins}勝${total - wins}敗 (勝率${userWR}%)</span> | ` +
-      resolved.map(p => {
-        const icon = p.result === 'WIN' ? '✅' : '❌';
-        const clr = p.result === 'WIN' ? 'var(--green)' : 'var(--red)';
-        return `<span style="color:${clr};">${icon}${p.dir} ${p.pnlPct >= 0 ? '+' : ''}${p.pnlPct.toFixed(2)}%</span>`;
-      }).join(' ');
-  } else {
-    histEl.textContent = 'まだ予測履歴がありません。上のボタンで予測を開始しましょう！';
-  }
-}
-
-// 未解決予測の残り時間タイマーを復元
-function restorePendingPredictions() {
-  userPredictions.forEach(pred => {
-    if (!pred.resolved) {
-      const remaining = (pred.time + 3600000) - Date.now();
-      if (remaining <= 0) {
-        resolvePrediction(pred);
-      } else {
-        setTimeout(() => resolvePrediction(pred), remaining);
-      }
-    }
-  });
-}
-restorePendingPredictions();
-
-// 予測UIを定期更新（アクティブな予測がある場合のPnL表示用）
-setInterval(() => {
-  if (userPredictions.some(p => !p.resolved)) updatePredictionUI();
-}, 10000);
 
 // ═══════════════════════════════════════════════
 // BASIS SPREAD — Binance先物 vs スポット乖離

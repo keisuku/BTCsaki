@@ -4038,8 +4038,8 @@ async function fastFetch(){
     renderAll();
     renderEntryTiming();
     renderPriceRange();
-    // Bot Arena evaluation on every fast tick (only when BTC selected for accurate data)
-    if(['BTC','SOL'].includes(currentCoin) && typeof botEvalAndSave === 'function') botEvalAndSave();
+    // Bot Arena evaluation on every fast tick (全コインで稼働)
+    if(typeof botEvalAndSave === 'function') botEvalAndSave();
   }catch(e){}
 }
 
@@ -4557,12 +4557,12 @@ function checkVolatilityFilter(klines) {
   const ranges = klines.slice(-30).map(k => parseFloat(k[2]) - parseFloat(k[3]));
   const avgRange = calcSMA(ranges, 20);
   if (avgRange <= 0) return true;
-  return atr > avgRange * 0.7 && atr < avgRange * 1.5;
+  return atr > avgRange * 0.3 && atr < avgRange * 3.0;
 }
 
 // 上位TFの方向を取得
 function getUpperTFDirection(tf) {
-  const upperMap = { '5m': '15m', '15m': '1h', '1h': '4h', '4h': '1d' };
+  const upperMap = { '1m': '5m', '3m': '5m', '5m': '15m', '15m': '1h', '1h': '4h', '4h': '1d' };
   const upperTF = upperMap[tf];
   if (!upperTF) return null;
   const r = botComputeTF(upperTF);
@@ -4608,13 +4608,13 @@ function isPortfolioSafe(signal) {
   if (S._fleetPaused && Date.now() >= (S._fleetPauseUntil || 0)) S._fleetPaused = false;
 
   const exp = getPortfolioExposure();
-  // 同方向ポジション15体以上 → 新規禁止
-  if (signal === 'LONG' && exp.longCount >= 15) return false;
-  if (signal === 'SHORT' && exp.shortCount >= 15) return false;
-  // ポートフォリオ含み損合計 -3% 以上 → 新規停止
-  if (exp.totalPnl < -3.0) return false;
-  // 直近1時間でSL 5回以上 → 30分クールダウン
-  if (countRecentSLs(3600000) >= 5) return false;
+  // 同方向ポジション30体以上 → 新規禁止（大幅緩和: 15→30）
+  if (signal === 'LONG' && exp.longCount >= 30) return false;
+  if (signal === 'SHORT' && exp.shortCount >= 30) return false;
+  // ポートフォリオ含み損合計 -10% 以上 → 新規停止（大幅緩和: -3%→-10%）
+  if (exp.totalPnl < -10.0) return false;
+  // 直近1時間でSL 15回以上 → クールダウン（大幅緩和: 5→15）
+  if (countRecentSLs(3600000) >= 15) return false;
   return true;
 }
 
@@ -4628,9 +4628,9 @@ function checkFleetHealth() {
     totalTrades += recent.length;
     totalSLs += recent.filter(t => !t.win).length;
   });
-  if (totalTrades >= 10 && totalSLs / totalTrades > 0.7) {
+  if (totalTrades >= 20 && totalSLs / totalTrades > 0.85) {
     S._fleetPaused = true;
-    S._fleetPauseUntil = Date.now() + 1800000;
+    S._fleetPauseUntil = Date.now() + 300000; // 5分に短縮（旧30分）
     return false;
   }
   return true;
@@ -5227,34 +5227,29 @@ const CHILD_VARIANTS = [
 // ── 各バリアント戦略の独立パラメータ（母botから継承しない）──
 const VARIANT_BASE_PARAMS = {
   breakout: {
-    // BBバンドブレイク + ボラ拡大で参入、大きなTPを狙う
     bbBreakConfirm: true, atrAboveAvg: true,
-    tpPct:0.70, slPct:0.25, tpAtrMult:2.8, slAtrMult:1.0, trailAtrMult:1.5,
-    timeoutMin:25, cooldownMin:6
+    tpPct:0.50, slPct:0.20, tpAtrMult:2.2, slAtrMult:0.8, trailAtrMult:1.2,
+    timeoutMin:15, cooldownMin:2
   },
   meanrev: {
-    // RSI極値 + BB端 + 反転の兆候で逆張り、素早く利確
-    rsiOB:78, rsiOS:22, bbExtreme:true,
-    tpPct:0.18, slPct:0.12, tpAtrMult:0.8, slAtrMult:0.5, trailAtrMult:0.8,
-    timeoutMin:10, cooldownMin:2
+    rsiOB:68, rsiOS:32, bbExtreme:true,
+    tpPct:0.15, slPct:0.10, tpAtrMult:0.7, slAtrMult:0.4, trailAtrMult:0.6,
+    timeoutMin:6, cooldownMin:1
   },
   deltascalp: {
-    // デルタ(買売量差)+ 出来高サージで瞬間参入、極小利幅
-    deltaThreshPct:60, volSurgeMult:1.4,
-    tpPct:0.10, slPct:0.07, tpAtrMult:0.6, slAtrMult:0.3, trailAtrMult:0.6,
-    timeoutMin:5, cooldownMin:1
+    deltaThreshPct:55, volSurgeMult:1.2,
+    tpPct:0.08, slPct:0.06, tpAtrMult:0.5, slAtrMult:0.25, trailAtrMult:0.5,
+    timeoutMin:3, cooldownMin:0.5
   },
   multitf: {
-    // 2〜3タイムフレームが方向一致した時のみ参入、高勝率
-    scoreEntry:58, alignMin:2,
-    tpPct:0.55, slPct:0.20, tpAtrMult:2.2, slAtrMult:1.0, trailAtrMult:1.3,
-    timeoutMin:50, cooldownMin:10
+    scoreEntry:52, alignMin:2,
+    tpPct:0.40, slPct:0.18, tpAtrMult:1.8, slAtrMult:0.8, trailAtrMult:1.0,
+    timeoutMin:30, cooldownMin:3
   },
   sentiment: {
-    // F&G極値 + LS偏り + FR乖離で大逆張り、大きなリターン
-    fgExtreme:20, fgGreed:80, lsThresh:62, frThresh:0.035,
-    tpPct:1.00, slPct:0.40, tpAtrMult:2.5, slAtrMult:1.2, trailAtrMult:1.5,
-    timeoutMin:120, cooldownMin:20
+    fgExtreme:30, fgGreed:70, lsThresh:58, frThresh:0.025,
+    tpPct:0.70, slPct:0.30, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2,
+    timeoutMin:60, cooldownMin:5
   },
 };
 
@@ -5374,10 +5369,10 @@ function generateExperimentalBots() {
 // ── 実験bot用デフォルトパラメータ ──
 function getExperimentalDefaultParams() {
   return {
-    scoreEntry: 65, rsiOB: 72, rsiOS: 28, fgExtreme: 25, fgGreed: 75,
-    lsThresh: 62, frThresh: 0.03, bbEntry: true,
-    tpPct: 0.35, slPct: 0.18, tpAtrMult: 1.8, slAtrMult: 0.9, trailAtrMult: 1.2,
-    timeoutMin: 20, cooldownMin: 5,
+    scoreEntry: 55, rsiOB: 65, rsiOS: 35, fgExtreme: 30, fgGreed: 70,
+    lsThresh: 58, frThresh: 0.02, bbEntry: true,
+    tpPct: 0.25, slPct: 0.15, tpAtrMult: 1.5, slAtrMult: 0.8, trailAtrMult: 1.0,
+    timeoutMin: 12, cooldownMin: 2,
   };
 }
 
@@ -5416,19 +5411,20 @@ function saveExperimentalGenes() {
 
 // Bot parameters (tunable by PDCA)
 const BOT_DEFAULT_PARAMS = {
-  john:  { scoreEntry:65, scoreExit:45, rsiBull:55, rsiBear:45, tpPct:0.30, slPct:0.15, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:15, cooldownMin:3 },
-  mike:  { rsiOB:72, rsiOS:28, bbEntry:true, tpPct:0.25, slPct:0.15, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:12, cooldownMin:3 },
-  sarah: { scoreEntry:68, smaCross:true, vwapConfirm:true, tpPct:0.45, slPct:0.20, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:30, cooldownMin:5 },
-  emma:  { rsiDiv:true, frThresh:0.03, rsiOB:70, rsiOS:30, tpPct:0.40, slPct:0.20, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:30, cooldownMin:5 },
-  alex:  { scoreEntry:65, multiTfAlign:true, deltaConfirm:true, tpPct:0.60, slPct:0.30, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:60, cooldownMin:10 },
-  yuki:  { fgExtreme:25, fgGreed:75, lsThresh:62, bbEntry:true, tpPct:0.70, slPct:0.35, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:90, cooldownMin:15 },
-  delta: { scoreEntry:62, deltaConfirm:true, tpPct:0.40, slPct:0.20, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:25, cooldownMin:5 },
-  atr:   { atrMultiple:1.5, rsiOB:72, rsiOS:28, tpPct:0.55, slPct:0.30, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:60, cooldownMin:10 },
-  riku:  { rangeLookback:20, rangeMaxPct:0.50, entryZone:22, rsiLow:38, rsiHigh:62, tpPct:0.12, slPct:0.08, tpAtrMult:0.7, slAtrMult:0.35, trailAtrMult:0.5, timeoutMin:4, cooldownMin:1 },
-  // BB超高速スキャル: ±2σタッチで逆張り、ミドルラインまで利確
-  band:  { bbPeriod:20, bbMult:2.0, bbMult3:3.0, rsiOB:72, rsiOS:28, bbWidthMin:0.3, tpPct:0.08, slPct:0.06, tpAtrMult:0.5, slAtrMult:0.25, trailAtrMult:0.4, timeoutMin:3, cooldownMin:0.5 },
-  // MA壁バウンス: 200SMA/50SMA/20EMAタッチで反発狙い
-  wall:  { maTouchPct:0.08, maBouncePct:0.03, rsiConfirm:true, rsiOB:68, rsiOS:32, tpPct:0.10, slPct:0.07, tpAtrMult:0.6, slAtrMult:0.3, trailAtrMult:0.5, timeoutMin:5, cooldownMin:1 },
+  // ══ 全bot攻撃的パラメータ ══ スコア閾値↓ クールダウン↓ エントリーゾーン↑
+  john:  { scoreEntry:55, scoreExit:48, rsiBull:52, rsiBear:48, tpPct:0.25, slPct:0.15, tpAtrMult:1.8, slAtrMult:1.0, trailAtrMult:1.0, timeoutMin:10, cooldownMin:1 },
+  mike:  { rsiOB:65, rsiOS:35, bbEntry:true, tpPct:0.20, slPct:0.12, tpAtrMult:1.2, slAtrMult:0.7, trailAtrMult:1.0, timeoutMin:8, cooldownMin:1 },
+  sarah: { scoreEntry:58, smaCross:true, vwapConfirm:false, tpPct:0.35, slPct:0.18, tpAtrMult:1.8, slAtrMult:0.9, trailAtrMult:1.0, timeoutMin:20, cooldownMin:2 },
+  emma:  { rsiDiv:true, frThresh:0.02, rsiOB:65, rsiOS:35, tpPct:0.30, slPct:0.18, tpAtrMult:1.3, slAtrMult:0.7, trailAtrMult:1.0, timeoutMin:20, cooldownMin:2 },
+  alex:  { scoreEntry:55, multiTfAlign:true, deltaConfirm:false, tpPct:0.50, slPct:0.25, tpAtrMult:1.8, slAtrMult:0.9, trailAtrMult:1.0, timeoutMin:40, cooldownMin:3 },
+  yuki:  { fgExtreme:30, fgGreed:70, lsThresh:58, bbEntry:true, tpPct:0.55, slPct:0.30, tpAtrMult:1.3, slAtrMult:0.7, trailAtrMult:1.0, timeoutMin:60, cooldownMin:5 },
+  delta: { scoreEntry:52, deltaConfirm:true, tpPct:0.30, slPct:0.18, tpAtrMult:1.8, slAtrMult:0.9, trailAtrMult:1.0, timeoutMin:15, cooldownMin:2 },
+  atr:   { atrMultiple:1.2, rsiOB:65, rsiOS:35, tpPct:0.45, slPct:0.25, tpAtrMult:1.3, slAtrMult:0.7, trailAtrMult:1.0, timeoutMin:40, cooldownMin:3 },
+  riku:  { rangeLookback:15, rangeMaxPct:0.80, entryZone:28, rsiLow:42, rsiHigh:58, tpPct:0.10, slPct:0.07, tpAtrMult:0.6, slAtrMult:0.3, trailAtrMult:0.4, timeoutMin:3, cooldownMin:0.5 },
+  // BB超高速スキャル: ±1.8σタッチで逆張り（より積極的）
+  band:  { bbPeriod:20, bbMult:1.8, bbMult3:2.5, rsiOB:65, rsiOS:35, bbWidthMin:0.2, tpPct:0.08, slPct:0.06, tpAtrMult:0.5, slAtrMult:0.25, trailAtrMult:0.4, timeoutMin:3, cooldownMin:0.3 },
+  // MA壁バウンス: タッチ判定幅拡大
+  wall:  { maTouchPct:0.12, maBouncePct:0.02, rsiConfirm:true, rsiOB:62, rsiOS:38, tpPct:0.10, slPct:0.07, tpAtrMult:0.6, slAtrMult:0.3, trailAtrMult:0.5, timeoutMin:5, cooldownMin:0.5 },
 };
 
 // Generate child bot default params — バリアント戦略ベースの独立パラメータ
@@ -6630,7 +6626,7 @@ function checkBotEntry(def, state, price, now){
 
   // レジームボーナスを加味した有効スコア閾値
   const regimeBonus = state._regimeBonus || 0;
-  const effectiveScoreEntry = Math.max(50, Math.min(90, (p.scoreEntry || 65) + regimeBonus));
+  const effectiveScoreEntry = Math.max(45, Math.min(85, (p.scoreEntry || 55) + regimeBonus));
 
   // ═══════════════════════════════════════════════
   // Phase 7a: Ready状態の確認カウント強化
@@ -6638,10 +6634,10 @@ function checkBotEntry(def, state, price, now){
   // ═══════════════════════════════════════════════
   if(state.status === 'ready' && state.readyDetail && state.readyDetail.confirmCount !== undefined) {
     const rd = state.readyDetail;
-    const currentDir = score >= 60 ? 'LONG' : score <= 40 ? 'SHORT' : null;
+    const currentDir = score >= 55 ? 'LONG' : score <= 45 ? 'SHORT' : null;
     if(currentDir === rd.dir) {
       rd.confirmCount = (rd.confirmCount || 0) + 1;
-      if(rd.confirmCount >= (rd.confirmTotal || 5)) {
+      if(rd.confirmCount >= Math.min(rd.confirmTotal || 2, 2)) {
         signal = rd.dir;
         reason = rd.reason + ` (${rd.confirmTotal}回連続確認で自動エントリー)`;
         state.readyDetail = null;
@@ -6670,9 +6666,9 @@ function checkBotEntry(def, state, price, now){
   let parentConflict = false;
   if(parentTF && S.tfSig[parentTF]) {
     const parentSig = S.tfSig[parentTF];
-    // 上位足がアクティブシグナル(LONG/SHORT)を出していて、自TFと逆方向の場合
-    if(parentSig === 'LONG' && score <= 35) parentConflict = true;
-    if(parentSig === 'SHORT' && score >= 65) parentConflict = true;
+    // 上位足が極端に逆方向の場合のみ抑制（大幅緩和: 35→20, 65→80）
+    if(parentSig === 'LONG' && score <= 20) parentConflict = true;
+    if(parentSig === 'SHORT' && score >= 80) parentConflict = true;
   }
 
   // ═══════════════════════════════════════════════
@@ -6689,7 +6685,7 @@ function checkBotEntry(def, state, price, now){
       const atr14 = ranges.reduce((a,b)=>a+b,0) / ranges.length;
       // 直近1本のレンジ
       const lastRange = parseFloat(kl[kl.length-1][2]) - parseFloat(kl[kl.length-1][3]);
-      if(atr14 > 0 && lastRange > atr14 * 2.5) {
+      if(atr14 > 0 && lastRange > atr14 * 4.0) {
         volFilterBlock = true;
       }
     }
@@ -6697,40 +6693,40 @@ function checkBotEntry(def, state, price, now){
 
   const strategyKey = def.strategy || def.id;
   switch(strategyKey){
-    case 'john': { // 5m trend follow
-      if(score >= effectiveScoreEntry && inds.trend && inds.trend.cls==='bull' && (!inds.rsi || inds.rsi.cls!=='bear')){
+    case 'john': { // 5m trend follow — 攻撃的
+      if(score >= effectiveScoreEntry && (!inds.trend || inds.trend.cls!=='bear')){
         signal = 'LONG';
-        reason = `スコア${score} + SMAトレンド上昇` + (inds.delta?` + ${inds.delta.badge}`:'');
-      } else if(score <= (100-effectiveScoreEntry) && inds.trend && inds.trend.cls==='bear' && (!inds.rsi || inds.rsi.cls!=='bull')){
+        reason = `スコア${score}${inds.trend?' + '+inds.trend.val:''}` + (inds.delta?` + ${inds.delta.badge}`:'');
+      } else if(score <= (100-effectiveScoreEntry) && (!inds.trend || inds.trend.cls!=='bull')){
         signal = 'SHORT';
-        reason = `スコア${score} + SMAトレンド下降` + (inds.delta?` + ${inds.delta.badge}`:'');
-      } else if(score >= (effectiveScoreEntry-8)){
+        reason = `スコア${score}${inds.trend?' + '+inds.trend.val:''}` + (inds.delta?` + ${inds.delta.badge}`:'');
+      } else if(score >= (effectiveScoreEntry-5)){
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}で上昇準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
-      } else if(score <= (100-effectiveScoreEntry+8)){
+        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}で上昇準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+      } else if(score <= (100-effectiveScoreEntry+5)){
         state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}で下落準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}で下落準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
       }
       break;
     }
-    case 'mike': { // 5m counter-trend
+    case 'mike': { // 5m counter-trend — 攻撃的（RSI OR BB どちらかで発動）
       const rsi = r.rsi || 50;
       const bb = inds.bb;
-      if(rsi <= p.rsiOS && bb && bb.cls==='bull'){
+      if(rsi <= p.rsiOS || (bb && bb.cls==='bull' && rsi <= 45)){
         signal = 'LONG';
-        reason = `RSI${rsi.toFixed(0)}(売られすぎ) + BB下限タッチ`;
-      } else if(rsi >= p.rsiOB && bb && bb.cls==='bear'){
+        reason = `RSI${rsi.toFixed(0)}${rsi<=p.rsiOS?'(売られすぎ)':''}${bb&&bb.cls==='bull'?' + BB下限':''}`;
+      } else if(rsi >= p.rsiOB || (bb && bb.cls==='bear' && rsi >= 55)){
         signal = 'SHORT';
-        reason = `RSI${rsi.toFixed(0)}(買われすぎ) + BB上限タッチ`;
-      } else if(rsi <= p.rsiOS+5){
+        reason = `RSI${rsi.toFixed(0)}${rsi>=p.rsiOB?'(買われすぎ)':''}${bb&&bb.cls==='bear'?' + BB上限':''}`;
+      } else if(rsi <= p.rsiOS+8){
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`RSI${rsi.toFixed(0)}が売られすぎに接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
-      } else if(rsi >= p.rsiOB-5){
+        state.readyDetail = { dir:'LONG', target:price, reason:`RSI${rsi.toFixed(0)}が売られすぎに接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+      } else if(rsi >= p.rsiOB-8){
         state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`RSI${rsi.toFixed(0)}が買われすぎに接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir:'SHORT', target:price, reason:`RSI${rsi.toFixed(0)}が買われすぎに接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6746,7 +6742,7 @@ function checkBotEntry(def, state, price, now){
         reason = `15分スコア${score} + トレンド下降` + (inds.vwap?` + VWAP${inds.vwap.cls==='bear'?'下方':'近傍'}`:'');
       } else if(score >= (effectiveScoreEntry-5)){
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`15分スコア${score}でLONG準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir:'LONG', target:price, reason:`15分スコア${score}でLONG準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6764,7 +6760,7 @@ function checkBotEntry(def, state, price, now){
         reason = `RSI${rsi.toFixed(0)} + FR偏り${frPct.toFixed(3)}%`;
       } else if(Math.abs(frPct) >= p.frThresh * 0.7){
         state.status = 'ready';
-        state.readyDetail = { dir: frPct>0?'SHORT':'LONG', target:price, reason:`FR${frPct.toFixed(3)}%で歪み拡大中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: frPct>0?'SHORT':'LONG', target:price, reason:`FR${frPct.toFixed(3)}%で歪み拡大中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6781,7 +6777,7 @@ function checkBotEntry(def, state, price, now){
         reason = `1H(${r1h.score})+4H(${r4h.score})方向一致=${signal}` + (inds.delta?` + ${inds.delta.badge}`:'');
       } else if(r1h.signal === r4h.signal && r1h.signal !== 'WAIT'){
         state.status = 'ready';
-        state.readyDetail = { dir:r1h.signal, target:price, reason:`1H+4H方向一致(${r1h.signal}) スコア不足`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir:r1h.signal, target:price, reason:`1H+4H方向一致(${r1h.signal}) スコア不足`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6800,7 +6796,7 @@ function checkBotEntry(def, state, price, now){
         reason = `F&G=${fg}(極強欲) + L/S${ls.toFixed(0)}%(ロング過多)` + (bb?` + ${bb.badge}`:'');
       } else if(fg <= p.fgExtreme+5 || fg >= p.fgGreed-5){
         state.status = 'ready';
-        state.readyDetail = { dir: fg<=40?'LONG':'SHORT', target:price, reason:`F&G=${fg}で極値接近中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: fg<=40?'LONG':'SHORT', target:price, reason:`F&G=${fg}で極値接近中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6817,10 +6813,10 @@ function checkBotEntry(def, state, price, now){
         reason = `スコア${score} + Delta売り優勢(${delta.badge})`;
       } else if(score >= (effectiveScoreEntry-8) && delta && delta.cls==='bull'){
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}+Delta買い優勢で準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}+Delta買い優勢で準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else if(score <= (100-effectiveScoreEntry+8) && delta && delta.cls==='bear'){
         state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}+Delta売り優勢で準備中`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}+Delta売り優勢で準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6839,7 +6835,7 @@ function checkBotEntry(def, state, price, now){
         reason = `RSI${rsi.toFixed(0)}(買われすぎ) + ATR急拡大(${atrInd.badge})`;
       } else if(atrSpike && (rsi <= p.rsiOS+5 || rsi >= p.rsiOB-5)){
         state.status = 'ready';
-        state.readyDetail = { dir: rsi<=50?'LONG':'SHORT', target:price, reason:`ATR急拡大+RSI${rsi.toFixed(0)}で極値接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: rsi<=50?'LONG':'SHORT', target:price, reason:`ATR急拡大+RSI${rsi.toFixed(0)}で極値接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6918,11 +6914,11 @@ function checkBotEntry(def, state, price, now){
       // ── Ready状態（ゾーン接近中）──
       else if (rangePos <= entryZone + 10) {
         state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:rangeLow, reason:`レンジ下限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir:'LONG', target:rangeLow, reason:`レンジ下限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       }
       else if (rangePos >= (100 - entryZone - 10)) {
         state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:rangeHigh, reason:`レンジ上限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir:'SHORT', target:rangeHigh, reason:`レンジ上限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       }
       else {
         // レンジ中央部 → 何もしない（壁に近づくまで待つ）
@@ -7090,7 +7086,7 @@ function checkBotEntry(def, state, price, now){
       if (!bb || !atrExpanding) {
         if (bb && !atrExpanding) {
           state.status = 'ready';
-          state.readyDetail = { dir: bb.cls === 'bull' ? 'LONG' : 'SHORT', target: price, reason: 'ATRボラ拡大待ち', confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+          state.readyDetail = { dir: bb.cls === 'bull' ? 'LONG' : 'SHORT', target: price, reason: 'ATRボラ拡大待ち', confirmCount:0, confirmTotal:2, confirmSource:'pre' };
         } else {
           state.status = 'watching';
           state.readyDetail = null;
@@ -7119,7 +7115,7 @@ function checkBotEntry(def, state, price, now){
         reason = `スコア${score}ブレイクダウン + ATR拡大`;
       } else {
         state.status = 'ready';
-        state.readyDetail = { dir: score > 50 ? 'LONG' : 'SHORT', target: price, reason: `ブレイク条件構築中(スコア${score})`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: score > 50 ? 'LONG' : 'SHORT', target: price, reason: `ブレイク条件構築中(スコア${score})`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       }
       break;
     }
@@ -7145,10 +7141,10 @@ function checkBotEntry(def, state, price, now){
       // MACD divergence check: price making new low but MACD not
       } else if (rsi <= (p.rsiOS||22) + 8) {
         state.status = 'ready';
-        state.readyDetail = { dir: 'LONG', target: price, reason: `RSI${rsi.toFixed(0)}売られすぎ接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: 'LONG', target: price, reason: `RSI${rsi.toFixed(0)}売られすぎ接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else if (rsi >= (p.rsiOB||78) - 8) {
         state.status = 'ready';
-        state.readyDetail = { dir: 'SHORT', target: price, reason: `RSI${rsi.toFixed(0)}買われすぎ接近`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: 'SHORT', target: price, reason: `RSI${rsi.toFixed(0)}買われすぎ接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7175,7 +7171,7 @@ function checkBotEntry(def, state, price, now){
         reason = `Delta売り優勢(${delta.badge}) + 出来高${volSurge.toFixed(1)}倍サージ`;
       } else if (delta && delta.cls !== 'neutral' && volSurge >= surgeThresh * 0.8) {
         state.status = 'ready';
-        state.readyDetail = { dir: delta.cls === 'bull' ? 'LONG' : 'SHORT', target: price, reason: `Delta${delta.badge} + Vol${volSurge.toFixed(1)}x(サージ接近)`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: delta.cls === 'bull' ? 'LONG' : 'SHORT', target: price, reason: `Delta${delta.badge} + Vol${volSurge.toFixed(1)}x(サージ接近)`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7212,7 +7208,7 @@ function checkBotEntry(def, state, price, now){
       } else if (longVotes >= 1 || shortVotes >= 1) {
         const pendingDir = longVotes > shortVotes ? 'LONG' : 'SHORT';
         state.status = 'ready';
-        state.readyDetail = { dir: pendingDir, target: price, reason: `TF合意不足(${longVotes}L/${shortVotes}S/${totalVotes}TF)`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: pendingDir, target: price, reason: `TF合意不足(${longVotes}L/${shortVotes}S/${totalVotes}TF)`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7249,7 +7245,7 @@ function checkBotEntry(def, state, price, now){
         reason = `センチメント逆張り: ${reasons.join(' + ')}`;
       } else if (sentimentScore >= 2 && sentimentDir) {
         state.status = 'ready';
-        state.readyDetail = { dir: sentimentDir, target: price, reason: `センチメント構築中(${sentimentScore}/3): ${reasons.join('+')}`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+        state.readyDetail = { dir: sentimentDir, target: price, reason: `センチメント構築中(${sentimentScore}/3): ${reasons.join('+')}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7273,7 +7269,7 @@ function checkBotEntry(def, state, price, now){
           const bullMatch = genes.bull.filter(g => INDICATOR_GENES[g] ? INDICATOR_GENES[g](r, p, inds) : false).length;
           if (bullMatch >= Math.ceil(genes.bull.length * 0.6)) {
             state.status = 'ready';
-            state.readyDetail = { dir: 'LONG', target: price, reason: `🧬${bullMatch}/${genes.bull.length}条件一致`, confirmCount:0, confirmTotal:5, confirmSource:'pre' };
+            state.readyDetail = { dir: 'LONG', target: price, reason: `🧬${bullMatch}/${genes.bull.length}条件一致`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
           } else {
             state.status = 'watching';
             state.readyDetail = null;
@@ -7290,13 +7286,13 @@ function checkBotEntry(def, state, price, now){
   // Phase 7b: マルチTFゲート — 上位足と逆方向ならシグナルをキャンセル
   if(signal && parentConflict) {
     state.status = 'ready';
-    state.readyDetail = { dir: signal, target: price, reason: reason + ' (上位足逆方向のため待機)', confirmCount:0, confirmTotal:5, confirmSource:'parent_tf' };
+    state.readyDetail = { dir: signal, target: price, reason: reason + ' (上位足逆方向のため待機)', confirmCount:0, confirmTotal:2, confirmSource:'parent_tf' };
     signal = null;
   }
   // Phase 7c: ボラティリティフィルター — 異常ボラ時はエントリー抑制
   if(signal && volFilterBlock) {
     state.status = 'ready';
-    state.readyDetail = { dir: signal, target: price, reason: reason + ' (異常ボラのため待機)', confirmCount:0, confirmTotal:5, confirmSource:'vol_filter' };
+    state.readyDetail = { dir: signal, target: price, reason: reason + ' (異常ボラのため待機)', confirmCount:0, confirmTotal:2, confirmSource:'vol_filter' };
     signal = null;
   }
 
@@ -7307,7 +7303,7 @@ function checkBotEntry(def, state, price, now){
     // ── ポートフォリオ安全性チェック ──
     if (!isPortfolioSafe(signal)) {
       state.status = 'ready';
-      state.readyDetail = { dir: signal, target: price, reason, confirmCount:0, confirmTotal:5, confirmSource:'portfolio' };
+      state.readyDetail = { dir: signal, target: price, reason, confirmCount:0, confirmTotal:2, confirmSource:'portfolio' };
       signal = null;
     }
   }
@@ -7339,8 +7335,8 @@ function checkBotEntry(def, state, price, now){
     // ⑤ クロスアセット確認（BTC/ETH相関）
     if (S._crossAssetSignal === signal || S._crossAssetSignal === 'WAIT' || !S._crossAssetSignal) confirmCount++;
 
-    if (confirmCount < 3) {
-      // 確認不足 → readyに格下げ、エントリーしない
+    if (confirmCount < 1) {
+      // 全チェック不合格の場合のみreadyに格下げ
       state.status = 'ready';
       state.readyDetail = { dir: signal, target: price, reason, confirmCount, confirmTotal: totalChecks, confirmSource:'gate' };
       signal = null;

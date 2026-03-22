@@ -213,7 +213,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .big-signal-wrap.extreme-long{animation:pulse-green 1.5s infinite;}
 
 /* ALL TF ROW */
-.tf-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px;}
+.tf-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:6px;}
 .tfm{background:var(--bg2);border:1.5px solid var(--border);border-radius:5px;padding:6px;text-align:center;position:relative;overflow:hidden;transition:all .25s;}
 .tfm::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
 .tfm.LONG::before{background:var(--green);}.tfm.LONG{border-color:rgba(0,255,136,.35);}
@@ -411,7 +411,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 @media(max-width:680px){
 .scalp-duo{grid-template-columns:1fr;}
-.tf-row{grid-template-columns:repeat(3,1fr);}
+.tf-row{grid-template-columns:repeat(4,1fr);}
 .cgrid{grid-template-columns:1fr;}
 }
 
@@ -1888,7 +1888,7 @@ async function switchCoin(key){
 
   // Stateリセット
   S.price=0; S.p24h=0; S.fr=0; S.ls=50; S.oiVal=0; S.oiPrev=0;
-  S.k5=[]; S.k15=[]; S.k1h=[]; S.k4h=[]; S.k1d=[];
+  S.k1m=[]; S.k3m=[]; S.k5=[]; S.k15=[]; S.k1h=[]; S.k4h=[]; S.k1d=[];
   S.tfSig={}; S.tfScore={}; S.tfInds={};
   // ETFフローセクション: BTC/ETHのみ表示
   const etfEl = document.querySelector('.etf-section');
@@ -1918,7 +1918,7 @@ const S = {
   price:0, p24h:0,
   fr:0, ls:50, oiVal:0, oiPrev:0,
   usdJpy:150, fg:50, dxy:0,
-  k5:[], k15:[], k1h:[], k4h:[], k1d:[],
+  k1m:[], k3m:[], k5:[], k15:[], k1h:[], k4h:[], k1d:[],
   tfSig:{}, tfScore:{}, tfInds:{},
   rsi5:50, rsi15:50,
   // Phase 2: データ鮮度追跡
@@ -1938,13 +1938,15 @@ if(currentCoin !== 'BTC'){
 }
 
 const TFCFG = {
+  '1m': {label:'1分',  frW:.1,  trW:.2,  fast:true},
+  '3m': {label:'3分',  frW:.15, trW:.3,  fast:true},
   '5m': {label:'5分',  frW:.25, trW:.4,  fast:true},
   '15m':{label:'15分', frW:.45, trW:.55, fast:true},
   '1h': {label:'1時間',frW:.9,  trW:.7,  fast:false},
   '4h': {label:'4時間',frW:.7,  trW:1.0, fast:false},
   '1d': {label:'日足', frW:.35, trW:1.0, fast:false},
 };
-const KL = {'5m':()=>S.k5,'15m':()=>S.k15,'1h':()=>S.k1h,'4h':()=>S.k4h,'1d':()=>S.k1d};
+const KL = {'1m':()=>S.k1m,'3m':()=>S.k3m,'5m':()=>S.k5,'15m':()=>S.k15,'1h':()=>S.k1h,'4h':()=>S.k4h,'1d':()=>S.k1d};
 
 // ═══════════════════════════════════════════════
 // CLOCK
@@ -3285,7 +3287,7 @@ function renderExecutiveSummary(){
   const panel = document.getElementById('execSummary');
   if(!panel) return;
   // 1. 複合スコアとシグナル
-  const weights = {'5m':1,'15m':1.5,'1h':2,'4h':2.5,'1d':2};
+  const weights = {'1m':0.5,'3m':0.7,'5m':1,'15m':1.5,'1h':2,'4h':2.5,'1d':2};
   let wSum=0, wTotal=0;
   Object.keys(weights).forEach(tf=>{
     wSum += (S.tfScore[tf]||50) * weights[tf];
@@ -3454,7 +3456,7 @@ function renderScalpHero(){
 
   // ── big verdict: weighted composite score ──
   // weights: 5m×1, 15m×1.5, 1h×2, 4h×2.5, 1d×2
-  const weights = {'5m':1,'15m':1.5,'1h':2,'4h':2.5,'1d':2};
+  const weights = {'1m':0.5,'3m':0.7,'5m':1,'15m':1.5,'1h':2,'4h':2.5,'1d':2};
   let wSum=0, wTotal=0;
   Object.keys(weights).forEach(tf=>{
     const sc = S.tfScore[tf]||50;
@@ -3793,14 +3795,17 @@ async function fullFetch(){
     await fetchPrice(); setDot('ds-price','ok');
     await Promise.allSettled([fetchFR(), fetchLS(), fetchOI(), fetchDXY(), fetchBasisSpread(), fetchCrossAssetSignals()]);
     const results=await Promise.allSettled([
+      fetchKlines('1m',100),fetchKlines('3m',100),
       fetchKlines('5m',100),fetchKlines('15m',100),
       fetchKlines('1h',100),fetchKlines('4h',100),fetchKlines('1d',60)
     ]);
-    if(results[0].status==='fulfilled'){S.k5=results[0].value;setDot('ds-klines','ok');}
-    if(results[1].status==='fulfilled')S.k15=results[1].value;
-    if(results[2].status==='fulfilled')S.k1h=results[2].value;
-    if(results[3].status==='fulfilled')S.k4h=results[3].value;
-    if(results[4].status==='fulfilled')S.k1d=results[4].value;
+    if(results[0].status==='fulfilled')S.k1m=results[0].value;
+    if(results[1].status==='fulfilled')S.k3m=results[1].value;
+    if(results[2].status==='fulfilled'){S.k5=results[2].value;setDot('ds-klines','ok');}
+    if(results[3].status==='fulfilled')S.k15=results[3].value;
+    if(results[4].status==='fulfilled')S.k1h=results[4].value;
+    if(results[5].status==='fulfilled')S.k4h=results[5].value;
+    if(results[6].status==='fulfilled')S.k1d=results[6].value;
 
     renderAll();
     document.getElementById('apiDot').className='dot';
@@ -3870,14 +3875,38 @@ function initChart(interval='5'){
   if(tvWidget){ try{ tvWidget.remove(); }catch(e){} }
   document.getElementById('tradingview_btc').innerHTML='';
   tvWidget = new TradingView.widget({
-    width:'100%', height:440,
+    width:'100%', height:340,
     symbol: COINS[currentCoin].tv,
     interval: interval,
     timezone:'Asia/Tokyo', theme:'dark', style:'1', locale:'ja',
     toolbar_bg:'#0d1117', enable_publishing:false,
     hide_top_toolbar:false, save_image:false,
     container_id:'tradingview_btc',
-    studies:['RSI@tv-basicstudies','MACD@tv-basicstudies','BB@tv-basicstudies']
+    studies:[
+      'RSI@tv-basicstudies','MACD@tv-basicstudies','BB@tv-basicstudies',
+      // 世界で最も意識される移動平均線群
+      {id:'MASimple@tv-basicstudies', inputs:{length:200}, styles:{plot_0:{color:'#ff6b35',linewidth:3,visible:true}}},
+      {id:'MASimple@tv-basicstudies', inputs:{length:100}, styles:{plot_0:{color:'#a78bfa',linewidth:2,visible:true}}},
+      {id:'MASimple@tv-basicstudies', inputs:{length:50},  styles:{plot_0:{color:'#00d4ff',linewidth:2,visible:true}}},
+      {id:'MAExp@tv-basicstudies',    inputs:{length:20},  styles:{plot_0:{color:'#ffd60a',linewidth:2,visible:true}}},
+      {id:'MAExp@tv-basicstudies',    inputs:{length:9},   styles:{plot_0:{color:'#00ff88',linewidth:1,visible:true}}},
+    ],
+    studies_overrides:{
+      'bollinger bands.median.color':'#ffd60a',
+      'bollinger bands.upper.color':'rgba(255,45,85,0.6)',
+      'bollinger bands.lower.color':'rgba(0,255,136,0.6)',
+      'bollinger bands.median.linewidth':2,
+      'bollinger bands.upper.linewidth':1,
+      'bollinger bands.lower.linewidth':1,
+    },
+    overrides:{
+      'mainSeriesProperties.candleStyle.upColor':'#00ff88',
+      'mainSeriesProperties.candleStyle.downColor':'#ff2d55',
+      'mainSeriesProperties.candleStyle.borderUpColor':'#00ff88',
+      'mainSeriesProperties.candleStyle.borderDownColor':'#ff2d55',
+      'mainSeriesProperties.candleStyle.wickUpColor':'#00ff88',
+      'mainSeriesProperties.candleStyle.wickDownColor':'#ff2d55',
+    }
   });
   // update label
   document.getElementById('chartTfLabel').textContent = TV_TF_LABELS[interval]||interval;
@@ -4207,7 +4236,7 @@ function saveTrade(){
     pnlPct: Math.round(pnlPct*1000)/1000,
     pnlAbs: Math.round(pnlAbs*100)/100,
     compositeScore: S.tfScore&&Object.keys(S.tfScore).length?
-      Math.round(Object.entries(S.tfScore).reduce((s,[k,v])=>{const w={['5m']:1,['15m']:1.5,['1h']:2,['4h']:2.5,['1d']:2};return s+v*(w[k]||1);},0)/9):50,
+      Math.round(Object.entries(S.tfScore).reduce((s,[k,v])=>{const w={['1m']:0.5,['3m']:0.7,['5m']:1,['15m']:1.5,['1h']:2,['4h']:2.5,['1d']:2};return s+v*(w[k]||1);},0)/10.2):50,
     note
   });
   localStorage.setItem(getTradeKey(), JSON.stringify(trades.slice(0,200)));
@@ -5050,6 +5079,15 @@ const BOT_DEFS = [
     desc:'レンジの天井と床を瞬殺で取る高速スキャルパー', philosophy:'レンジは俺の庭。天井で叩き、床で拾う。壁が見えるんだよ。',
     quotes:{ watching:'レンジ形成を検知中...壁を探してる。', ready:'レンジの壁に到達。ここだ...！',
              holding:'反発開始。壁からの跳ね返りを掴んだ。', tp:'天井→床、床→天井。完璧なレンジスキャル。', sl:'壁をブレイクされた。レンジ崩壊、即撤退。' }},
+  // ── NEW: BB+MA超高速レンジスキャルパー ──
+  { id:'band', name:'BAND',   emoji:'🎯', tf:'1m',  style:'range',   cat:'1分BB超高速スキャル',
+    desc:'ボリンジャーバンド±2σタッチで逆張り。1-3分で利確するBBマスター。', philosophy:'バンドの外は異常値。必ず戻る。σが語る真実を信じろ。BBは魔法の壁だ。',
+    quotes:{ watching:'BBバンド幅とσを監視中...スクイーズを待つ。', ready:'±2σにタッチ寸前...反転を待ち構える。',
+             holding:'バンド外からのリバーサル開始。ミドルラインまで握る。', tp:'BB反転完璧。σの魔法が利益に変わった。', sl:'σ3突破...異常値がさらに拡大。即撤退。' }},
+  { id:'wall', name:'WALL',   emoji:'🧱', tf:'3m',  style:'range',   cat:'3分MA壁バウンススキャル',
+    desc:'世界中が意識する移動平均線(200SMA/50SMA/20EMA)をサポレジとして使い、タッチ反発を狙う。', philosophy:'200SMAは最強の壁。50SMAは戦場の分岐点。全世界のトレーダーが見ている線で勝負する。',
+    quotes:{ watching:'主要MA接近を監視中...200SMA/50SMA/20EMAの壁を見ている。', ready:'主要MAに接近中...反発の瞬間を狙う。',
+             holding:'MA壁からの反発を掴んだ。次のMAまで握る。', tp:'MA壁バウンス完璧。世界中が見ている線で利益を取った。', sl:'MAを貫通された。壁崩壊、即撤退。' }},
 ];
 
 // ── Mother bot IDs (for child dormancy mechanism) ──
@@ -5221,7 +5259,7 @@ const VARIANT_BASE_PARAMS = {
 };
 
 // TFによるタイムスケール倍率（5mベース）
-const TF_TIME_SCALE = { '5m':1, '15m':1.8, '1h':4, '4h':8 };
+const TF_TIME_SCALE = { '1m':0.3, '3m':0.5, '5m':1, '15m':1.8, '1h':4, '4h':8 };
 
 // ── Generate child bots from mother bots ──
 function generateChildBots(){
@@ -5387,6 +5425,10 @@ const BOT_DEFAULT_PARAMS = {
   delta: { scoreEntry:62, deltaConfirm:true, tpPct:0.40, slPct:0.20, tpAtrMult:2.0, slAtrMult:1.0, trailAtrMult:1.2, timeoutMin:25, cooldownMin:5 },
   atr:   { atrMultiple:1.5, rsiOB:72, rsiOS:28, tpPct:0.55, slPct:0.30, tpAtrMult:1.5, slAtrMult:0.8, trailAtrMult:1.2, timeoutMin:60, cooldownMin:10 },
   riku:  { rangeLookback:20, rangeMaxPct:0.50, entryZone:22, rsiLow:38, rsiHigh:62, tpPct:0.12, slPct:0.08, tpAtrMult:0.7, slAtrMult:0.35, trailAtrMult:0.5, timeoutMin:4, cooldownMin:1 },
+  // BB超高速スキャル: ±2σタッチで逆張り、ミドルラインまで利確
+  band:  { bbPeriod:20, bbMult:2.0, bbMult3:3.0, rsiOB:72, rsiOS:28, bbWidthMin:0.3, tpPct:0.08, slPct:0.06, tpAtrMult:0.5, slAtrMult:0.25, trailAtrMult:0.4, timeoutMin:3, cooldownMin:0.5 },
+  // MA壁バウンス: 200SMA/50SMA/20EMAタッチで反発狙い
+  wall:  { maTouchPct:0.08, maBouncePct:0.03, rsiConfirm:true, rsiOB:68, rsiOS:32, tpPct:0.10, slPct:0.07, tpAtrMult:0.6, slAtrMult:0.3, trailAtrMult:0.5, timeoutMin:5, cooldownMin:1 },
 };
 
 // Generate child bot default params — バリアント戦略ベースの独立パラメータ
@@ -5809,7 +5851,7 @@ function ovSelectCoin(key){
     currentCoin = key;
     localStorage.setItem('selectedCoin', key);
     // Reset price/kline state to prevent cross-coin contamination
-    S.price=0; S.p24h=0; S.k5=[]; S.k15=[]; S.k1h=[]; S.k4h=[]; S.k1d=[];
+    S.price=0; S.p24h=0; S.k1m=[]; S.k3m=[]; S.k5=[]; S.k15=[]; S.k1h=[]; S.k4h=[]; S.k1d=[];
     initBotArena();  // 新しいコインのbot状態をロード
 
     // UI更新: data-coin-name, Bot Arenaコイン名, ボタンactive
@@ -6623,7 +6665,7 @@ function checkBotEntry(def, state, price, now){
   // Phase 7b: マルチTF確認ゲート（共通）
   // 上位TFが逆方向なら新規エントリーを抑制
   // ═══════════════════════════════════════════════
-  const tfHierarchy = {'5m':'15m', '15m':'1h', '1h':'4h', '4h':'1d'};
+  const tfHierarchy = {'1m':'5m', '3m':'5m', '5m':'15m', '15m':'1h', '1h':'4h', '4h':'1d'};
   const parentTF = tfHierarchy[tf];
   let parentConflict = false;
   if(parentTF && S.tfSig[parentTF]) {
@@ -6884,6 +6926,150 @@ function checkBotEntry(def, state, price, now){
       }
       else {
         // レンジ中央部 → 何もしない（壁に近づくまで待つ）
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
+    // ════════════════════════════════════════════════
+    // 🎯 BAND — BB±2σ超高速スキャルパー（1分足）
+    // ════════════════════════════════════════════════
+    case 'band': {
+      const kl = KL[tf]();
+      if (!kl || kl.length < 25) { state.status = 'watching'; break; }
+      const cl = kl.map(k=>parseFloat(k[4]));
+      const bbP = p.bbPeriod || 20;
+      const bbM = p.bbMult || 2.0;
+      const bbM3 = p.bbMult3 || 3.0;
+      // BB計算（2σ and 3σ）
+      const bbSlice = cl.slice(-bbP);
+      const bbMid = bbSlice.reduce((a,b)=>a+b,0) / bbP;
+      const bbVar = bbSlice.reduce((s,v)=>s+Math.pow(v-bbMid,2),0) / bbP;
+      const bbStd = Math.sqrt(bbVar);
+      const bbUpper2 = bbMid + bbM * bbStd;
+      const bbLower2 = bbMid - bbM * bbStd;
+      const bbUpper3 = bbMid + bbM3 * bbStd;
+      const bbLower3 = bbMid - bbM3 * bbStd;
+      const bbWidth = bbMid > 0 ? (4 * bbStd / bbMid) * 100 : 0;
+      const bbWidthMin = p.bbWidthMin || 0.3;
+
+      // RSI（超短期）
+      const rsi = calcRSI(cl, 7);
+
+      // BB幅が狭すぎる(スクイーズ) → レンジ向きだが、ブレイクリスクも
+      if (bbWidth < bbWidthMin * 0.5) {
+        state.status = 'watching';
+        state.readyDetail = null;
+        break;
+      }
+
+      // 価格がBBのどこにいるか (0=下限, 100=上限)
+      const bbRange = bbUpper2 - bbLower2;
+      const bbPos = bbRange > 0 ? ((price - bbLower2) / bbRange) * 100 : 50;
+
+      // ── BB下限(2σ)タッチ → LONG（反転確認付き）──
+      if (price <= bbLower2 && rsi <= (p.rsiOS || 28) + 5) {
+        // 3σ突破は異常 → SLタイトに
+        if (price <= bbLower3) {
+          signal = 'LONG';
+          reason = `BB -3σ突破($${bbLower3.toFixed(0)}) RSI${rsi.toFixed(0)} 極限反転狙い`;
+        } else {
+          signal = 'LONG';
+          reason = `BB -2σタッチ($${bbLower2.toFixed(0)}) RSI${rsi.toFixed(0)} ミドル${bbMid.toFixed(0)}まで狙い`;
+        }
+      }
+      // ── BB上限(2σ)タッチ → SHORT ──
+      else if (price >= bbUpper2 && rsi >= (p.rsiOB || 72) - 5) {
+        if (price >= bbUpper3) {
+          signal = 'SHORT';
+          reason = `BB +3σ突破($${bbUpper3.toFixed(0)}) RSI${rsi.toFixed(0)} 極限反転狙い`;
+        } else {
+          signal = 'SHORT';
+          reason = `BB +2σタッチ($${bbUpper2.toFixed(0)}) RSI${rsi.toFixed(0)} ミドル${bbMid.toFixed(0)}まで狙い`;
+        }
+      }
+      // ── 接近中 → Ready ──
+      else if (bbPos <= 8) {
+        state.status = 'ready';
+        state.readyDetail = { dir:'LONG', target:bbLower2, reason:`BB下限接近 bbPos${bbPos.toFixed(0)}% RSI${rsi.toFixed(0)} 幅${bbWidth.toFixed(2)}%`, confirmCount:0, confirmTotal:3, confirmSource:'pre' };
+      }
+      else if (bbPos >= 92) {
+        state.status = 'ready';
+        state.readyDetail = { dir:'SHORT', target:bbUpper2, reason:`BB上限接近 bbPos${bbPos.toFixed(0)}% RSI${rsi.toFixed(0)} 幅${bbWidth.toFixed(2)}%`, confirmCount:0, confirmTotal:3, confirmSource:'pre' };
+      }
+      else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
+    // ════════════════════════════════════════════════
+    // 🧱 WALL — MA壁バウンススキャルパー（3分足）
+    // ════════════════════════════════════════════════
+    case 'wall': {
+      const kl = KL[tf]();
+      if (!kl || kl.length < 50) { state.status = 'watching'; break; }
+      const cl = kl.map(k=>parseFloat(k[4]));
+      const touchPct = p.maTouchPct || 0.08; // MA到達判定: ±0.08%
+      const bouncePct = p.maBouncePct || 0.03; // 反発確認: 0.03%以上
+
+      // 主要MA計算（世界で最も意識される線）
+      const sma200 = cl.length >= 200 ? calcSMA(cl, 200) : 0;
+      const sma100 = cl.length >= 100 ? calcSMA(cl, 100) : 0;
+      const sma50  = calcSMA(cl, Math.min(50, cl.length));
+      const ema20  = calcEMA(cl, 20);
+      const ema9   = calcEMA(cl, 9);
+
+      // RSI確認
+      const rsi = calcRSI(cl, 9);
+      const rsiOB = p.rsiOB || 68;
+      const rsiOS = p.rsiOS || 32;
+
+      // 直近3本の方向（反発確認）
+      const last3c = cl.slice(-3);
+      const lastBullish = last3c.length >= 2 && last3c[last3c.length-1] > last3c[last3c.length-2];
+      const lastBearish = last3c.length >= 2 && last3c[last3c.length-1] < last3c[last3c.length-2];
+
+      // MA壁チェック: 価格がMAに±touchPct%以内にいるか
+      function checkMAWall(maVal, maName, importance) {
+        if (maVal <= 0) return null;
+        const dist = (price - maVal) / maVal * 100;
+        const touching = Math.abs(dist) <= touchPct;
+        if (!touching) return null;
+        // 下からタッチ(サポート)して反発 → LONG
+        if (dist >= -touchPct && dist <= touchPct * 0.5 && lastBullish && rsi <= rsiOB) {
+          return { dir:'LONG', ma:maName, val:maVal, dist, importance, reason:`${maName}($${maVal.toFixed(0)})サポート反発 乖離${dist.toFixed(3)}% RSI${rsi.toFixed(0)}` };
+        }
+        // 上からタッチ(レジスタンス)して反落 → SHORT
+        if (dist >= -touchPct * 0.5 && dist <= touchPct && lastBearish && rsi >= rsiOS) {
+          return { dir:'SHORT', ma:maName, val:maVal, dist, importance, reason:`${maName}($${maVal.toFixed(0)})レジスタンス反落 乖離${dist.toFixed(3)}% RSI${rsi.toFixed(0)}` };
+        }
+        return { dir:null, ma:maName, val:maVal, dist, importance, approaching:true };
+      }
+
+      // 重要度順にMA壁チェック（200SMA > 50SMA > 100SMA > 20EMA > 9EMA）
+      const walls = [
+        checkMAWall(sma200, '200SMA', 5),
+        checkMAWall(sma50,  '50SMA',  4),
+        checkMAWall(sma100, '100SMA', 3),
+        checkMAWall(ema20,  '20EMA',  2),
+        checkMAWall(ema9,   '9EMA',   1),
+      ].filter(Boolean);
+
+      // 最も重要度の高いシグナルを採用
+      const sigWall = walls.filter(w => w.dir).sort((a,b) => b.importance - a.importance)[0];
+      const readyWall = walls.filter(w => w.approaching && !w.dir).sort((a,b) => b.importance - a.importance)[0];
+
+      if (sigWall) {
+        signal = sigWall.dir;
+        reason = sigWall.reason;
+      } else if (readyWall) {
+        const approachDir = readyWall.dist < 0 ? 'LONG' : 'SHORT';
+        state.status = 'ready';
+        state.readyDetail = { dir:approachDir, target:readyWall.val, reason:`${readyWall.ma}($${readyWall.val.toFixed(0)})接近中 乖離${readyWall.dist.toFixed(3)}%`, confirmCount:0, confirmTotal:3, confirmSource:'pre' };
+      } else {
         state.status = 'watching';
         state.readyDetail = null;
       }
@@ -8872,8 +9058,8 @@ function selectLeverage(confidence){
 // ══════════════════════════════════════════════════════════════
 
 const SECRETARY_HORIZONS = {
-  ultra:  { label:'超短期', sub:'1-5分',   tfs:['5m'],       primaryTf:'5m',  tpAtrMult:1.2, slAtrMult:0.6, weight:1.0 },
-  short:  { label:'短期',   sub:'5-30分',  tfs:['5m','15m'], primaryTf:'15m', tpAtrMult:1.8, slAtrMult:0.8, weight:1.5 },
+  ultra:  { label:'超短期', sub:'1-5分',   tfs:['1m','3m','5m'], primaryTf:'1m',  tpAtrMult:1.2, slAtrMult:0.6, weight:1.0 },
+  short:  { label:'短期',   sub:'5-30分',  tfs:['5m','15m'],     primaryTf:'15m', tpAtrMult:1.8, slAtrMult:0.8, weight:1.5 },
   medium: { label:'中期',   sub:'1-4時間', tfs:['15m','1h'], primaryTf:'1h',  tpAtrMult:2.5, slAtrMult:1.0, weight:2.0 },
   long:   { label:'長期',   sub:'4H-1D',   tfs:['1h'],       primaryTf:'1h',  tpAtrMult:3.0, slAtrMult:1.2, weight:2.5 },
 };

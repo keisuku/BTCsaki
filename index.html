@@ -25,7 +25,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
 /* ── NEWS TICKER ── */
-.news-ticker{background:var(--bg3);border-bottom:1px solid var(--border);overflow:hidden;height:32px;display:flex;align-items:center;position:relative;}
+.news-ticker{background:var(--bg3);border-bottom:1px solid var(--border);overflow:hidden;height:26px;display:flex;align-items:center;position:relative;}
 .ticker-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--accent);padding:0 14px;flex-shrink:0;border-right:1px solid var(--border);height:100%;display:flex;align-items:center;gap:5px;background:var(--bg2);z-index:2;letter-spacing:.1em;}
 .ticker-label .dot{width:5px;height:5px;background:var(--accent);box-shadow:0 0 5px var(--accent);}
 .ticker-scroll-wrap{flex:1;overflow:hidden;height:100%;position:relative;}
@@ -88,7 +88,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .load-msg{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--dim);}
 
 /* TOPBAR */
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:6px;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:4px;}
 .logo{font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent);letter-spacing:.1em;}
 .topbar-r{display:flex;gap:12px;align-items:center;font-family:'Share Tech Mono',monospace;font-size:.66rem;color:var(--dim);flex-wrap:wrap;}
 .session-badge{padding:2px 8px;border-radius:4px;font-size:.58rem;font-weight:700;font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
@@ -105,7 +105,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .src-badge.warn{background:rgba(255,214,10,.08);color:var(--yellow);border-color:rgba(255,214,10,.2);}
 
 /* SCORE HISTORY CHART PANEL */
-.score-history-panel{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px 10px;}
+.score-history-panel{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 12px 6px;}
 .shp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
 .shp-title{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--text);letter-spacing:.1em;display:flex;align-items:center;gap:8px;}
 .shp-tabs{display:flex;gap:4px;}
@@ -115,14 +115,14 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .shp-charts{display:flex;flex-direction:column;gap:6px;}
 .shp-chart-wrap{position:relative;}
 .shp-chart-label{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);letter-spacing:.1em;margin-bottom:2px;}
-#scoreHistCanvas{width:100%;height:160px;display:block;border-radius:4px;background:var(--bg);}
-#priceMiniCanvas{width:100%;height:120px;display:block;border-radius:4px;background:var(--bg);}
+#scoreHistCanvas{width:100%;height:120px;display:block;border-radius:4px;background:var(--bg);}
+#priceMiniCanvas{width:100%;height:90px;display:block;border-radius:4px;background:var(--bg);}
 .shp-legend{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;}
 .shp-leg-item{font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--dim);display:flex;align-items:center;gap:4px;}
 .shp-leg-dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
 
 /* API STATUS BAR */
-.api-status-bar{display:flex;gap:8px;align-items:center;padding:6px 20px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);}
+.api-status-bar{display:flex;gap:6px;align-items:center;padding:3px 14px;background:var(--bg3);border-bottom:1px solid var(--border);flex-wrap:wrap;font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);}
 .api-item{display:flex;align-items:center;gap:4px;}
 .api-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .api-dot.ok{background:var(--green);}
@@ -130,13 +130,19 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .api-dot.err{background:var(--red);}
 
 /* SECTION */
-.sec{padding:14px 20px;margin:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);}
-.sec-t{font-size:.56rem;text-transform:uppercase;letter-spacing:.25em;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec{padding:10px 14px;margin:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);}
+.sec-t{font-size:.54rem;text-transform:uppercase;letter-spacing:.25em;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:8px;display:flex;align-items:center;gap:8px;cursor:default;}
 .sec-t::after{content:'';flex:1;height:1px;background:var(--border);}
-.live-b{font-size:.5rem;padding:1px 5px;background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.22);border-radius:2px;letter-spacing:.1em;}
+.live-b{font-size:.48rem;padding:1px 5px;background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.22);border-radius:2px;letter-spacing:.1em;}
+/* Collapsible section */
+.sec.collapsible .sec-t{cursor:pointer;user-select:none;}
+.sec.collapsible .sec-t::before{content:'▾';margin-right:2px;font-size:.7rem;transition:transform .2s;color:var(--dim);}
+.sec.collapsible.collapsed .sec-t::before{transform:rotate(-90deg);}
+.sec.collapsible .sec-body{transition:max-height .3s ease,opacity .2s ease;overflow:hidden;}
+.sec.collapsible.collapsed .sec-body{max-height:0!important;opacity:0;padding:0;margin:0;}
 
 /* ══ BIG SIGNAL HERO ══ */
-.big-signal-wrap{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:10px;position:relative;overflow:hidden;transition:all .4s;}
+.big-signal-wrap{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;position:relative;overflow:hidden;transition:all .4s;}
 .big-signal-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;transition:background .4s;}
 .big-signal-wrap.LONG{border-color:rgba(0,255,136,.5);box-shadow:0 0 40px rgba(0,255,136,.07);}
 .big-signal-wrap.LONG::before{background:linear-gradient(90deg,transparent,var(--green),transparent);}
@@ -146,7 +152,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .big-signal-wrap.WAIT::before{background:linear-gradient(90deg,transparent,var(--yellow),transparent);}
 
 /* — big verdict row — */
-.bsig-row{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;margin-bottom:18px;}
+.bsig-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;margin-bottom:10px;}
 .bsig-left{}
 .bsig-tf-lbl{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin-bottom:4px;}
 .bsig-verdict{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:900;line-height:1.15;margin-bottom:6px;}
@@ -162,7 +168,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .dial-lbl{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--dim);margin-top:1px;}
 
 /* — 5-level strength bar — */
-.strength-section{margin-bottom:14px;}
+.strength-section{margin-bottom:8px;}
 .strength-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;}
 .strength-track{height:16px;background:var(--bg3);border-radius:8px;overflow:hidden;border:1px solid var(--border);position:relative;}
 .strength-fill{height:100%;border-radius:8px;transition:width 1.2s cubic-bezier(.4,0,.2,1);position:relative;}
@@ -184,7 +190,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .lp.active-long{background:rgba(0,255,136,.12);border-color:rgba(0,255,136,.35);color:var(--green);font-weight:700;}
 
 /* — 5m/15m mini pair — */
-.scalp-duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.scalp-duo{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
 .sf{background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;padding:14px;position:relative;overflow:hidden;transition:all .3s;}
 .sf::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:8px 8px 0 0;transition:background .4s;}
 .sf.LONG::before{background:var(--green);}.sf.LONG{border-color:rgba(0,255,136,.45);}
@@ -207,8 +213,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .big-signal-wrap.extreme-long{animation:pulse-green 1.5s infinite;}
 
 /* ALL TF ROW */
-.tf-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px;}
-.tfm{background:var(--bg2);border:1.5px solid var(--border);border-radius:6px;padding:9px;text-align:center;position:relative;overflow:hidden;transition:all .25s;}
+.tf-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px;}
+.tfm{background:var(--bg2);border:1.5px solid var(--border);border-radius:5px;padding:6px;text-align:center;position:relative;overflow:hidden;transition:all .25s;}
 .tfm::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
 .tfm.LONG::before{background:var(--green);}.tfm.LONG{border-color:rgba(0,255,136,.35);}
 .tfm.SHORT::before{background:var(--red);}.tfm.SHORT{border-color:rgba(255,45,85,.35);}
@@ -225,8 +231,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .conflict-t{color:var(--yellow);font-weight:700;font-size:.73rem;margin-bottom:3px;}
 
 /* INDICATOR CARDS */
-.inds{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;}
-.ind{background:var(--bg2);border:1.5px solid var(--border);border-radius:6px;padding:11px;position:relative;overflow:hidden;}
+.inds{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;}
+.ind{background:var(--bg2);border:1.5px solid var(--border);border-radius:5px;padding:7px 9px;position:relative;overflow:hidden;}
 .ind::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
 .ind.bull::before{background:var(--green);}.ind.bull{border-color:rgba(0,255,136,.35);}
 .ind.bear::before{background:var(--red);}.ind.bear{border-color:rgba(255,45,85,.35);}
@@ -243,7 +249,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .in-src{font-size:.49rem;color:var(--dim);margin-top:3px;font-family:'Share Tech Mono',monospace;}
 
 /* ── UPDATE SPEED CONTROL ── */
-.upd-ctrl{display:flex;align-items:center;gap:8px;padding:6px 20px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.upd-ctrl{display:flex;align-items:center;gap:6px;padding:4px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;}
 .upd-label{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);}
 .upd-btn{font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:3px 9px;border-radius:3px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);cursor:pointer;transition:all .2s;}
 .upd-btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -324,8 +330,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .chart-wrap{border:1px solid var(--border);border-radius:6px;overflow:hidden;}
 
 /* FUNDA */
-.funda-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;}
-.fc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;position:relative;overflow:hidden;}
+.funda-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px;}
+.fc{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px;position:relative;overflow:hidden;}
 .fc-t{font-size:.57rem;text-transform:uppercase;letter-spacing:.14em;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-bottom:8px;}
 .fg-num{font-size:2.5rem;font-weight:900;font-family:'Share Tech Mono',monospace;line-height:1;margin-bottom:3px;}
 .fg-lbl{font-size:.76rem;font-weight:700;margin-bottom:7px;}
@@ -396,7 +402,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .sn{font-family:'Share Tech Mono',monospace;color:var(--accent);font-size:.7rem;flex-shrink:0;width:16px;}
 
 /* BOTTOM */
-.bottom{display:flex;justify-content:space-between;padding:10px 20px;background:var(--bg2);border-top:1px solid var(--border);flex-wrap:wrap;gap:6px;font-family:'Share Tech Mono',monospace;font-size:.59rem;color:var(--dim);}
+.bottom{display:flex;justify-content:space-between;padding:6px 14px;background:var(--bg2);border-top:1px solid var(--border);flex-wrap:wrap;gap:4px;font-family:'Share Tech Mono',monospace;font-size:.54rem;color:var(--dim);}
 
 /* utils */
 .green{color:var(--green);} .red{color:var(--red);} .yellow{color:var(--yellow);} .accent{color:var(--accent);} .dim{color:var(--dim);}
@@ -447,52 +453,56 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 /* ══ OVERVIEW SECTION ══ */
 .overview-btn.active{background:rgba(0,212,255,.18)!important;color:var(--accent)!important;border-color:rgba(0,212,255,.45)!important;box-shadow:0 0 12px rgba(0,212,255,.25)!important;}
-#overviewSection{display:none;padding:10px 12px;max-width:480px;margin:0 auto;}
+#overviewSection{display:none;padding:8px 10px;max-width:900px;margin:0 auto;}
 #overviewSection.visible{display:block;}
 
 /* OV Header */
-.ov-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:10px;border:1px solid rgba(0,212,255,.25);border-radius:6px;background:rgba(0,212,255,.04);}
-.ov-title{font-family:'Share Tech Mono',monospace;font-size:.82rem;font-weight:700;color:var(--accent);letter-spacing:.08em;}
-.ov-session{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#00ff88;border:1px solid rgba(0,255,136,.3);border-radius:3px;padding:2px 6px;background:rgba(0,255,136,.08);}
-.ov-clock{font-family:'Share Tech Mono',monospace;font-size:.78rem;color:var(--text);letter-spacing:.05em;}
+.ov-header{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-bottom:6px;border:1px solid rgba(0,212,255,.25);border-radius:6px;background:rgba(0,212,255,.04);}
+.ov-title{font-family:'Share Tech Mono',monospace;font-size:.72rem;font-weight:700;color:var(--accent);letter-spacing:.08em;}
+.ov-session{font-family:'Share Tech Mono',monospace;font-size:.54rem;color:#00ff88;border:1px solid rgba(0,255,136,.3);border-radius:3px;padding:2px 6px;background:rgba(0,255,136,.08);}
+.ov-clock{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--text);letter-spacing:.05em;}
 
 /* OV Heatmap Grid */
-.ov-heatmap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.ov-coin{position:relative;border-radius:8px;padding:10px 12px;cursor:pointer;overflow:hidden;border:1px solid rgba(255,255,255,.08);transition:background .5s ease,border-color .5s ease,box-shadow .5s ease;min-height:80px;}
+.ov-heatmap{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+@media(min-width:640px){.ov-heatmap{grid-template-columns:repeat(4,1fr);}}
+.ov-coin{position:relative;border-radius:8px;padding:8px 10px;cursor:pointer;overflow:hidden;border:1px solid rgba(255,255,255,.08);transition:background .5s ease,border-color .5s ease,box-shadow .5s ease;min-height:70px;}
 .ov-coin.bull{background:linear-gradient(135deg,rgba(0,128,60,.55),rgba(0,80,35,.4));border-color:rgba(0,255,136,.3);}
 .ov-coin.bear{background:linear-gradient(135deg,rgba(128,20,30,.55),rgba(80,10,20,.4));border-color:rgba(255,45,85,.3);}
 .ov-coin.neut{background:linear-gradient(135deg,rgba(80,80,40,.4),rgba(50,50,25,.3));border-color:rgba(255,214,10,.2);}
-.ov-coin.focused{box-shadow:0 0 20px rgba(0,212,255,.5),inset 0 0 20px rgba(0,212,255,.08)!important;border:2px solid rgba(0,212,255,.8)!important;transform:scale(1.03);z-index:2;}
-.ov-coin.focused::before{content:'▶ 詳細表示中';position:absolute;bottom:6px;right:8px;font-size:.5rem;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:.08em;opacity:.9;z-index:1;}
-.ov-coin:not(.focused){opacity:.6;filter:brightness(.85);transition:opacity .3s,filter .3s,transform .3s;}
-.ov-coin:not(.focused):hover{opacity:.85;filter:brightness(1);}
-.ov-coin-name{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:rgba(255,255,255,.7);font-weight:700;display:flex;align-items:center;gap:4px;}
-.ov-coin-name .ov-arrow{font-size:.65rem;}
-.ov-coin-price{font-family:'Share Tech Mono',monospace;font-size:1.05rem;font-weight:900;color:var(--text);margin:2px 0;}
-.ov-coin-score{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:rgba(255,255,255,.5);}
-.ov-coin-signal{position:absolute;top:8px;right:10px;font-family:'Share Tech Mono',monospace;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:3px;}
+.ov-coin.focused{box-shadow:0 0 16px rgba(0,212,255,.5),inset 0 0 16px rgba(0,212,255,.08)!important;border:2px solid rgba(0,212,255,.8)!important;z-index:2;}
+.ov-coin.focused::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);}
+.ov-coin:not(.focused){opacity:.7;filter:brightness(.88);transition:opacity .3s,filter .3s;}
+.ov-coin:not(.focused):hover{opacity:.9;filter:brightness(1);}
+.ov-coin-name{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:rgba(255,255,255,.7);font-weight:700;display:flex;align-items:center;gap:4px;}
+.ov-coin-name .ov-arrow{font-size:.6rem;}
+.ov-coin-price{font-family:'Share Tech Mono',monospace;font-size:.92rem;font-weight:900;color:var(--text);margin:1px 0;}
+.ov-coin-chg{font-family:'Share Tech Mono',monospace;font-size:.6rem;font-weight:700;}
+.ov-coin-score{font-family:'Share Tech Mono',monospace;font-size:.5rem;color:rgba(255,255,255,.5);}
+.ov-coin-signal{position:absolute;top:6px;right:8px;font-family:'Share Tech Mono',monospace;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;}
 .ov-coin-signal.LONG{color:#00ff88;background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.25);}
 .ov-coin-signal.SHORT{color:#ff2d55;background:rgba(255,45,85,.12);border:1px solid rgba(255,45,85,.25);}
 .ov-coin-signal.WAIT{color:#ffd60a;background:rgba(255,214,10,.1);border:1px solid rgba(255,214,10,.2);}
-.ov-spark{position:absolute;bottom:0;left:0;right:0;height:32px;opacity:.45;}
+.ov-coin-mini-metrics{display:flex;gap:3px;margin-top:2px;flex-wrap:wrap;}
+.ov-coin-mini{font-family:'Share Tech Mono',monospace;font-size:.42rem;padding:0px 3px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);white-space:nowrap;line-height:1.4;}
+.ov-spark{position:absolute;bottom:0;left:0;right:0;height:28px;opacity:.35;}
 
 /* OV Coin Banner */
-.ov-coin-banner{display:flex;align-items:baseline;gap:12px;padding:8px 4px;margin:8px 0 4px;border-bottom:1px solid rgba(0,212,255,.15);}
-.ov-banner-coin{font-family:'Share Tech Mono',monospace;font-size:1.6rem;font-weight:900;color:var(--accent);letter-spacing:.04em;}
-.ov-banner-pair{font-size:.9rem;color:var(--dim);font-weight:400;}
-.ov-banner-price{font-family:'Share Tech Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--text);}
-.ov-banner-chg{font-family:'Share Tech Mono',monospace;font-size:.82rem;font-weight:700;}
+.ov-coin-banner{display:flex;align-items:baseline;gap:10px;padding:6px 4px;margin:4px 0 2px;border-bottom:1px solid rgba(0,212,255,.15);}
+.ov-banner-coin{font-family:'Share Tech Mono',monospace;font-size:1.3rem;font-weight:900;color:var(--accent);letter-spacing:.04em;}
+.ov-banner-pair{font-size:.76rem;color:var(--dim);font-weight:400;}
+.ov-banner-price{font-family:'Share Tech Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--text);}
+.ov-banner-chg{font-family:'Share Tech Mono',monospace;font-size:.76rem;font-weight:700;}
 
 /* OV Two Panel Layout */
-.ov-two-panel{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 12px;}
-.ov-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden;}
+.ov-two-panel{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 6px;}
+.ov-panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;position:relative;overflow:hidden;}
 .ov-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
 .ov-panel-signal::before{background:linear-gradient(90deg,var(--accent),transparent);}
 .ov-panel-bot::before{background:linear-gradient(90deg,#a78bfa,transparent);}
-.ov-panel-header{font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.ov-panel-header{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
 /* Signal Panel */
-.ov-sig-score{font-family:'Share Tech Mono',monospace;font-size:2.4rem;font-weight:900;line-height:1;}
-.ov-sig-dir{font-family:'Share Tech Mono',monospace;font-size:.88rem;font-weight:700;padding:2px 8px;border-radius:3px;display:inline-block;margin:4px 0 8px;}
+.ov-sig-score{font-family:'Share Tech Mono',monospace;font-size:1.8rem;font-weight:900;line-height:1;}
+.ov-sig-dir{font-family:'Share Tech Mono',monospace;font-size:.78rem;font-weight:700;padding:2px 8px;border-radius:3px;display:inline-block;margin:2px 0 4px;}
 /* Signal pulse speed by state: WAIT=static, LONG/SHORT=fast */
 .ov-sig-score.sig-active,.ov-sig-dir.sig-active{animation-name:sigPulse;animation-timing-function:ease-in-out;animation-iteration-count:infinite;}
 .ov-sig-score.sig-active{animation-duration:1.5s;}
@@ -502,10 +512,10 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-sig-label{color:var(--dim);}
 .ov-sig-verdict{font-size:.72rem;color:var(--dim);margin-top:6px;line-height:1.4;}
 /* Bot Panel */
-.ov-bot-summary{display:flex;gap:8px;margin-bottom:8px;}
-.ov-bot-stat{flex:1;text-align:center;padding:6px 4px;border-radius:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);}
-.ov-bot-stat-num{font-family:'Share Tech Mono',monospace;font-size:1.4rem;font-weight:900;line-height:1;}
-.ov-bot-stat-label{font-family:'Share Tech Mono',monospace;font-size:.5rem;color:var(--dim);letter-spacing:.06em;margin-top:2px;}
+.ov-bot-summary{display:flex;gap:4px;margin-bottom:4px;}
+.ov-bot-stat{flex:1;text-align:center;padding:4px 3px;border-radius:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);}
+.ov-bot-stat-num{font-family:'Share Tech Mono',monospace;font-size:1.1rem;font-weight:900;line-height:1;}
+.ov-bot-stat-label{font-family:'Share Tech Mono',monospace;font-size:.44rem;color:var(--dim);letter-spacing:.06em;margin-top:1px;}
 .ov-bot-consensus{padding:6px 8px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:.7rem;margin-top:6px;}
 .ov-bot-top{font-family:'Share Tech Mono',monospace;font-size:.68rem;margin-top:6px;padding:4px 0;border-top:1px solid rgba(255,255,255,.06);}
 .ov-bot-dir-bar{display:flex;height:4px;border-radius:2px;overflow:hidden;margin:4px 0;background:rgba(255,255,255,.06);}
@@ -531,23 +541,23 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-signal-nature.mixed{color:var(--dim);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
 
 /* OV AI Insight */
-.ov-insight{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin-bottom:10px;border:1px solid rgba(0,212,255,.15);border-left:3px solid rgba(0,212,255,.4);border-radius:6px;background:rgba(0,212,255,.03);}
-.ov-insight-icon{font-size:1.2rem;flex-shrink:0;margin-top:1px;}
-.ov-insight-text{font-size:.68rem;color:var(--dim);line-height:1.5;}
+.ov-insight{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;margin-bottom:6px;border:1px solid rgba(0,212,255,.15);border-left:3px solid rgba(0,212,255,.4);border-radius:5px;background:rgba(0,212,255,.03);}
+.ov-insight-icon{font-size:.9rem;flex-shrink:0;margin-top:1px;}
+.ov-insight-text{font-size:.62rem;color:var(--dim);line-height:1.4;}
 
 /* OV Mini Badges */
-.ov-badges{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
-.ov-badge{flex:1;min-width:60px;text-align:center;padding:8px 4px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);}
-.ov-badge-label{font-family:'Share Tech Mono',monospace;font-size:.7rem;font-weight:700;color:var(--text);display:block;margin-bottom:2px;}
-.ov-badge-val{font-family:'Share Tech Mono',monospace;font-size:.72rem;font-weight:700;display:block;}
+.ov-badges{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:0;}
+.ov-badge{flex:1;min-width:50px;text-align:center;padding:5px 3px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);}
+.ov-badge-label{font-family:'Share Tech Mono',monospace;font-size:.5rem;font-weight:700;color:var(--text);display:block;margin-bottom:1px;}
+.ov-badge-val{font-family:'Share Tech Mono',monospace;font-size:.64rem;font-weight:700;display:block;}
 .ov-badge.green{border-color:rgba(0,255,136,.25);}
 .ov-badge.red{border-color:rgba(255,45,85,.25);}
 .ov-badge.yellow{border-color:rgba(255,214,10,.2);}
 .ov-badge.cyan{border-color:rgba(0,212,255,.25);}
 
 /* OV Range Bars */
-.ov-range-wrap{margin-bottom:10px;padding:8px 10px;border:1px solid rgba(255,255,255,.06);border-radius:6px;background:rgba(255,255,255,.015);}
-.ov-range-title{font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--dim);margin-bottom:6px;letter-spacing:.08em;}
+.ov-range-wrap{margin-bottom:6px;padding:6px 8px;border:1px solid rgba(255,255,255,.06);border-radius:5px;background:rgba(255,255,255,.015);}
+.ov-range-title{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:4px;letter-spacing:.08em;}
 .ov-range-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-family:'Share Tech Mono',monospace;font-size:.52rem;}
 .ov-range-tf{width:28px;color:var(--dim);text-align:right;flex-shrink:0;}
 .ov-range-bar{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;position:relative;}
@@ -563,7 +573,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-range-dev{width:70px;color:var(--dim);text-align:right;flex-shrink:0;}
 
 /* OV Bot Grid (compact) */
-.ov-bot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;}
+.ov-bot-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:6px;}
+@media(max-width:640px){.ov-bot-grid{grid-template-columns:repeat(3,1fr);}}
 .ov-bg-cell{padding:5px 4px;border-radius:4px;text-align:center;font-family:'Share Tech Mono',monospace;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.015);transition:border-color .3s ease,background .3s ease;}
 .ov-bg-cell.watching{border-color:rgba(90,122,138,.25);background:rgba(90,122,138,.06);}
 .ov-bg-cell.ready-long{border-color:rgba(0,255,136,.25);background:rgba(0,255,136,.06);}
@@ -581,18 +592,22 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ov-bg-pnl{font-size:.4rem;color:var(--dim);margin-top:1px;}
 
 /* OV Bot Status */
-.ov-bot{padding:6px 10px;margin-bottom:8px;border:1px solid rgba(167,139,250,.2);border-radius:5px;background:rgba(167,139,250,.04);font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);}
+.ov-bot{padding:4px 8px;margin-bottom:4px;border:1px solid rgba(167,139,250,.2);border-radius:4px;background:rgba(167,139,250,.04);font-family:'Share Tech Mono',monospace;font-size:.56rem;color:var(--dim);}
 .ov-bot strong{color:#c4b5fd;}
 
+/* OV Dashboard Row (badges + range side by side) */
+.ov-dash-row{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:6px;}
+@media(min-width:640px){.ov-dash-row{grid-template-columns:auto 1fr;}}
+
 /* OV Bottom Status */
-.ov-status{display:flex;justify-content:space-between;padding:6px 10px;border:1px solid rgba(0,212,255,.12);border-radius:5px;background:rgba(0,212,255,.03);font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:12px;flex-wrap:wrap;gap:4px;}
+.ov-status{display:flex;justify-content:space-between;padding:4px 8px;border:1px solid rgba(0,212,255,.12);border-radius:5px;background:rgba(0,212,255,.03);font-family:'Share Tech Mono',monospace;font-size:.5rem;color:var(--dim);margin-bottom:8px;flex-wrap:wrap;gap:3px;}
 .ov-status span{white-space:nowrap;}
 
 /* OV Drill-down Cards */
-.ov-drill{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.ov-drill{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
 .ov-drill-card{border:1px solid rgba(255,255,255,.08);border-radius:6px;background:rgba(255,255,255,.02);overflow:hidden;transition:border-color .3s ease;}
 .ov-drill-card.open{border-color:rgba(0,212,255,.25);}
-.ov-drill-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--text);font-weight:700;user-select:none;}
+.ov-drill-header{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:.66rem;color:var(--text);font-weight:700;user-select:none;}
 .ov-drill-header::after{content:'▸';color:var(--dim);transition:transform .3s ease;font-size:.8rem;}
 .ov-drill-card.open .ov-drill-header::after{transform:rotate(90deg);color:var(--accent);}
 .ov-drill-badge{font-size:.55rem;padding:1px 6px;border-radius:3px;font-weight:700;margin-left:8px;}
@@ -626,8 +641,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 #botArenaSection{display:none;}
 #botArenaSection.visible{display:block;}
 #mainDashboard.hidden{display:none;}
-.ba-wrap{padding:10px 16px;max-width:1200px;margin:0 auto;}
-.ba-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.ba-wrap{padding:8px 12px;max-width:1200px;margin:0 auto;}
+.ba-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
 .ba-title{font-size:1.15rem;font-weight:900;color:#c4b5fd;font-family:'Share Tech Mono',monospace;letter-spacing:.08em;}
 .ba-coin-name{color:#ff2d55;font-weight:900;}
 .ba-sub{font-size:.76rem;color:var(--dim);}
@@ -635,9 +650,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 @keyframes baPulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* leaderboard */
-.ba-leaders{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.ba-leaders{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
 @media(max-width:700px){.ba-leaders{grid-template-columns:1fr;}}
-.ba-lead-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden;}
+.ba-lead-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;position:relative;overflow:hidden;}
 .ba-lead-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#a78bfa,#7c3aed);}
 .ba-lc-cat{font-family:'Share Tech Mono',monospace;font-size:.72rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;}
 .ba-lc-name{font-size:1.2rem;font-weight:900;margin-bottom:6px;}
@@ -652,8 +667,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-lc-style{font-size:.74rem;color:var(--dim);font-style:italic;margin-top:6px;}
 
 /* bot cards */
-.ba-bots{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
-.ba-bot{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color .3s;}
+.ba-bots{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.ba-bot{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;position:relative;overflow:hidden;transition:border-color .3s;}
 .ba-bot::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;transition:background .3s;}
 .ba-bot.st-holding.dir-long{border-color:rgba(0,255,136,.3);}.ba-bot.st-holding.dir-long::before{background:var(--green);}
 .ba-bot.st-holding.dir-short{border-color:rgba(255,45,85,.3);}.ba-bot.st-holding.dir-short::before{background:var(--red);}
@@ -668,10 +683,10 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-bot-status.ready{background:rgba(255,214,10,.12);color:var(--yellow);border:1px solid rgba(255,214,10,.3);}
 .ba-bot-status.holding{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.25);}
 .ba-bot-status.holding-short{background:rgba(255,45,85,.1);color:var(--red);border:1px solid rgba(255,45,85,.25);}
-.ba-bot-detail{font-size:.88rem;color:var(--text);line-height:1.55;margin-bottom:8px;}
-.ba-bot-rationale{font-size:.8rem;color:var(--dim);line-height:1.45;padding:8px 12px;background:var(--bg3);border-radius:4px;border-left:2px solid rgba(167,139,250,.3);margin-bottom:8px;}
-.ba-bot-quote{font-size:.82rem;color:#c4b5fd;font-style:italic;margin-top:6px;}
-.ba-bot-mini-stats{display:flex;gap:14px;font-size:.74rem;color:var(--dim);font-family:'Share Tech Mono',monospace;}
+.ba-bot-detail{font-size:.78rem;color:var(--text);line-height:1.45;margin-bottom:6px;}
+.ba-bot-rationale{font-size:.72rem;color:var(--dim);line-height:1.4;padding:6px 10px;background:var(--bg3);border-radius:4px;border-left:2px solid rgba(167,139,250,.3);margin-bottom:6px;}
+.ba-bot-quote{font-size:.72rem;color:#c4b5fd;font-style:italic;margin-top:4px;}
+.ba-bot-mini-stats{display:flex;gap:10px;font-size:.66rem;color:var(--dim);font-family:'Share Tech Mono',monospace;flex-wrap:wrap;}
 .ba-bot-mini-stats span{display:flex;gap:3px;}
 
 /* trade log */
@@ -916,7 +931,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .ba-ds-pattern{padding:6px 10px;background:rgba(0,212,255,0.06);border-radius:6px;margin:4px 0;font-size:.78rem;border-left:3px solid var(--accent);}
 
 /* ── SIGNAL NATURE + DAY GAUGE ── */
-.nature-gauge-row{display:flex;gap:14px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin:10px 16px 4px;flex-wrap:wrap;align-items:flex-start;}
+.nature-gauge-row{display:flex;gap:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin:6px 10px 4px;flex-wrap:wrap;align-items:flex-start;}
 .nature-panel{flex:2;min-width:200px;}
 .day-gauge-panel{flex:1;min-width:110px;display:flex;flex-direction:column;align-items:center;gap:2px;}
 .ng-title{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-bottom:7px;}
@@ -1025,7 +1040,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <button class="chart-tf-btn" onclick="switchChart('M')">月足</button>
   </div>
   <div class="chart-wrap">
-    <div id="tradingview_btc" style="height:440px;width:100%;"></div>
+    <div id="tradingview_btc" style="height:340px;width:100%;"></div>
   </div>
 </div>
 
@@ -1175,9 +1190,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 <!-- ENTRY TIMING (1min, based on 1H/4H direction) -->
 
-<div class="sec">
+<div class="sec collapsible" onclick="toggleCollapse(event,this)">
   <div class="sec-t">エントリータイミング <span class="live-b">1分足 LIVE</span> <span style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);"> — 1H・4H方向固定</span></div>
-  <div class="entry-timing">
+  <div class="sec-body"><div class="entry-timing">
     <div class="et-header">
       <div class="et-title">上位足の方向性</div>
       <div class="et-direction WAIT" id="etDirection">計算中...</div>
@@ -1215,15 +1230,15 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     </div>
     <div class="et-countdown" id="etCountdown">次回更新: --s</div>
   </div>
-</div>
+</div></div>
 
 <!-- ══════════════════════════════════════════════════════════ -->
 <!-- PRO TECHNICAL ANALYSIS — TOP5 手法 + レンジ分析 + プロ思考 -->
 <!-- ══════════════════════════════════════════════════════════ -->
 
-<div class="sec">
+<div class="sec collapsible" onclick="toggleCollapse(event,this)">
   <div class="sec-t">プロ テクニカル分析 <span class="live-b">5m LIVE</span> <span style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);"> — TOP5手法 + レンジ解像度</span></div>
-
+  <div class="sec-body">
   <!-- 5分足レンジポジション — 超高解像度 -->
   <div id="rangeAnalysis" style="padding:10px 12px 6px;">
     <div style="font-size:.62rem;color:var(--accent);font-weight:700;margin-bottom:6px;">5分足 レンジ解像度マップ</div>
@@ -1262,7 +1277,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <div style="font-size:.62rem;color:var(--accent);font-weight:700;margin-bottom:6px;">プロの目線 — 今この瞬間の思考</div>
     <div id="proThinking" style="padding:10px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--accent);font-size:.6rem;line-height:1.6;color:var(--text);">分析中...</div>
   </div>
-</div>
+</div></div>
 
 <!-- PRICE RANGE PREDICTION -->
 <div class="sec">
@@ -1296,9 +1311,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 <!-- FUNDA -->
 
-<div class="sec">
+<div class="sec collapsible collapsed" onclick="toggleCollapse(event,this)">
   <div class="sec-t">ファンダメンタルズ・市場心理</div>
-  <div class="funda-grid">
+  <div class="sec-body" style="max-height:0;opacity:0;"><div class="funda-grid">
 
 <div class="fc" style="border-top:2px solid var(--orange);">
   <div class="fc-t">Fear & Greed Index <span class="src-badge ok">alternative.me API</span></div>
@@ -1382,14 +1397,14 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </div>
 
   </div>
-</div>
+</div></div>
 
 
 <!-- EVENTS -->
 
-<div class="sec">
+<div class="sec collapsible collapsed" onclick="toggleCollapse(event,this)">
   <div class="sec-t">重要イベント カウントダウン</div>
-  <div class="ev-list">
+  <div class="sec-body" style="max-height:0;opacity:0;"><div class="ev-list">
     <div class="ev" style="border-color:rgba(255,45,85,.3);background:rgba(255,45,85,.04);">
       <div class="ev-date">03/07(金)<br>22:30 JST</div>
       <div class="ev-body">
@@ -1436,14 +1451,14 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <div class="ev-cd" id="cd-qend">--</div>
     </div>
   </div>
-</div>
+</div></div>
 
 
 <!-- MATRIX -->
 
-<div class="sec">
+<div class="sec collapsible collapsed" onclick="toggleCollapse(event,this)">
   <div class="sec-t">複合シグナルマトリクス <span class="live-b">LIVE</span></div>
-  <table class="mt">
+  <div class="sec-body" style="max-height:0;opacity:0;"><table class="mt">
     <thead><tr><th>指標</th><th>現在値</th><th>しきい値</th><th>状態</th><th>示唆</th><th>ソース</th></tr></thead>
     <tbody id="matrixBody">
       <tr><td>BTC価格</td><td class="dim" id="mx-p">---</td><td>—</td><td><span class="dim">---</span></td><td class="dim">基準値</td><td class="dim" style="font-size:.56rem;">Binance REST</td></tr>
@@ -1457,14 +1472,14 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <tr><td>ETFフロー週計</td><td class="green">+$407M</td><td>—</td><td><span class="green">✓ 純流入</span></td><td class="dim">機関が買い越し</td><td class="dim" style="font-size:.56rem;">手動更新</td></tr>
     </tbody>
   </table>
-</div>
+</div></div>
 
 
 <!-- STRATEGY -->
 
-<div class="sec">
+<div class="sec collapsible collapsed" onclick="toggleCollapse(event,this)">
   <div class="sec-t">高勝率戦略ライブラリ（クリックで詳細）</div>
-  <div class="sg-grid">
+  <div class="sec-body" style="max-height:0;opacity:0;"><div class="sg-grid">
     <div class="sc" onclick="openM('fr')"><div class="sc-h"><span class="sc-n">① FR Contrarian</span><span class="sc-w">勝率 68–74%</span></div><div class="sc-d">FR極値での逆張り。+0.05%超でショート、-0.03%以下でロング。市場の偏りを利用する王道手法。</div><div class="tags"><span class="tag tb">逆張り</span><span class="tag tg">1H–4H</span><span class="tag to">先物専用</span></div></div>
     <div class="sc" onclick="openM('liq')"><div class="sc-h"><span class="sc-n">② Liquidation Hunt</span><span class="sc-w">勝率 63–70%</span></div><div class="sc-d">清算ヒートマップで大量清算帯を特定し、価格がその帯に向かう初動でトレンドフォロー。</div><div class="tags"><span class="tag to">清算追尾</span><span class="tag tb">トレンドフォロー</span><span class="tag ty">1H–4H</span></div></div>
     <div class="sc" onclick="openM('oi')"><div class="sc-h"><span class="sc-n">③ OI Divergence</span><span class="sc-w">勝率 65–72%</span></div><div class="sc-d">価格とOIの乖離を検知。価格↓+OI↑は新規空売り→踏み上げリスクのサイン。</div><div class="tags"><span class="tag tg">ダイバージェンス</span><span class="tag tb">4H–1D</span></div></div>
@@ -1472,14 +1487,14 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <div class="sc" onclick="openM('basis')"><div class="sc-h"><span class="sc-n">⑤ Cash & Carry</span><span class="sc-w">勝率 85%+ 低リスク</span></div><div class="sc-d">現物ロング+先物ショートでFRを受け取る中立戦略。年率10–30%の安定リターン。</div><div class="tags"><span class="tag tb">中立</span><span class="tag to">アービトラージ</span><span class="tag tg">低リスク</span></div></div>
     <div class="sc" onclick="openM('fg')"><div class="sc-h"><span class="sc-n">⑥ Fear&Greed 逆張り</span><span class="sc-w">勝率 62–70%</span></div><div class="sc-d">F&GI 25以下でロング、80以上でショート。日足・週足向け。スキャルは大局判断のみ活用。</div><div class="tags"><span class="tag ty">心理指標</span><span class="tag tb">逆張り</span><span class="tag tg">日足–週足</span></div></div>
   </div>
-</div>
+</div></div>
 
 
 <!-- POSITION CALCULATOR -->
 
-<div class="sec">
+<div class="sec collapsible collapsed" onclick="toggleCollapse(event,this)">
   <div class="sec-t">ポジションサイズ計算機 <span class="live-b">自動計算</span></div>
-  <div class="pos-calc">
+  <div class="sec-body" style="max-height:0;opacity:0;"><div class="pos-calc">
     <div class="pos-input-row">
       <div class="pos-input-group">
         <label class="pos-input-label">総資金 (円)</label>
@@ -1498,12 +1513,12 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       高レバレッジほど利益も損失も拡大します。慣れないうちは「安全」または「一般」から始めてください。
     </div>
   </div>
-</div>
+</div></div>
 
 <!-- TRADE JOURNAL -->
-<div class="sec">
+<div class="sec collapsible collapsed" onclick="toggleCollapse(event,this)">
   <div class="sec-t">トレード日誌 <span class="live-b" style="font-size:.5rem;">localStorage保存</span></div>
-  <div style="padding:12px;">
+  <div class="sec-body" style="max-height:0;opacity:0;"><div style="padding:12px;">
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
       <div>
         <label style="font-size:.55rem;color:var(--dim);">方向</label>
@@ -1541,19 +1556,21 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <div id="tjStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;font-family:'Share Tech Mono',monospace;font-size:.6rem;"></div>
     <div id="tjTable" style="max-height:200px;overflow-y:auto;font-size:.58rem;"></div>
   </div>
-</div>
+</div></div>
 
 
 <!-- FUNDA AI ANALYSIS -->
 
-<div class="sec"><div class="funda-ai" style="padding:0;">
-  <div class="fai-title">重要ファンダメンタルズ分析 <span class="ai-badge">✦ AI分析</span> <span class="live-b" style="font-size:.5rem;">自動更新</span></div>
+<div class="sec collapsible collapsed" onclick="toggleCollapse(event,this)">
+  <div class="sec-t">重要ファンダメンタルズ分析 <span class="ai-badge">AI分析</span></div>
+  <div class="sec-body" style="max-height:0;opacity:0;"><div class="funda-ai" style="padding:0;">
   <div class="fai-cards" id="faiCards">
     <div class="fai-loading">
       <div class="fai-loading-text">AIがBTCの重要ファンダ情報を分析中...</div>
       <div class="fai-progress"><div class="fai-progress-fill"></div></div>
     </div>
   </div>
+</div>
 </div>
 </div>
 </div><!-- /mainDashboard -->
@@ -1568,36 +1585,43 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <span class="ov-clock" id="ovClock">00:00:00</span>
   </div>
 
-  <!-- Score Heatmap 2x2 -->
-  <div class="ov-label" style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:4px;letter-spacing:.1em;">SCORE HEATMAP</div>
+  <!-- Score Heatmap -->
   <div class="ov-heatmap">
     <div class="ov-coin neut" id="ov-BTC" onclick="ovSelectCoin('BTC')">
-      <div class="ov-coin-name">BTC<span style="color:var(--dim)">/USDT</span> <span class="ov-arrow" id="ovArrow-BTC"></span></div>
+      <div class="ov-coin-name">BTC <span class="ov-arrow" id="ovArrow-BTC"></span></div>
       <div class="ov-coin-price" id="ovPrice-BTC">--</div>
-      <div class="ov-coin-score" id="ovScore-BTC">TRADING SCORE 0-100</div>
+      <div class="ov-coin-chg" id="ovChg-BTC"></div>
+      <div class="ov-coin-score" id="ovScore-BTC">SCORE --</div>
       <div class="ov-coin-signal WAIT" id="ovSig-BTC">WAIT</div>
-      <canvas class="ov-spark" id="ovSpark-BTC" width="180" height="32"></canvas>
+      <div class="ov-coin-mini-metrics" id="ovMini-BTC"></div>
+      <canvas class="ov-spark" id="ovSpark-BTC" width="180" height="28"></canvas>
     </div>
     <div class="ov-coin neut" id="ov-ETH" onclick="ovSelectCoin('ETH')">
-      <div class="ov-coin-name">ETH<span style="color:var(--dim)">/USDT</span> <span class="ov-arrow" id="ovArrow-ETH"></span></div>
+      <div class="ov-coin-name">ETH <span class="ov-arrow" id="ovArrow-ETH"></span></div>
       <div class="ov-coin-price" id="ovPrice-ETH">--</div>
-      <div class="ov-coin-score" id="ovScore-ETH">TRADING SCORE 0-100</div>
+      <div class="ov-coin-chg" id="ovChg-ETH"></div>
+      <div class="ov-coin-score" id="ovScore-ETH">SCORE --</div>
       <div class="ov-coin-signal WAIT" id="ovSig-ETH">WAIT</div>
-      <canvas class="ov-spark" id="ovSpark-ETH" width="180" height="32"></canvas>
+      <div class="ov-coin-mini-metrics" id="ovMini-ETH"></div>
+      <canvas class="ov-spark" id="ovSpark-ETH" width="180" height="28"></canvas>
     </div>
     <div class="ov-coin neut" id="ov-XRP" onclick="ovSelectCoin('XRP')">
-      <div class="ov-coin-name">XRP<span style="color:var(--dim)">/USDT</span> <span class="ov-arrow" id="ovArrow-XRP"></span></div>
+      <div class="ov-coin-name">XRP <span class="ov-arrow" id="ovArrow-XRP"></span></div>
       <div class="ov-coin-price" id="ovPrice-XRP">--</div>
-      <div class="ov-coin-score" id="ovScore-XRP">TRADING SCORE 0-100</div>
+      <div class="ov-coin-chg" id="ovChg-XRP"></div>
+      <div class="ov-coin-score" id="ovScore-XRP">SCORE --</div>
       <div class="ov-coin-signal WAIT" id="ovSig-XRP">WAIT</div>
-      <canvas class="ov-spark" id="ovSpark-XRP" width="180" height="32"></canvas>
+      <div class="ov-coin-mini-metrics" id="ovMini-XRP"></div>
+      <canvas class="ov-spark" id="ovSpark-XRP" width="180" height="28"></canvas>
     </div>
     <div class="ov-coin neut" id="ov-SOL" onclick="ovSelectCoin('SOL')">
-      <div class="ov-coin-name">SOL<span style="color:var(--dim)">/USDT</span> <span class="ov-arrow" id="ovArrow-SOL"></span></div>
+      <div class="ov-coin-name">SOL <span class="ov-arrow" id="ovArrow-SOL"></span></div>
       <div class="ov-coin-price" id="ovPrice-SOL">--</div>
-      <div class="ov-coin-score" id="ovScore-SOL">TRADING SCORE 0-100</div>
+      <div class="ov-coin-chg" id="ovChg-SOL"></div>
+      <div class="ov-coin-score" id="ovScore-SOL">SCORE --</div>
       <div class="ov-coin-signal WAIT" id="ovSig-SOL">WAIT</div>
-      <canvas class="ov-spark" id="ovSpark-SOL" width="180" height="32"></canvas>
+      <div class="ov-coin-mini-metrics" id="ovMini-SOL"></div>
+      <canvas class="ov-spark" id="ovSpark-SOL" width="180" height="28"></canvas>
     </div>
   </div>
 
@@ -1635,50 +1659,39 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
 
   <!-- AI Insight -->
-  <div class="ov-label" style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:4px;letter-spacing:.1em;">AI INSIGHT TEXT BOX</div>
   <div class="ov-insight">
     <span class="ov-insight-icon">🧠</span>
     <span class="ov-insight-text" id="ovInsightText">データ取得中...</span>
   </div>
 
-  <!-- Mini Metric Badges -->
-  <div class="ov-label" style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:4px;letter-spacing:.1em;">MINI METRIC BADGES</div>
-  <div class="ov-badges">
-    <div class="ov-badge green" id="ovBadgeFR">
-      <span class="ov-badge-label">FR</span>
-      <span class="ov-badge-val" style="color:var(--green);" id="ovValFR">--</span>
+  <!-- Dashboard Row: Badges + Range side by side -->
+  <div class="ov-dash-row">
+    <div class="ov-badges">
+      <div class="ov-badge green" id="ovBadgeFR">
+        <span class="ov-badge-label">FR</span>
+        <span class="ov-badge-val" style="color:var(--green);" id="ovValFR">--</span>
+      </div>
+      <div class="ov-badge cyan" id="ovBadgeLS">
+        <span class="ov-badge-label">L/S</span>
+        <span class="ov-badge-val" style="color:var(--accent);" id="ovValLS">--</span>
+      </div>
+      <div class="ov-badge yellow" id="ovBadgeFGI">
+        <span class="ov-badge-label">FGI</span>
+        <span class="ov-badge-val" style="color:var(--yellow);" id="ovValFGI">--</span>
+      </div>
+      <div class="ov-badge red" id="ovBadgeOI">
+        <span class="ov-badge-label">OI</span>
+        <span class="ov-badge-val" style="color:var(--red);" id="ovValOI">--</span>
+      </div>
     </div>
-    <div class="ov-badge cyan" id="ovBadgeLS">
-      <span class="ov-badge-label">L/S</span>
-      <span class="ov-badge-val" style="color:var(--accent);" id="ovValLS">--</span>
-    </div>
-    <div class="ov-badge yellow" id="ovBadgeFGI">
-      <span class="ov-badge-label">FGI</span>
-      <span class="ov-badge-val" style="color:var(--yellow);" id="ovValFGI">--</span>
-    </div>
-    <div class="ov-badge red" id="ovBadgeOI">
-      <span class="ov-badge-label">OI</span>
-      <span class="ov-badge-val" style="color:var(--red);" id="ovValOI">--</span>
-    </div>
-  </div>
-
-  <!-- Range Position Bars -->
-  <div class="ov-range-wrap" id="ovRangeWrap">
-    <div class="ov-range-title">RANGE POSITION — <span id="ovRangeCoin">BTC</span></div>
-    <div id="ovRangeBars">
-      <!-- Populated by JS -->
+    <div class="ov-range-wrap" id="ovRangeWrap">
+      <div class="ov-range-title">RANGE — <span id="ovRangeCoin">BTC</span></div>
+      <div id="ovRangeBars"></div>
     </div>
   </div>
 
-  <!-- Bot Status -->
-  <!-- Bot Grid (compact status) -->
-  <div class="ov-label" style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:4px;letter-spacing:.1em;">BOT STATUS GRID</div>
-  <div class="ov-bot-grid" id="ovBotGrid">
-    <!-- Populated by JS -->
-  </div>
-
-  <!-- Bot Status (top performer) -->
-  <div class="ov-label" style="font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);margin-bottom:4px;letter-spacing:.1em;">BOT STATUS BAR</div>
+  <!-- Bot Grid + Top performer inline -->
+  <div class="ov-bot-grid" id="ovBotGrid"></div>
   <div class="ov-bot" id="ovBot">-- | POSITION: -- | PNL: --</div>
 
   <!-- Bottom Status -->
@@ -3889,6 +3902,63 @@ function switchChart(tf){
 })();
 
 // ═══════════════════════════════════════════════
+// COLLAPSIBLE SECTIONS
+// ═══════════════════════════════════════════════
+function toggleCollapse(e, sec){
+  // Don't collapse if user clicked an interactive element inside
+  if(e.target.closest('input,select,button:not(.sec-t),a,.sc,.chart-tf-btn,.upd-btn,.manual-upd-btn')) return;
+  // Only toggle if click was on the header area
+  const t = e.target.closest('.sec-t');
+  if(!t) return;
+  const body = sec.querySelector('.sec-body');
+  if(!body) return;
+  const isCollapsed = sec.classList.contains('collapsed');
+  if(isCollapsed){
+    sec.classList.remove('collapsed');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.style.opacity = '1';
+    // After transition, remove maxHeight to allow dynamic content
+    setTimeout(()=>{ if(!sec.classList.contains('collapsed')) body.style.maxHeight = 'none'; }, 350);
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.offsetHeight; // force reflow
+    body.style.maxHeight = '0';
+    body.style.opacity = '0';
+    sec.classList.add('collapsed');
+  }
+}
+
+// BOT CARD EXPAND/COLLAPSE
+// ═══════════════════════════════════════════════
+let _expandedBotId = null;
+function toggleBotExpand(botId){
+  const detailEl = document.getElementById('botDetail-' + botId);
+  const cardEl = document.getElementById('bot-card-' + botId);
+  if(!detailEl || !cardEl) return;
+  const isExpanded = detailEl.style.display !== 'none';
+  // Collapse previous
+  if(_expandedBotId && _expandedBotId !== botId){
+    const prevDetail = document.getElementById('botDetail-' + _expandedBotId);
+    const prevCard = document.getElementById('bot-card-' + _expandedBotId);
+    if(prevDetail) prevDetail.style.display = 'none';
+    if(prevCard){
+      const prevIcon = prevCard.querySelector('.ba-bot-expand-icon');
+      if(prevIcon) prevIcon.style.transform = 'rotate(0)';
+    }
+  }
+  if(isExpanded){
+    detailEl.style.display = 'none';
+    const icon = cardEl.querySelector('.ba-bot-expand-icon');
+    if(icon) icon.style.transform = 'rotate(0)';
+    _expandedBotId = null;
+  } else {
+    detailEl.style.display = 'block';
+    const icon = cardEl.querySelector('.ba-bot-expand-icon');
+    if(icon) icon.style.transform = 'rotate(90deg)';
+    _expandedBotId = botId;
+  }
+}
+
 // UPDATE SPEED CONTROL
 // ═══════════════════════════════════════════════
 let updSpeed = 3; // seconds
@@ -5875,27 +5945,37 @@ function renderOvHeatmap(){
     const ov = OV[key];
     const cell = document.getElementById(`ov-${key}`);
     if(!cell) return;
-    // Color class
     cell.className = `ov-coin ${ov.signal==='LONG'?'bull':ov.signal==='SHORT'?'bear':'neut'}${key===ovFocusCoin?' focused':''}`;
-    // Price
     const priceEl = document.getElementById(`ovPrice-${key}`);
     if(priceEl) priceEl.textContent = ov.price > 0 ? '$'+ov.price.toLocaleString('en',{maximumFractionDigits:2}) : '--';
-    // Arrow
     const arrowEl = document.getElementById(`ovArrow-${key}`);
     if(arrowEl){
       arrowEl.textContent = ov.pctChg > 0 ? '↗' : ov.pctChg < 0 ? '↘' : '→';
       arrowEl.style.color = ov.pctChg > 0 ? 'var(--green)' : ov.pctChg < 0 ? 'var(--red)' : 'var(--yellow)';
     }
-    // Score
+    // 24h change inline
+    const chgEl = document.getElementById(`ovChg-${key}`);
+    if(chgEl){
+      const chg = ov.pctChg;
+      chgEl.textContent = (chg>=0?'+':'') + chg.toFixed(2) + '%';
+      chgEl.style.color = chg>=0 ? 'var(--green)' : 'var(--red)';
+    }
     const scoreEl = document.getElementById(`ovScore-${key}`);
-    if(scoreEl) scoreEl.textContent = `TRADING SCORE ${ov.composite}/100`;
-    // Signal badge
+    if(scoreEl) scoreEl.textContent = `SCORE ${ov.composite}/100`;
     const sigEl = document.getElementById(`ovSig-${key}`);
     if(sigEl){
       sigEl.textContent = ov.signal;
       sigEl.className = `ov-coin-signal ${ov.signal}`;
     }
-    // Sparkline
+    // Mini metrics inside card
+    const miniEl = document.getElementById(`ovMini-${key}`);
+    if(miniEl){
+      const frPct = (ov.fr*100);
+      const frColor = frPct > 0.03 ? 'var(--red)' : frPct < -0.01 ? 'var(--green)' : 'var(--dim)';
+      const lsRatio = ov.ls > 0 ? (ov.ls / (100 - ov.ls)).toFixed(2) : '--';
+      const lsColor = ov.ls > 60 ? 'var(--red)' : ov.ls < 40 ? 'var(--green)' : 'var(--dim)';
+      miniEl.innerHTML = `<span class="ov-coin-mini" style="color:${frColor}">FR ${frPct>=0?'+':''}${frPct.toFixed(2)}%</span><span class="ov-coin-mini" style="color:${lsColor}">L/S ${lsRatio}</span>`;
+    }
     drawOvSparkline(`ovSpark-${key}`, ov.sparkData, ov.signal==='LONG'?'rgba(0,255,136,.7)':ov.signal==='SHORT'?'rgba(255,45,85,.7)':'rgba(255,214,10,.6)');
   });
 }
@@ -7787,36 +7867,43 @@ function renderSingleBotCard(def, bs, isFull){
   }
 
   const rank = getBotRank(bs);
-  return `<div id="bot-card-${def.id}" class="ba-bot st-${bs.status==='holding'?'holding':bs.status} ${dirCls}" ${adminClick}>
-    <div class="ba-bot-top">
-      <span class="ba-bot-emoji">${def.emoji}</span>
-      <span class="ba-bot-name">${def.name}${variant}${promotedBadge} <span class="bot-rank-badge bot-rank-${rank.rank}">${rank.icon} ${rank.label}</span></span>
-      <span class="ba-bot-cat">${def.cat}</span>
-      <span class="ba-bot-status ${statusCls}">${statusText}</span>
-      ${isAdminMode?'<span style="font-size:.62rem;color:var(--accent);margin-left:auto;">TAP詳細</span>':''}
+  const pnlTotal = bs.totalPnlPct;
+  const pnlTotalCls = pnlTotal>=0?'var(--green)':'var(--red)';
+  // Compact summary line with key metrics
+  const summaryLine = `<span style="color:${pnlTotalCls};font-weight:700;">${pnlTotal>=0?'+':''}${pnlTotal.toFixed(2)}%</span> <span style="color:var(--dim);">勝率${rate}%</span> <span style="color:var(--dim);">${bs.totalWins}W/${bs.totalLosses}L</span>`;
+
+  return `<div id="bot-card-${def.id}" class="ba-bot st-${bs.status==='holding'?'holding':bs.status} ${dirCls}" onclick="${isAdminMode?`showAdminBotDetail('${def.id}')`:`toggleBotExpand('${def.id}')`}" style="cursor:pointer;">
+    <div class="ba-bot-top" style="margin-bottom:0;">
+      <span class="ba-bot-emoji" style="font-size:1rem;">${def.emoji}</span>
+      <span class="ba-bot-name" style="font-size:.95rem;">${def.name}${variant}${promotedBadge} <span class="bot-rank-badge bot-rank-${rank.rank}">${rank.icon}</span></span>
+      <span class="ba-bot-status ${statusCls}" style="font-size:.64rem;padding:2px 7px;">${statusText}</span>
+      <span style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:.72rem;">${summaryLine}</span>
+      <span class="ba-bot-expand-icon" style="color:var(--dim);font-size:.7rem;margin-left:4px;transition:transform .2s;">▸</span>
     </div>
-    <div class="ba-bot-detail">${detail}</div>
-    ${rationale?`<div class="ba-bot-rationale">根拠: ${rationale}</div>`:''}
-    ${quote?`<div class="ba-bot-quote">「${quote}」</div>`:''}
-    <div class="ba-bot-mini-stats">
-      <span>勝率:${rate}%</span>
-      <span>勝${bs.totalWins}/負${bs.totalLosses}</span>
-      <span>累計:${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</span>
-      <span>本日:${ts.count}回(${ts.pnl>=0?'+':''}${ts.pnl.toFixed(2)}%)</span>
+    <div class="ba-bot-detail-wrap" id="botDetail-${def.id}" style="display:none;margin-top:8px;">
+      <div class="ba-bot-detail">${detail}</div>
+      ${rationale?`<div class="ba-bot-rationale">根拠: ${rationale}</div>`:''}
+      ${quote?`<div class="ba-bot-quote">「${quote}」</div>`:''}
+      <div class="ba-bot-mini-stats">
+        <span>勝率:${rate}%</span>
+        <span>勝${bs.totalWins}/負${bs.totalLosses}</span>
+        <span>累計:${bs.totalPnlPct>=0?'+':''}${bs.totalPnlPct.toFixed(2)}%</span>
+        <span>本日:${ts.count}回(${ts.pnl>=0?'+':''}${ts.pnl.toFixed(2)}%)</span>
+      </div>
+      ${(()=>{
+        const trades = bs._tradeHistory || [];
+        if(trades.length < 2) return '';
+        const rm = calcRiskMetrics(trades);
+        const shColor = rm.sharpe > 1 ? 'var(--green)' : rm.sharpe > 0 ? 'var(--yellow)' : 'var(--red)';
+        const pfColor = rm.profitFactor > 1.5 ? 'var(--green)' : rm.profitFactor > 1 ? 'var(--yellow)' : 'var(--red)';
+        return '<div class="ba-bot-mini-stats" style="margin-top:2px;font-size:.58rem;color:var(--dim);">' +
+          '<span style="color:'+shColor+';">Sharpe:'+rm.sharpe.toFixed(2)+'</span>' +
+          '<span style="color:'+pfColor+';">PF:'+rm.profitFactor.toFixed(2)+'</span>' +
+          '<span>MaxDD:'+rm.maxDD.toFixed(1)+'%</span>' +
+          '<span>Sortino:'+rm.sortino.toFixed(2)+'</span>' +
+        '</div>';
+      })()}
     </div>
-    ${(()=>{
-      const trades = bs._tradeHistory || [];
-      if(trades.length < 2) return '';
-      const rm = calcRiskMetrics(trades);
-      const shColor = rm.sharpe > 1 ? 'var(--green)' : rm.sharpe > 0 ? 'var(--yellow)' : 'var(--red)';
-      const pfColor = rm.profitFactor > 1.5 ? 'var(--green)' : rm.profitFactor > 1 ? 'var(--yellow)' : 'var(--red)';
-      return '<div class="ba-bot-mini-stats" style="margin-top:2px;font-size:.58rem;color:var(--dim);">' +
-        '<span style="color:'+shColor+';">Sharpe:'+rm.sharpe.toFixed(2)+'</span>' +
-        '<span style="color:'+pfColor+';">PF:'+rm.profitFactor.toFixed(2)+'</span>' +
-        '<span>MaxDD:'+rm.maxDD.toFixed(1)+'%</span>' +
-        '<span>Sortino:'+rm.sortino.toFixed(2)+'</span>' +
-      '</div>';
-    })()}
   </div>`;
 }
 

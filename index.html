@@ -2255,6 +2255,7 @@ function computeMAStatus(tf) {
     granville: detectGranville(cl),
   };
 }
+function calcMACD(closes, fast=12, slow=26, sig=9){
   if(!closes||closes.length<slow+sig) return {macd:0,signal:0,hist:0};
   const k_f=2/(fast+1), k_s=2/(slow+1), k_sig=2/(sig+1);
   let emaF=closes.slice(0,fast).reduce((a,b)=>a+b,0)/fast;

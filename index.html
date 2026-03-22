@@ -90,20 +90,29 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 /* ══ MA ALERT BANNER (最上部) ══ */
 .ma-alert-banner{position:sticky;top:0;z-index:200;padding:0;overflow:hidden;transition:max-height .3s ease;font-family:'Share Tech Mono',monospace;}
 .ma-alert-banner.hidden{max-height:0;padding:0;}
+.ma-alert-summary{padding:5px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.35);}
+.ma-alert-summary .ma-verdict{font-weight:900;font-size:.78rem;}
+.ma-alert-summary .ma-verdict.bull{color:var(--green);}
+.ma-alert-summary .ma-verdict.bear{color:var(--red);}
+.ma-alert-summary .ma-verdict.mixed{color:var(--yellow);}
+.ma-alert-summary .ma-sub{font-size:.54rem;color:var(--dim);flex:1;}
 .ma-alert-items{display:flex;flex-wrap:wrap;gap:0;}
-.ma-alert-item{flex:1;min-width:200px;padding:6px 12px;display:flex;align-items:center;gap:8px;font-size:.68rem;border-right:1px solid rgba(255,255,255,.1);}
+.ma-alert-item{flex:1;min-width:150px;padding:7px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-right:1px solid rgba(255,255,255,.06);}
 .ma-alert-item:last-child{border-right:none;}
-.ma-alert-item.critical{background:linear-gradient(135deg,rgba(0,255,136,.15),rgba(0,212,255,.08));border-bottom:2px solid var(--green);animation:maAlertPulse 2s infinite;}
-.ma-alert-item.critical.bear{background:linear-gradient(135deg,rgba(255,45,85,.15),rgba(255,107,53,.08));border-bottom-color:var(--red);}
-.ma-alert-item.warning{background:rgba(255,214,10,.06);border-bottom:1px solid rgba(255,214,10,.3);}
-.ma-alert-item.approaching{background:rgba(90,122,138,.06);border-bottom:1px solid var(--border);}
-.ma-alert-icon{font-size:1rem;flex-shrink:0;}
-.ma-alert-label{font-weight:900;font-size:.72rem;white-space:nowrap;}
+.ma-alert-item.critical{background:linear-gradient(135deg,rgba(0,255,136,.12),rgba(0,212,255,.06));border-bottom:2px solid var(--green);}
+.ma-alert-item.critical.bear{background:linear-gradient(135deg,rgba(255,45,85,.12),rgba(255,107,53,.06));border-bottom-color:var(--red);}
+.ma-alert-item.warning{background:rgba(255,214,10,.05);border-bottom:1px solid rgba(255,214,10,.25);}
+.ma-alert-item.approaching{background:rgba(90,122,138,.05);border-bottom:1px solid var(--border);}
+.ma-alert-item.minority{opacity:.4;filter:grayscale(.3);}
+.ma-alert-row1{display:flex;align-items:center;gap:5px;}
+.ma-alert-icon{font-size:.85rem;flex-shrink:0;}
+.ma-alert-label{font-weight:900;font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ma-alert-label.bull{color:var(--green);}
 .ma-alert-label.bear{color:var(--red);}
 .ma-alert-label.neut{color:var(--yellow);}
-.ma-alert-detail{font-size:.58rem;color:var(--dim);flex:1;min-width:0;}
-.ma-alert-tf{font-size:.52rem;padding:1px 5px;border-radius:2px;background:rgba(255,255,255,.06);color:var(--accent);flex-shrink:0;}
+.ma-alert-row2{display:flex;align-items:center;justify-content:space-between;width:100%;gap:4px;}
+.ma-alert-detail{font-size:.52rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ma-alert-tf{font-size:.48rem;padding:1px 4px;border-radius:2px;background:rgba(255,255,255,.08);color:var(--accent);flex-shrink:0;}
 @keyframes maAlertPulse{0%,100%{opacity:1;}50%{opacity:.7;}}
 
 /* TOPBAR */
@@ -973,6 +982,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 
 <!-- MA ALERT BANNER (最上部) -->
 <div class="ma-alert-banner hidden" id="maAlertBanner">
+  <div class="ma-alert-summary" id="maAlertSummary"></div>
   <div class="ma-alert-items" id="maAlertContent"></div>
 </div>
 
@@ -3175,6 +3185,7 @@ function calcPearsonCorrelation(x, y) {
 function renderMAAlert(){
   const banner = document.getElementById('maAlertBanner');
   const content = document.getElementById('maAlertContent');
+  const summaryEl = document.getElementById('maAlertSummary');
   if(!banner || !content) return;
   const alerts = [];
   // 重要TF順に収集 (1h > 15m > 5m > 4h > 3m > 1m > 1d)
@@ -3191,6 +3202,7 @@ function renderMAAlert(){
         icon: ms.perfectOrder.type==='bullish' ? '🔥' : '💀',
         label: isFull ? 'パーフェクトオーダー' : 'PO形成中',
         labelCls: ms.perfectOrder.type==='bullish' ? 'bull' : 'bear',
+        dir: ms.perfectOrder.type==='bullish' ? 'bull' : 'bear',
         detail: `${ms.perfectOrder.detail} (${ms.perfectOrder.score}/5)`,
         tf: tfLabel,
         cls: `critical${ms.perfectOrder.type==='bearish'?' bear':''}`,
@@ -3203,8 +3215,9 @@ function renderMAAlert(){
         alerts.push({
           priority: c.importance * 10 + (c.candles_ago === 0 ? 5 : 0),
           icon: c.type==='golden' ? '⚡' : '💥',
-          label: c.type==='golden' ? `ゴールデンクロス(${c.pair})` : `デッドクロス(${c.pair})`,
+          label: `${c.type==='golden'?'GC':'DC'} ${c.pair}`,
           labelCls: c.type==='golden' ? 'bull' : 'bear',
+          dir: c.type==='golden' ? 'bull' : 'bear',
           detail: c.candles_ago === 0 ? '今発生!' : `${c.candles_ago}本前`,
           tf: tfLabel,
           cls: isInst ? `critical${c.type==='dead'?' bear':''}` : 'warning',
@@ -3213,8 +3226,9 @@ function renderMAAlert(){
         alerts.push({
           priority: c.importance * 5,
           icon: '📡',
-          label: `クロス接近(${c.pair})`,
+          label: `接近 ${c.pair}`,
           labelCls: 'neut',
+          dir: 'neut',
           detail: `乖離${Math.abs(c.gap_pct).toFixed(3)}%`,
           tf: tfLabel,
           cls: 'approaching',
@@ -3229,28 +3243,60 @@ function renderMAAlert(){
         icon: g.dir==='LONG' ? '📈' : '📉',
         label: `グランビル${g.law}`,
         labelCls: g.dir==='LONG' ? 'bull' : 'bear',
+        dir: g.dir==='LONG' ? 'bull' : 'bear',
         detail: g.desc,
         tf: tfLabel,
         cls: 'warning',
       });
     }
   });
-  // 重複排除 & ソート & 最大5件表示
+  // ソート & 最大4件表示
   alerts.sort((a,b) => b.priority - a.priority);
-  const top = alerts.slice(0, 5);
+  const top = alerts.slice(0, 4);
   if(top.length === 0){
     banner.classList.add('hidden');
     return;
   }
   banner.classList.remove('hidden');
-  content.innerHTML = top.map(a =>
-    `<div class="ma-alert-item ${a.cls}">
-      <span class="ma-alert-icon">${a.icon}</span>
-      <span class="ma-alert-label ${a.labelCls}">${a.label}</span>
-      <span class="ma-alert-detail">${a.detail}</span>
-      <span class="ma-alert-tf">${a.tf}</span>
-    </div>`
-  ).join('');
+
+  // ── 総合判定ヘッダー ──
+  const bullCount = alerts.filter(a => a.dir === 'bull').length;
+  const bearCount = alerts.filter(a => a.dir === 'bear').length;
+  const neutCount = alerts.filter(a => a.dir === 'neut').length;
+  let verdictText, verdictCls, verdictSub;
+  if(bullCount > bearCount){
+    verdictCls = 'bull';
+    verdictText = '▲ MA強気優勢';
+    verdictSub = `GC系×${bullCount}${bearCount>0?' vs DC系×'+bearCount:''}${neutCount>0?' / 接近×'+neutCount:''}`;
+  } else if(bearCount > bullCount){
+    verdictCls = 'bear';
+    verdictText = '▼ MA弱気優勢';
+    verdictSub = `DC系×${bearCount}${bullCount>0?' vs GC系×'+bullCount:''}${neutCount>0?' / 接近×'+neutCount:''}`;
+  } else {
+    verdictCls = 'mixed';
+    verdictText = '— MA方向混在';
+    verdictSub = `強気×${bullCount} vs 弱気×${bearCount}${neutCount>0?' / 接近×'+neutCount:''}`;
+  }
+  // 最重要アラートの説明を付加
+  if(top[0]){
+    const t = top[0];
+    verdictSub += ` — 最重要: ${t.label}(${t.tf})`;
+  }
+  if(summaryEl){
+    summaryEl.innerHTML = `<span class="ma-verdict ${verdictCls}">${verdictText}</span><span class="ma-sub">${verdictSub}</span>`;
+  }
+
+  // ── 多数派判定（少数派はminorityクラス） ──
+  const majorDir = bullCount > bearCount ? 'bull' : bearCount > bullCount ? 'bear' : null;
+
+  // ── カード描画（2行構造） ──
+  content.innerHTML = top.map(a => {
+    const minority = majorDir && a.dir !== 'neut' && a.dir !== majorDir ? ' minority' : '';
+    return `<div class="ma-alert-item ${a.cls}${minority}">
+      <div class="ma-alert-row1"><span class="ma-alert-icon">${a.icon}</span><span class="ma-alert-label ${a.labelCls}">${a.label}</span></div>
+      <div class="ma-alert-row2"><span class="ma-alert-detail">${a.detail}</span><span class="ma-alert-tf">${a.tf}</span></div>
+    </div>`;
+  }).join('');
 }
 
 function renderAll(){

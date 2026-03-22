@@ -87,6 +87,25 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .load-fill{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width .3s;box-shadow:0 0 8px var(--accent);}
 .load-msg{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--dim);}
 
+/* ══ MA ALERT BANNER (最上部) ══ */
+.ma-alert-banner{position:sticky;top:0;z-index:200;padding:0;overflow:hidden;transition:max-height .3s ease;font-family:'Share Tech Mono',monospace;}
+.ma-alert-banner.hidden{max-height:0;padding:0;}
+.ma-alert-items{display:flex;flex-wrap:wrap;gap:0;}
+.ma-alert-item{flex:1;min-width:200px;padding:6px 12px;display:flex;align-items:center;gap:8px;font-size:.68rem;border-right:1px solid rgba(255,255,255,.1);}
+.ma-alert-item:last-child{border-right:none;}
+.ma-alert-item.critical{background:linear-gradient(135deg,rgba(0,255,136,.15),rgba(0,212,255,.08));border-bottom:2px solid var(--green);animation:maAlertPulse 2s infinite;}
+.ma-alert-item.critical.bear{background:linear-gradient(135deg,rgba(255,45,85,.15),rgba(255,107,53,.08));border-bottom-color:var(--red);}
+.ma-alert-item.warning{background:rgba(255,214,10,.06);border-bottom:1px solid rgba(255,214,10,.3);}
+.ma-alert-item.approaching{background:rgba(90,122,138,.06);border-bottom:1px solid var(--border);}
+.ma-alert-icon{font-size:1rem;flex-shrink:0;}
+.ma-alert-label{font-weight:900;font-size:.72rem;white-space:nowrap;}
+.ma-alert-label.bull{color:var(--green);}
+.ma-alert-label.bear{color:var(--red);}
+.ma-alert-label.neut{color:var(--yellow);}
+.ma-alert-detail{font-size:.58rem;color:var(--dim);flex:1;min-width:0;}
+.ma-alert-tf{font-size:.52rem;padding:1px 5px;border-radius:2px;background:rgba(255,255,255,.06);color:var(--accent);flex-shrink:0;}
+@keyframes maAlertPulse{0%,100%{opacity:1;}50%{opacity:.7;}}
+
 /* TOPBAR */
 .topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:4px;}
 .logo{font-family:'Share Tech Mono',monospace;font-size:.76rem;color:var(--accent);letter-spacing:.1em;}
@@ -974,6 +993,11 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="load-logo">⬡ <span data-coin-name>BTC</span> SIGNAL LOADING</div>
   <div class="load-track"><div class="load-fill" id="loadFill"></div></div>
   <div class="load-msg" id="loadMsg">初期化中...</div>
+</div>
+
+<!-- MA ALERT BANNER (最上部) -->
+<div class="ma-alert-banner hidden" id="maAlertBanner">
+  <div class="ma-alert-items" id="maAlertContent"></div>
 </div>
 
 <!-- TOPBAR -->
@@ -2136,7 +2160,165 @@ function calcEMA(arr, period){
   return ema;
 }
 
-function calcMACD(closes, fast=12, slow=26, sig=9){
+// ═══════════════════════════════════════════════
+// MA最重要指標: ゴールデンクロス / パーフェクトオーダー / グランビルの法則
+// ═══════════════════════════════════════════════
+
+// Batch EMA: EMA(period) at every position → returns array[closes.length]
+function calcEMAAll(arr, period) {
+  const out = new Array(arr.length).fill(0);
+  if (!arr || arr.length < period) return out;
+  const k = 2 / (period + 1);
+  let ema = arr.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  for (let i = 0; i < period; i++) out[i] = ema;
+  for (let i = period; i < arr.length; i++) {
+    ema = arr[i] * k + ema * (1 - k);
+    out[i] = ema;
+  }
+  return out;
+}
+
+// ── ゴールデンクロス / デッドクロス検出 ──
+function detectMACrossovers(closes) {
+  if (!closes || closes.length < 50) return [];
+  const results = [];
+  const pairs = [
+    { short: 5, long: 20, type: 'EMA', label: 'EMA5×20', importance: 2 },
+    { short: 9, long: 21, type: 'EMA', label: 'EMA9×21', importance: 3 },
+    { short: 20, long: 50, type: 'SMA', label: 'SMA20×50', importance: 4 },
+  ];
+  // SMA50×200 only if enough data
+  if (closes.length >= 200) {
+    pairs.push({ short: 50, long: 200, type: 'SMA', label: 'SMA50×200', importance: 5 });
+  }
+  pairs.forEach(p => {
+    const shortAll = p.type === 'EMA' ? calcEMAAll(closes, p.short) : calcSMAAll(closes, p.short);
+    const longAll = p.type === 'EMA' ? calcEMAAll(closes, p.long) : calcSMAAll(closes, p.long);
+    const len = closes.length;
+    if (len < p.long + 2) return;
+    const shortNow = shortAll[len - 1], longNow = longAll[len - 1];
+    const shortPrev = shortAll[len - 2], longPrev = longAll[len - 2];
+    const gapPct = longNow > 0 ? ((shortNow - longNow) / longNow) * 100 : 0;
+    // クロス検出: 直近2本で交差
+    if (shortPrev <= longPrev && shortNow > longNow) {
+      results.push({ pair: p.label, type: 'golden', candles_ago: 0, gap_pct: gapPct, importance: p.importance });
+    } else if (shortPrev >= longPrev && shortNow < longNow) {
+      results.push({ pair: p.label, type: 'dead', candles_ago: 0, gap_pct: gapPct, importance: p.importance });
+    } else {
+      // 直近5本以内にクロスがあったか
+      for (let i = 2; i <= Math.min(5, len - p.long - 1); i++) {
+        const sp = shortAll[len - i - 1], lp = longAll[len - i - 1];
+        const sc = shortAll[len - i], lc = longAll[len - i];
+        if (sp <= lp && sc > lc) {
+          results.push({ pair: p.label, type: 'golden', candles_ago: i, gap_pct: gapPct, importance: p.importance, recent: true });
+          break;
+        } else if (sp >= lp && sc < lc) {
+          results.push({ pair: p.label, type: 'dead', candles_ago: i, gap_pct: gapPct, importance: p.importance, recent: true });
+          break;
+        }
+      }
+      // 接近中: 乖離率が0.05%以内
+      if (Math.abs(gapPct) <= 0.05) {
+        results.push({ pair: p.label, type: 'approaching', candles_ago: -1, gap_pct: gapPct, importance: p.importance });
+      }
+    }
+  });
+  return results.sort((a, b) => b.importance - a.importance);
+}
+
+// ── パーフェクトオーダー検出 ──
+function detectPerfectOrder(closes) {
+  if (!closes || closes.length < 50) return { type: 'none', score: 0, detail: '' };
+  const last = closes[closes.length - 1];
+  const ema9 = calcEMA(closes, 9);
+  const ema20 = calcEMA(closes, 20);
+  const sma50 = calcSMA(closes, Math.min(50, closes.length));
+  const sma100 = closes.length >= 100 ? calcSMA(closes, 100) : sma50;
+  const sma200 = closes.length >= 200 ? calcSMA(closes, 200) : sma100;
+  // Bullish check: price > ema9 > ema20 > sma50 > sma100 > sma200
+  const bullPairs = [
+    [last, ema9], [ema9, ema20], [ema20, sma50], [sma50, sma100], [sma100, sma200]
+  ];
+  const bearPairs = [
+    [ema9, last], [ema20, ema9], [sma50, ema20], [sma100, sma50], [sma200, sma100]
+  ];
+  let bullScore = 0, bearScore = 0;
+  bullPairs.forEach(([a, b]) => { if (a > b) bullScore++; });
+  bearPairs.forEach(([a, b]) => { if (a > b) bearScore++; });
+  if (bullScore >= 3) {
+    const labels = ['P>EMA9', 'EMA9>EMA20', 'EMA20>SMA50', 'SMA50>SMA100', 'SMA100>SMA200'];
+    const detail = bullPairs.map((p, i) => p[0] > p[1] ? labels[i] : '').filter(Boolean).join(' > ');
+    return { type: 'bullish', score: bullScore, detail };
+  }
+  if (bearScore >= 3) {
+    const labels = ['EMA9>P', 'EMA20>EMA9', 'SMA50>EMA20', 'SMA100>SMA50', 'SMA200>SMA100'];
+    const detail = bearPairs.map((p, i) => p[0] > p[1] ? labels[i] : '').filter(Boolean).join(' > ');
+    return { type: 'bearish', score: bearScore, detail };
+  }
+  return { type: 'none', score: Math.max(bullScore, bearScore), detail: `Bull:${bullScore}/Bear:${bearScore}` };
+}
+
+// ── グランビルの法則検出 (8法則) ──
+function detectGranville(closes) {
+  if (!closes || closes.length < 30) return [];
+  const results = [];
+  [20, 50].forEach(period => {
+    if (closes.length < period + 5) return;
+    const maAll = calcSMAAll(closes, period);
+    const len = closes.length;
+    const last = closes[len - 1], prev = closes[len - 2], prev2 = closes[len - 3];
+    const maNow = maAll[len - 1], maPrev = maAll[len - 2], maPrev2 = maAll[len - 3];
+    const maName = `SMA${period}`;
+    const maTrend = maNow - maPrev; // MA方向
+    const distPct = ((last - maNow) / maNow) * 100;
+    // 買い1: 価格がMA下→上 & MAが上向き(or横ばい)
+    if (prev <= maPrev && last > maNow && maTrend >= 0) {
+      results.push({ law: '買い1', dir: 'LONG', ma: maName, desc: `${maName}を上抜け(トレンド転換)`, importance: period === 50 ? 3 : 2 });
+    }
+    // 買い2: 価格がMAまで押して反発 (MA上昇中)
+    if (maTrend > 0 && prev2 > maPrev2 && prev <= maPrev * 1.001 && last > maNow) {
+      results.push({ law: '買い2', dir: 'LONG', ma: maName, desc: `${maName}で押し目反発`, importance: period === 50 ? 3.5 : 2.5 });
+    }
+    // 買い3: 価格がMAに近づくが触れずに上昇 (MA上昇中)
+    if (maTrend > 0 && Math.abs(distPct) < 0.3 && prev < prev2 && last > prev && last > maNow) {
+      results.push({ law: '買い3', dir: 'LONG', ma: maName, desc: `${maName}接近→反発上昇`, importance: period === 50 ? 2.5 : 1.5 });
+    }
+    // 買い4: 価格がMA下方に大きく乖離 (MA下降中でも反発狙い)
+    if (distPct < -1.5 && last > prev) {
+      results.push({ law: '買い4', dir: 'LONG', ma: maName, desc: `${maName}から${Math.abs(distPct).toFixed(1)}%乖離→リバウンド`, importance: 2 });
+    }
+    // 売り1: 価格がMA上→下 & MAが下向き
+    if (prev >= maPrev && last < maNow && maTrend <= 0) {
+      results.push({ law: '売り1', dir: 'SHORT', ma: maName, desc: `${maName}を下抜け(トレンド転換)`, importance: period === 50 ? 3 : 2 });
+    }
+    // 売り2: 価格がMAまで戻って反落 (MA下降中)
+    if (maTrend < 0 && prev2 < maPrev2 && prev >= maPrev * 0.999 && last < maNow) {
+      results.push({ law: '売り2', dir: 'SHORT', ma: maName, desc: `${maName}で戻り売り反落`, importance: period === 50 ? 3.5 : 2.5 });
+    }
+    // 売り3: 価格がMAに近づくが触れずに下落 (MA下降中)
+    if (maTrend < 0 && Math.abs(distPct) < 0.3 && prev > prev2 && last < prev && last < maNow) {
+      results.push({ law: '売り3', dir: 'SHORT', ma: maName, desc: `${maName}接近→反落下降`, importance: period === 50 ? 2.5 : 1.5 });
+    }
+    // 売り4: 価格がMA上方に大きく乖離 (反落狙い)
+    if (distPct > 1.5 && last < prev) {
+      results.push({ law: '売り4', dir: 'SHORT', ma: maName, desc: `${maName}から+${distPct.toFixed(1)}%乖離→反落`, importance: 2 });
+    }
+  });
+  return results.sort((a, b) => b.importance - a.importance);
+}
+
+// MA状態キャッシュ
+let _maStatusCache = {};
+function computeMAStatus(tf) {
+  const kl = KL[tf]();
+  if (!kl || kl.length < 25) return null;
+  const cl = kl.map(k => parseFloat(k[4]));
+  return {
+    crossovers: detectMACrossovers(cl),
+    perfectOrder: detectPerfectOrder(cl),
+    granville: detectGranville(cl),
+  };
+}
   if(!closes||closes.length<slow+sig) return {macd:0,signal:0,hist:0};
   const k_f=2/(fast+1), k_s=2/(slow+1), k_sig=2/(sig+1);
   let emaF=closes.slice(0,fast).reduce((a,b)=>a+b,0)/fast;
@@ -2190,6 +2372,38 @@ function computeTF(tf){
   else if(last<sma20&&sma20<sma50){inds.trend={cls:'bear',val:'下降',badge:'▼ MA下方',bCls:'br',why:'価格<SMA20<SMA50'};bear+=2*c.trW;}
   else if(last<sma20){inds.trend={cls:'bear',val:'やや下降',badge:'▼ 弱い下降',bCls:'br',why:'価格<SMA20'};bear+=c.trW;}
   else{inds.trend={cls:'neut',val:'横ばい',badge:'— レンジ',bCls:'bn',why:'MA付近で推移'};}
+
+  // ══ MA最重要指標: クロス・パーフェクトオーダー・グランビル ══
+  const maCrosses = detectMACrossovers(cl);
+  const po = detectPerfectOrder(cl);
+  const gv = detectGranville(cl);
+
+  // パーフェクトオーダー (最重要: ±4pt)
+  if(po.type==='bullish' && po.score>=5){bull+=4;inds.perfectOrder={cls:'bull',val:`完全PO(${po.score}/5)`,badge:'▲▲ パーフェクトオーダー',bCls:'bb',why:po.detail};}
+  else if(po.type==='bearish' && po.score>=5){bear+=4;inds.perfectOrder={cls:'bear',val:`完全PO(${po.score}/5)`,badge:'▼▼ パーフェクトオーダー',bCls:'br',why:po.detail};}
+  else if(po.type==='bullish' && po.score>=3){bull+=2.5;inds.perfectOrder={cls:'bull',val:`PO形成中(${po.score}/5)`,badge:'▲ PO接近',bCls:'bb',why:po.detail};}
+  else if(po.type==='bearish' && po.score>=3){bear+=2.5;inds.perfectOrder={cls:'bear',val:`PO形成中(${po.score}/5)`,badge:'▼ PO接近',bCls:'br',why:po.detail};}
+  else{inds.perfectOrder={cls:'neut',val:`${po.detail}`,badge:'— PO未形成',bCls:'bn',why:'MA順序未整列'};}
+
+  // ゴールデンクロス / デッドクロス (重要: ±1.5~3pt)
+  const topCross = maCrosses[0];
+  if(topCross){
+    const isGolden = topCross.type==='golden';
+    const isDead = topCross.type==='dead';
+    const isApproach = topCross.type==='approaching';
+    const w = topCross.importance >= 5 ? 3 : topCross.importance >= 4 ? 2 : 1.5;
+    if(isGolden){bull+=w;inds.maCross={cls:'bull',val:`GC ${topCross.pair}`,badge:`▲ ゴールデンクロス`,bCls:'bb',why:`${topCross.pair}${topCross.candles_ago>0?` ${topCross.candles_ago}本前`:' 今!'}`};}
+    else if(isDead){bear+=w;inds.maCross={cls:'bear',val:`DC ${topCross.pair}`,badge:`▼ デッドクロス`,bCls:'br',why:`${topCross.pair}${topCross.candles_ago>0?` ${topCross.candles_ago}本前`:' 今!'}`};}
+    else if(isApproach){inds.maCross={cls:'neut',val:`接近 ${topCross.pair}`,badge:`⚡ クロス接近`,bCls:'bn',why:`${topCross.pair} 乖離${Math.abs(topCross.gap_pct).toFixed(3)}%`};}
+  } else {inds.maCross={cls:'neut',val:'なし',badge:'— クロスなし',bCls:'bn',why:'MA交差なし'};}
+
+  // グランビルの法則 (±1~1.5pt)
+  const topGv = gv[0];
+  if(topGv){
+    const gvW = topGv.importance >= 3 ? 1.5 : 1;
+    if(topGv.dir==='LONG'){bull+=gvW;inds.granville={cls:'bull',val:topGv.law,badge:`▲ ${topGv.law}`,bCls:'bb',why:topGv.desc};}
+    else{bear+=gvW;inds.granville={cls:'bear',val:topGv.law,badge:`▼ ${topGv.law}`,bCls:'br',why:topGv.desc};}
+  } else {inds.granville={cls:'neut',val:'なし',badge:'— グランビルなし',bCls:'bn',why:'該当法則なし'};}
 
   // FR
   const fv=S.fr*c.frW;
@@ -3371,14 +3585,103 @@ function calcPearsonCorrelation(x, y) {
   return dx>0 && dy>0 ? num / Math.sqrt(dx*dy) : 0;
 }
 
+// ═══════════════════════════════════════════════
+// MA ALERT BANNER — 最上部アラート描画
+// ═══════════════════════════════════════════════
+function renderMAAlert(){
+  const banner = document.getElementById('maAlertBanner');
+  const content = document.getElementById('maAlertContent');
+  if(!banner || !content) return;
+  const alerts = [];
+  // 重要TF順に収集 (1h > 15m > 5m > 4h > 3m > 1m > 1d)
+  const tfPriority = ['1h','15m','5m','4h','3m','1m','1d'];
+  tfPriority.forEach(tf => {
+    const ms = _maStatusCache[tf];
+    if(!ms) return;
+    const tfLabel = TFCFG[tf]?.label || tf;
+    // パーフェクトオーダー
+    if(ms.perfectOrder && ms.perfectOrder.score >= 4){
+      const isFull = ms.perfectOrder.score === 5;
+      alerts.push({
+        priority: isFull ? 100 : 80,
+        icon: ms.perfectOrder.type==='bullish' ? '🔥' : '💀',
+        label: isFull ? 'パーフェクトオーダー' : 'PO形成中',
+        labelCls: ms.perfectOrder.type==='bullish' ? 'bull' : 'bear',
+        detail: `${ms.perfectOrder.detail} (${ms.perfectOrder.score}/5)`,
+        tf: tfLabel,
+        cls: `critical${ms.perfectOrder.type==='bearish'?' bear':''}`,
+      });
+    }
+    // ゴールデン/デッドクロス
+    ms.crossovers.forEach(c => {
+      if(c.type === 'golden' || c.type === 'dead'){
+        const isInst = c.importance >= 5;
+        alerts.push({
+          priority: c.importance * 10 + (c.candles_ago === 0 ? 5 : 0),
+          icon: c.type==='golden' ? '⚡' : '💥',
+          label: c.type==='golden' ? `ゴールデンクロス(${c.pair})` : `デッドクロス(${c.pair})`,
+          labelCls: c.type==='golden' ? 'bull' : 'bear',
+          detail: c.candles_ago === 0 ? '今発生!' : `${c.candles_ago}本前`,
+          tf: tfLabel,
+          cls: isInst ? `critical${c.type==='dead'?' bear':''}` : 'warning',
+        });
+      } else if(c.type === 'approaching'){
+        alerts.push({
+          priority: c.importance * 5,
+          icon: '📡',
+          label: `クロス接近(${c.pair})`,
+          labelCls: 'neut',
+          detail: `乖離${Math.abs(c.gap_pct).toFixed(3)}%`,
+          tf: tfLabel,
+          cls: 'approaching',
+        });
+      }
+    });
+    // グランビル法則 (top 1 per TF)
+    if(ms.granville.length > 0){
+      const g = ms.granville[0];
+      alerts.push({
+        priority: g.importance * 8,
+        icon: g.dir==='LONG' ? '📈' : '📉',
+        label: `グランビル${g.law}`,
+        labelCls: g.dir==='LONG' ? 'bull' : 'bear',
+        detail: g.desc,
+        tf: tfLabel,
+        cls: 'warning',
+      });
+    }
+  });
+  // 重複排除 & ソート & 最大5件表示
+  alerts.sort((a,b) => b.priority - a.priority);
+  const top = alerts.slice(0, 5);
+  if(top.length === 0){
+    banner.classList.add('hidden');
+    return;
+  }
+  banner.classList.remove('hidden');
+  content.innerHTML = top.map(a =>
+    `<div class="ma-alert-item ${a.cls}">
+      <span class="ma-alert-icon">${a.icon}</span>
+      <span class="ma-alert-label ${a.labelCls}">${a.label}</span>
+      <span class="ma-alert-detail">${a.detail}</span>
+      <span class="ma-alert-tf">${a.tf}</span>
+    </div>`
+  ).join('');
+}
+
 function renderAll(){
+  // MA状態キャッシュをリセット
+  _maStatusCache = {};
   Object.keys(TFCFG).forEach(tf=>{
     const kl=KL[tf]();
     if(!kl||kl.length<20)return;
     const r=computeTF(tf);
     S.tfScore[tf]=r.score; S.tfSig[tf]=r.signal; S.tfInds[tf]=r.inds;
+    // MA状態も同時計算・キャッシュ
+    _maStatusCache[tf] = computeMAStatus(tf);
   });
   renderPrice();
+  renderMAAlert(); // 最上部バナーを最優先で更新
   renderScalpHero();
   renderTfRow();
   renderConflict();
@@ -3695,6 +3998,25 @@ function renderInds(){
       cls:'neut', badge:'— FXレート', bCls:'bn',
       why:'円換算用レート', src:'open.er-api.com'},
   ];
+
+  // MA最重要指標カード追加 (5m/15m/1hから最も重要な情報を取得)
+  const maTfs = ['5m','15m','1h'];
+  maTfs.forEach(tf => {
+    const ind = S.tfInds[tf];
+    if(!ind) return;
+    if(ind.perfectOrder && ind.perfectOrder.cls !== 'neut'){
+      items.unshift({name:`PO(${TFCFG[tf].label})`, val:ind.perfectOrder.val, cls:ind.perfectOrder.cls,
+        badge:ind.perfectOrder.badge, bCls:ind.perfectOrder.bCls, why:ind.perfectOrder.why, src:'MA順序分析', hot:ind.perfectOrder.val.includes('完全')});
+    }
+    if(ind.maCross && ind.maCross.cls !== 'neut'){
+      items.unshift({name:`MAクロス(${TFCFG[tf].label})`, val:ind.maCross.val, cls:ind.maCross.cls,
+        badge:ind.maCross.badge, bCls:ind.maCross.bCls, why:ind.maCross.why, src:'MA交差検出', hot:ind.maCross.badge.includes('ゴールデン')||ind.maCross.badge.includes('デッド')});
+    }
+    if(ind.granville && ind.granville.cls !== 'neut'){
+      items.unshift({name:`グランビル(${TFCFG[tf].label})`, val:ind.granville.val, cls:ind.granville.cls,
+        badge:ind.granville.badge, bCls:ind.granville.bCls, why:ind.granville.why, src:'グランビルの法則'});
+    }
+  });
 
   document.getElementById('indsGrid').innerHTML=items.map(i=>`
     <div class="ind ${i.cls}${i.hot?' hot':''}">
@@ -7058,13 +7380,30 @@ function checkBotEntry(def, state, price, now){
       const sigWall = walls.filter(w => w.dir).sort((a,b) => b.importance - a.importance)[0];
       const readyWall = walls.filter(w => w.approaching && !w.dir).sort((a,b) => b.importance - a.importance)[0];
 
+      // MA クロス/PO でフィルタリング: クロス方向と逆のエントリーは抑制
+      const wallCrosses = detectMACrossovers(cl);
+      const wallPO = detectPerfectOrder(cl);
+      const crossDir = wallCrosses.length > 0 ? (wallCrosses[0].type === 'golden' ? 'LONG' : wallCrosses[0].type === 'dead' ? 'SHORT' : null) : null;
+      const poDir = wallPO.type === 'bullish' ? 'LONG' : wallPO.type === 'bearish' ? 'SHORT' : null;
+
       if (sigWall) {
-        signal = sigWall.dir;
-        reason = sigWall.reason;
+        // クロスやPOと同方向なら信頼度UP、逆方向はブロック
+        if (crossDir && crossDir !== sigWall.dir) {
+          // クロスと逆 → readyに格下げ
+          state.status = 'ready';
+          state.readyDetail = { dir:sigWall.dir, target:sigWall.val, reason:sigWall.reason + ' (MAクロス逆方向で待機)', confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        } else {
+          signal = sigWall.dir;
+          reason = sigWall.reason + (crossDir===sigWall.dir ? ' + MAクロス一致🔥' : '') + (poDir===sigWall.dir ? ' + PO一致🔥' : '');
+        }
       } else if (readyWall) {
         const approachDir = readyWall.dist < 0 ? 'LONG' : 'SHORT';
         state.status = 'ready';
-        state.readyDetail = { dir:approachDir, target:readyWall.val, reason:`${readyWall.ma}($${readyWall.val.toFixed(0)})接近中 乖離${readyWall.dist.toFixed(3)}%`, confirmCount:0, confirmTotal:3, confirmSource:'pre' };
+        state.readyDetail = { dir:approachDir, target:readyWall.val, reason:`${readyWall.ma}($${readyWall.val.toFixed(0)})接近中 乖離${readyWall.dist.toFixed(3)}%`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+      } else if (poDir && wallPO.score >= 4) {
+        // MA壁タッチなくてもPO成立中ならreadyにする
+        state.status = 'ready';
+        state.readyDetail = { dir:poDir, target:price, reason:`PO成立(${wallPO.score}/5) — MA壁タッチ待ち`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
       } else {
         state.status = 'watching';
         state.readyDetail = null;

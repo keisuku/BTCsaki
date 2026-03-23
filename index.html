@@ -3787,6 +3787,8 @@ async function init(){
   // Phase 2: Fetch all klines in parallel
   setLoad(60,'ローソク足 取得中...');
   await Promise.allSettled([
+    fetchKlines('1m',100).then(d=>S.k1m=d),
+    fetchKlines('3m',100).then(d=>S.k3m=d),
     fetchKlines('5m',100).then(d=>S.k5=d),
     fetchKlines('15m',100).then(d=>S.k15=d),
     fetchKlines('1h',100).then(d=>S.k1h=d),
@@ -3976,7 +3978,9 @@ async function fastFetch(){
     await fetchPrice();
     // Guard: if coin changed during async fetch, discard stale data
     if(currentCoin !== coinAtStart){ S.price = 0; return; }
-    const [r5,r15,r1h,r4h] = await Promise.allSettled([
+    const [r1m,r3m,r5,r15,r1h,r4h] = await Promise.allSettled([
+      fetchKlines('1m',60).then(d=>S.k1m=d),
+      fetchKlines('3m',60).then(d=>S.k3m=d),
       fetchKlines('5m',50).then(d=>S.k5=d),
       fetchKlines('15m',50).then(d=>S.k15=d),
       fetchKlines('1h',50).then(d=>S.k1h=d),
@@ -4577,9 +4581,9 @@ function checkFleetHealth() {
     totalTrades += recent.length;
     totalSLs += recent.filter(t => !t.win).length;
   });
-  if (totalTrades >= 20 && totalSLs / totalTrades > 0.85) {
+  if (totalTrades >= 50 && totalSLs / totalTrades > 0.92) {
     S._fleetPaused = true;
-    S._fleetPauseUntil = Date.now() + 300000; // 5分に短縮（旧30分）
+    S._fleetPauseUntil = Date.now() + 60000; // 1分に短縮（旧5分）
     return false;
   }
   return true;
@@ -6560,13 +6564,22 @@ function checkBotEntry(def, state, price, now){
   const p = state.params;
   const tf = def.tf;
   const r = botComputeTF(tf);
-  if(!r) return;
+  if(!r) {
+    // デバッグ: klineデータ不足でbot評価不能
+    const kl = KL[tf]();
+    if(!state._lastNullLog || now - state._lastNullLog > 30000) {
+      console.warn(`[BOT-BLOCK] ${def.name}(${tf}): klineデータ不足 (${kl?kl.length:0}/20本)`);
+      state._lastNullLog = now;
+    }
+    return;
+  }
 
   const score = r.score;
   const inds = r.inds;
   let signal = null; // 'LONG' | 'SHORT' | null
   let reason = '';
   let readyMsg = '';
+  let fromReadyConfirm = false; // ready状態から復帰したシグナルは再ゲート不要
 
   // レジームボーナスを加味した有効スコア閾値
   const regimeBonus = state._regimeBonus || 0;
@@ -6585,6 +6598,7 @@ function checkBotEntry(def, state, price, now){
         signal = rd.dir;
         reason = rd.reason + ` (${rd.confirmTotal}回連続確認で自動エントリー)`;
         state.readyDetail = null;
+        fromReadyConfirm = true; // ready確認済み → ポートフォリオ/確認ゲート再通過不要
         // Phase 7a: 確認カウントによるエントリーはここで確定し、switch内のロジックをスキップ
       }
     } else if(currentDir && currentDir !== rd.dir) {
@@ -6610,9 +6624,9 @@ function checkBotEntry(def, state, price, now){
   let parentConflict = false;
   if(parentTF && S.tfSig[parentTF]) {
     const parentSig = S.tfSig[parentTF];
-    // 上位足が極端に逆方向の場合のみ抑制（大幅緩和: 35→20, 65→80）
-    if(parentSig === 'LONG' && score <= 20) parentConflict = true;
-    if(parentSig === 'SHORT' && score >= 80) parentConflict = true;
+    // 上位足が極端に逆方向の場合のみ抑制（大幅緩和: 20→10, 80→90）
+    if(parentSig === 'LONG' && score <= 10) parentConflict = true;
+    if(parentSig === 'SHORT' && score >= 90) parentConflict = true;
   }
 
   // ═══════════════════════════════════════════════
@@ -6629,7 +6643,7 @@ function checkBotEntry(def, state, price, now){
       const atr14 = ranges.reduce((a,b)=>a+b,0) / ranges.length;
       // 直近1本のレンジ
       const lastRange = parseFloat(kl[kl.length-1][2]) - parseFloat(kl[kl.length-1][3]);
-      if(atr14 > 0 && lastRange > atr14 * 8.0) {
+      if(atr14 > 0 && lastRange > atr14 * 15.0) {
         volFilterBlock = true;
       }
     }
@@ -6960,7 +6974,7 @@ function checkBotEntry(def, state, price, now){
     // ════════════════════════════════════════════════
     case 'wall': {
       const kl = KL[tf]();
-      if (!kl || kl.length < 50) { state.status = 'watching'; break; }
+      if (!kl || kl.length < 25) { state.status = 'watching'; break; }
       const cl = kl.map(k=>parseFloat(k[4]));
       const touchPct = p.maTouchPct || 0.15; // MA到達判定: ±0.15%
       const bouncePct = p.maBouncePct || 0.03; // 反発確認: 0.03%以上
@@ -7259,12 +7273,14 @@ function checkBotEntry(def, state, price, now){
 
   // Phase 7b: マルチTFゲート — 上位足と逆方向ならシグナルをキャンセル
   if(signal && parentConflict) {
+    console.log(`[BOT-GATE] ${def.name}: 上位足逆方向のため待機 (score=${score})`);
     state.status = 'ready';
     state.readyDetail = { dir: signal, target: price, reason: reason + ' (上位足逆方向のため待機)', confirmCount:0, confirmTotal:2, confirmSource:'parent_tf' };
     signal = null;
   }
   // Phase 7c: ボラティリティフィルター — 異常ボラ時はエントリー抑制
   if(signal && volFilterBlock) {
+    console.log(`[BOT-GATE] ${def.name}: 異常ボラのため待機`);
     state.status = 'ready';
     state.readyDetail = { dir: signal, target: price, reason: reason + ' (異常ボラのため待機)', confirmCount:0, confirmTotal:2, confirmSource:'vol_filter' };
     signal = null;
@@ -7273,9 +7289,11 @@ function checkBotEntry(def, state, price, now){
   } // Phase 7a: else block end
 
   // Execute entry if signal found — マルチコンファメーション + ポートフォリオ安全性
-  if(signal){
-    // ── ポートフォリオ安全性チェック ──
-    if (!isPortfolioSafe(signal)) {
+  // ready確認済みシグナルはゲート再通過不要（無限ループ防止）
+  if(signal && !fromReadyConfirm){
+    // ── ポートフォリオ安全性チェック（フリート停止中のみブロック） ──
+    if (S._fleetPaused && Date.now() < (S._fleetPauseUntil || 0)) {
+      console.log(`[BOT-GATE] ${def.name}: フリート一時停止中のため待機`);
       state.status = 'ready';
       state.readyDetail = { dir: signal, target: price, reason, confirmCount:0, confirmTotal:2, confirmSource:'portfolio' };
       signal = null;
@@ -7283,41 +7301,7 @@ function checkBotEntry(def, state, price, now){
   }
 
   if(signal){
-    // セカンダリ確認（3/5以上で発動）
-    let confirmCount = 0;
-    const totalChecks = 5;
-    const klines = KL[def.tf]();
-
-    // ① 上位TF一致
-    const upperDir = getUpperTFDirection(def.tf);
-    if (upperDir === signal) confirmCount++;
-
-    // ② オーダーフロー（直近5本の出来高加重モメンタム）
-    if (klines && klines.length >= 5) {
-      const flow = calcOrderFlow(klines, 5);
-      if ((signal === 'LONG' && flow > 0) || (signal === 'SHORT' && flow < 0)) confirmCount++;
-    }
-
-    // ③ ボラティリティ適正範囲
-    if (klines && checkVolatilityFilter(klines)) confirmCount++;
-
-    // ④ パターン記憶（類似パターンの勝率40%以上で通過）
-    const fp = createMarketFingerprint(def.tf);
-    const similar = findSimilarPatterns(fp, strategyKey, signal);
-    if (similar.matchCount < 5 || similar.patternScore >= 40) confirmCount++;
-
-    // ⑤ クロスアセット確認（BTC/ETH相関）
-    if (S._crossAssetSignal === signal || S._crossAssetSignal === 'WAIT' || !S._crossAssetSignal) confirmCount++;
-
-    if (confirmCount < 1) {
-      // 全チェック不合格の場合のみreadyに格下げ
-      state.status = 'ready';
-      state.readyDetail = { dir: signal, target: price, reason, confirmCount, confirmTotal: totalChecks, confirmSource:'gate' };
-      signal = null;
-    }
-  }
-
-  if(signal){
+    console.log(`[BOT-ENTRY] ${def.name}: ${signal} @ $${price} (${reason})${fromReadyConfirm?' [ready確認]':''}`);
     // 動的ATRベースTP/SL
     const { tp, sl } = calcDynamicTPSL(price, signal, def.tf, p);
     const entryFP = createMarketFingerprint(def.tf);

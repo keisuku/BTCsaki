@@ -3807,6 +3807,8 @@ async function init(){
   setInterval(fullFetch, 5*60*1000);
   // Start fast update loop (default 3s, price+klines only)
   restartUpdLoop();
+  // Start turbo loop for ultra-fast bots (30s cycle)
+  startTurboLoop();
   // Recalculate position sizes once price is loaded
   setTimeout(calcPosition, 1000);
   // 総合ページをデフォルトで表示
@@ -5041,6 +5043,19 @@ const BOT_DEFS = [
     desc:'世界中が意識する移動平均線(200SMA/50SMA/20EMA)をサポレジとして使い、タッチ反発を狙う。', philosophy:'200SMAは最強の壁。50SMAは戦場の分岐点。全世界のトレーダーが見ている線で勝負する。',
     quotes:{ watching:'主要MA接近を監視中...200SMA/50SMA/20EMAの壁を見ている。', ready:'主要MAに接近中...反発の瞬間を狙う。',
              holding:'MA壁からの反発を掴んだ。次のMAまで握る。', tp:'MA壁バウンス完璧。世界中が見ている線で利益を取った。', sl:'MAを貫通された。壁崩壊、即撤退。' }},
+  // ── TURBO TRIO: 30秒サイクル超高速スキャルパー ──
+  { id:'blitz', name:'BLITZ', emoji:'⚡', tf:'1m', style:'trend',  cat:'1分モメンタム超高速', turbo:true,
+    desc:'1分足モメンタムバーストを30秒単位で狩る超高速スキャルパー。連続陽線/陰線の勢いに飛び乗る。', philosophy:'勢いは全て。3本連続で同方向に動いたら乗れ。考えるな、感じろ。0.05%でも取れれば勝ちだ。',
+    quotes:{ watching:'30秒ごとに1分足を凝視中...モメンタムを嗅ぎ取る。', ready:'連続足が揃ってきた...勢いが来るぞ！',
+             holding:'モメンタムに乗った！1分以内に利確する。', tp:'モメンタムバースト成功！0.05%でも利益は利益だ。', sl:'勢い消失。即撤退。次の波を待つ。' }},
+  { id:'flash', name:'FLASH', emoji:'💥', tf:'1m', style:'trend',  cat:'1分出来高スパイク超高速', turbo:true,
+    desc:'出来高が急増した瞬間に飛び乗る超高速スキャルパー。30秒サイクルで出来高サージを監視。', philosophy:'出来高は嘘をつかない。平均の2倍の出来高が来たらそれが方向だ。迷わず乗れ。',
+    quotes:{ watching:'出来高を30秒ごとに監視中...サージを待つ。', ready:'出来高が増加中...爆発の予兆だ！',
+             holding:'出来高サージに乗った！方向は合っている。', tp:'出来高サージ読み的中！', sl:'出来高がダマシだった。即撤退。' }},
+  { id:'turbo', name:'TURBO', emoji:'🔥', tf:'1m', style:'counter', cat:'1分RSI瞬間リバーサル超高速', turbo:true,
+    desc:'1分足RSIの極値(20以下/80以上)で瞬間逆張りする超高速スキャルパー。30秒で判定し即エントリー。', philosophy:'1分RSIが20を切ったら買え、80を超えたら売れ。単純だが最強。超短期の歪みは必ず戻る。',
+    quotes:{ watching:'1分RSIを30秒ごとに監視中...極値を狙う。', ready:'RSIが極端に振れてきた...もう少し！',
+             holding:'RSI極値からのリバーサル開始！', tp:'RSI瞬間リバーサル的中！', sl:'RSIがさらに極端化。即撤退。' }},
 ];
 
 // ── Mother bot IDs (for child dormancy mechanism) ──
@@ -5378,6 +5393,10 @@ const BOT_DEFAULT_PARAMS = {
   band:  { bbPeriod:20, bbMult:1.8, bbMult3:2.5, rsiOB:60, rsiOS:40, bbWidthMin:0.15, tpPct:0.08, slPct:0.06, tpAtrMult:0.5, slAtrMult:0.25, trailAtrMult:0.4, timeoutMin:3, cooldownMin:0.3 },
   // MA壁バウンス: タッチ判定幅拡大
   wall:  { maTouchPct:0.15, maBouncePct:0.02, rsiConfirm:true, rsiOB:60, rsiOS:40, tpPct:0.10, slPct:0.07, tpAtrMult:0.6, slAtrMult:0.3, trailAtrMult:0.5, timeoutMin:5, cooldownMin:0.5 },
+  // ── TURBO TRIO: 超高速30秒サイクルスキャルパー ──
+  blitz: { momBars:3, momThresh:0.03, rsiMin:35, rsiMax:65, tpPct:0.05, slPct:0.035, tpAtrMult:0.35, slAtrMult:0.18, trailAtrMult:0.3, timeoutMin:1.5, cooldownMin:0.1 },
+  flash: { volSurgeMult:1.8, volLookback:10, deltaConfirm:true, tpPct:0.06, slPct:0.04, tpAtrMult:0.4, slAtrMult:0.2, trailAtrMult:0.3, timeoutMin:2, cooldownMin:0.1 },
+  turbo: { rsiPeriod:7, rsiExtremeLow:22, rsiExtremeHigh:78, bbConfirm:true, tpPct:0.05, slPct:0.035, tpAtrMult:0.35, slAtrMult:0.18, trailAtrMult:0.3, timeoutMin:1.5, cooldownMin:0.1 },
 };
 
 // Generate child bot default params — バリアント戦略ベースの独立パラメータ
@@ -7053,6 +7072,139 @@ function checkBotEntry(def, state, price, now){
     }
 
     // ════════════════════════════════════════════════
+    // ⚡ BLITZ — 1分モメンタムバースト超高速スキャル（30秒サイクル）
+    // ════════════════════════════════════════════════
+    case 'blitz': {
+      const kl = KL[tf]();
+      if (!kl || kl.length < 10) { state.status = 'watching'; break; }
+      const cl = kl.map(k => parseFloat(k[4]));
+      const op = kl.map(k => parseFloat(k[1]));
+      const momN = p.momBars || 3;
+      const momTh = p.momThresh || 0.03; // 0.03%の連続移動
+      // 直近N本の方向一致チェック（連続陽線/陰線）
+      const recent = cl.slice(-momN);
+      const recentOp = op.slice(-momN);
+      let bullCount = 0, bearCount = 0, totalMove = 0;
+      for (let i = 0; i < recent.length; i++) {
+        const move = ((recent[i] - recentOp[i]) / recentOp[i]) * 100;
+        totalMove += move;
+        if (recent[i] > recentOp[i]) bullCount++;
+        else bearCount++;
+      }
+      // RSI確認（極端すぎる場合はスキップ = 天井/底掴み防止）
+      const rsi = calcRSI(cl, 7);
+      const rsiMin = p.rsiMin || 35;
+      const rsiMax = p.rsiMax || 65;
+      // 現在の1分足の出来高確認
+      const lastVol = parseFloat(kl[kl.length-1][5]);
+      const avgVol5 = kl.slice(-5).reduce((s,k) => s + parseFloat(k[5]), 0) / 5;
+      const volOk = lastVol >= avgVol5 * 0.7; // 出来高が平均の70%以上あれば
+      if (bullCount === momN && totalMove >= momTh && rsi < rsiMax && rsi > 30 && volOk) {
+        signal = 'LONG';
+        reason = `⚡${momN}本連続陽線 移動${totalMove.toFixed(3)}% RSI${rsi.toFixed(0)} Vol${(lastVol/avgVol5).toFixed(1)}x`;
+      } else if (bearCount === momN && totalMove <= -momTh && rsi > rsiMin && rsi < 70 && volOk) {
+        signal = 'SHORT';
+        reason = `⚡${momN}本連続陰線 移動${totalMove.toFixed(3)}% RSI${rsi.toFixed(0)} Vol${(lastVol/avgVol5).toFixed(1)}x`;
+      } else if ((bullCount >= momN-1 && totalMove > 0) || (bearCount >= momN-1 && totalMove < 0)) {
+        const pendDir = totalMove > 0 ? 'LONG' : 'SHORT';
+        setReadyOrSignal(pendDir, price, `⚡モメンタム構築中(${bullCount}B/${bearCount}S) ${totalMove.toFixed(3)}%`);
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
+    // ════════════════════════════════════════════════
+    // 💥 FLASH — 1分出来高スパイク超高速スキャル（30秒サイクル）
+    // ════════════════════════════════════════════════
+    case 'flash': {
+      const kl = KL[tf]();
+      if (!kl || kl.length < 15) { state.status = 'watching'; break; }
+      const cl = kl.map(k => parseFloat(k[4]));
+      const vols = kl.map(k => parseFloat(k[5]));
+      const lookback = p.volLookback || 10;
+      const surgeMult = p.volSurgeMult || 1.8;
+      // 出来高サージ検出
+      const avgVol = vols.slice(-lookback-1, -1).reduce((a,b) => a+b, 0) / lookback;
+      const lastVol = vols[vols.length-1];
+      const volRatio = avgVol > 0 ? lastVol / avgVol : 1;
+      // 方向判定: 直近足の方向 + デルタ
+      const lastClose = cl[cl.length-1];
+      const lastOpen = parseFloat(kl[kl.length-1][1]);
+      const candleDir = lastClose > lastOpen ? 'LONG' : lastClose < lastOpen ? 'SHORT' : null;
+      // RSI方向確認
+      const rsi = calcRSI(cl, 7);
+      const delta = inds.delta;
+      const deltaMatch = !p.deltaConfirm || (delta && ((candleDir === 'LONG' && delta.cls === 'bull') || (candleDir === 'SHORT' && delta.cls === 'bear')));
+      if (volRatio >= surgeMult && candleDir && deltaMatch) {
+        signal = candleDir;
+        reason = `💥出来高${volRatio.toFixed(1)}xサージ ${candleDir==='LONG'?'陽線':'陰線'} RSI${rsi.toFixed(0)}${delta?' '+delta.badge:''}`;
+      } else if (volRatio >= surgeMult * 0.75 && candleDir) {
+        setReadyOrSignal(candleDir, price, `💥出来高${volRatio.toFixed(1)}x(サージ接近) RSI${rsi.toFixed(0)}`);
+      } else if (volRatio >= surgeMult * 0.6 && candleDir) {
+        setReadyOrSignal(candleDir, price, `💥出来高上昇中${volRatio.toFixed(1)}x RSI${rsi.toFixed(0)}`);
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
+    // ════════════════════════════════════════════════
+    // 🔥 TURBO — 1分RSI瞬間リバーサル超高速スキャル（30秒サイクル）
+    // ════════════════════════════════════════════════
+    case 'turbo': {
+      const kl = KL[tf]();
+      if (!kl || kl.length < 15) { state.status = 'watching'; break; }
+      const cl = kl.map(k => parseFloat(k[4]));
+      const rsiPeriod = p.rsiPeriod || 7;
+      const rsi = calcRSI(cl, rsiPeriod);
+      const rsiLow = p.rsiExtremeLow || 22;
+      const rsiHigh = p.rsiExtremeHigh || 78;
+      // BB確認（任意）
+      let bbConfirmOk = true;
+      if (p.bbConfirm) {
+        const bbP = 20;
+        const bbSlice = cl.slice(-bbP);
+        const bbMid = bbSlice.reduce((a,b) => a+b, 0) / bbP;
+        const bbStd = Math.sqrt(bbSlice.reduce((s,v) => s + Math.pow(v - bbMid, 2), 0) / bbP);
+        const bbLower = bbMid - 1.8 * bbStd;
+        const bbUpper = bbMid + 1.8 * bbStd;
+        // RSI低 + 価格がBB下限付近 → OK, RSI高 + 価格がBB上限付近 → OK
+        if (rsi <= rsiLow && price > bbMid) bbConfirmOk = false; // RSI低いのに価格が高い → ダマシ
+        if (rsi >= rsiHigh && price < bbMid) bbConfirmOk = false; // RSI高いのに価格が低い → ダマシ
+      }
+      // 直近2本の反転確認（ヒゲの方向）
+      const last2 = kl.slice(-2);
+      const prevDir = parseFloat(last2[0][4]) - parseFloat(last2[0][1]); // prev candle dir
+      const currDir = parseFloat(last2[1][4]) - parseFloat(last2[1][1]); // current candle dir
+      if (rsi <= rsiLow && bbConfirmOk) {
+        if (currDir > 0) { // 現在足が陽線（反転開始）
+          signal = 'LONG';
+          reason = `🔥RSI${rsi.toFixed(0)}極低値 + 陽線反転 BB${bbConfirmOk?'✓':'✗'}`;
+        } else {
+          setReadyOrSignal('LONG', price, `🔥RSI${rsi.toFixed(0)}(極低値接近)反転待ち`);
+        }
+      } else if (rsi >= rsiHigh && bbConfirmOk) {
+        if (currDir < 0) { // 現在足が陰線（反転開始）
+          signal = 'SHORT';
+          reason = `🔥RSI${rsi.toFixed(0)}極高値 + 陰線反転 BB${bbConfirmOk?'✓':'✗'}`;
+        } else {
+          setReadyOrSignal('SHORT', price, `🔥RSI${rsi.toFixed(0)}(極高値接近)反転待ち`);
+        }
+      } else if (rsi <= rsiLow + 5) {
+        setReadyOrSignal('LONG', price, `🔥RSI${rsi.toFixed(0)}低下中(${rsiLow}接近)`);
+      } else if (rsi >= rsiHigh - 5) {
+        setReadyOrSignal('SHORT', price, `🔥RSI${rsi.toFixed(0)}上昇中(${rsiHigh}接近)`);
+      } else {
+        state.status = 'watching';
+        state.readyDetail = null;
+      }
+      break;
+    }
+
+    // ════════════════════════════════════════════════
     // 独立バリアント戦略（母botとは完全に異なるロジック）
     // ════════════════════════════════════════════════
 
@@ -7596,6 +7748,102 @@ function botEvalAndSave(){
   botEvalAll();
   _botSaveCounter++;
   if(_botSaveCounter % 10 === 0) saveBotArena(); // save every ~30s if 3s interval
+}
+
+// ═══════════════════════════════════════════════
+// TURBO TRIO: 30秒専用ティックループ + 強制エントリー保証
+// ═══════════════════════════════════════════════
+let turboInterval = null;
+const TURBO_BOT_IDS = ['blitz', 'flash', 'turbo'];
+
+function turboTick(){
+  if(!S.price) return;
+  const now = Date.now();
+  // Phase 1: ターボbot群を30秒ごとに評価
+  const allBots = [...BOT_DEFS, ...BOT_CHILDREN];
+  const turboBots = allBots.filter(d => d.turbo || TURBO_BOT_IDS.includes(d.strategy || d.id));
+  turboBots.forEach(def => {
+    const state = botStates[def.id];
+    if(state) evaluateBot(def, state);
+  });
+  // Phase 2: 強制エントリー保証 — 常に最低2体は取引中であることを保証
+  ensureActiveTrading(now);
+  if(botArenaVisible) renderBotArena();
+}
+
+function ensureActiveTrading(now){
+  // 全botの中でholding状態のものをカウント
+  const allBots = [...BOT_DEFS, ...BOT_CHILDREN];
+  const holdingBots = allBots.filter(d => {
+    const st = botStates[d.id];
+    return st && st.position;
+  });
+  // 最低2体がholding中なら何もしない
+  if(holdingBots.length >= 2) return;
+  // turbo botのうちwatching状態のものを強制エントリー候補にする
+  const turboCandidates = allBots.filter(d => {
+    if(!d.turbo && !TURBO_BOT_IDS.includes(d.strategy || d.id)) return false;
+    const st = botStates[d.id];
+    if(!st || st.position) return false;
+    // クールダウン中はスキップ
+    if(st.lastTradeTime && (now - st.lastTradeTime) < (st.params.cooldownMin||0.1)*60000) return false;
+    return true;
+  });
+  if(turboCandidates.length === 0) return;
+  // 不足分だけ強制エントリー
+  const needed = Math.min(2 - holdingBots.length, turboCandidates.length);
+  const price = S.price;
+  if(!price || price <= 0) return;
+  for(let i = 0; i < needed; i++){
+    const def = turboCandidates[i];
+    const state = botStates[def.id];
+    if(!state) continue;
+    const p = state.params;
+    const tf = def.tf || '1m';
+    const r = botComputeTF(tf);
+    if(!r) continue;
+    // 方向決定: スコアベース + RSI + 直近足方向の多数決
+    const score = r.score;
+    const rsi = r.rsi || 50;
+    const kl = KL[tf]();
+    let forceDir = null;
+    let forceReason = '';
+    if(kl && kl.length >= 3) {
+      const last3 = kl.slice(-3);
+      const bullCandles = last3.filter(k => parseFloat(k[4]) > parseFloat(k[1])).length;
+      const bearCandles = 3 - bullCandles;
+      // 3つの投票: スコア、RSI、直近足
+      let longVotes = 0, shortVotes = 0;
+      if(score >= 50) longVotes++; else shortVotes++;
+      if(rsi <= 50) longVotes++; else shortVotes++; // RSI低→反発LONG
+      if(bullCandles >= 2) longVotes++; else shortVotes++;
+      forceDir = longVotes >= 2 ? 'LONG' : 'SHORT';
+      forceReason = `🚨強制エントリー スコア${score} RSI${rsi.toFixed(0)} 足${bullCandles}B/${bearCandles}S`;
+    } else {
+      forceDir = score >= 50 ? 'LONG' : 'SHORT';
+      forceReason = `🚨強制エントリー スコア${score}`;
+    }
+    // エントリー実行
+    const { tp, sl } = calcDynamicTPSL(price, forceDir, tf, p);
+    const entryFP = createMarketFingerprint(tf);
+    const entrySnap = captureMarketSnapshot(tf);
+    const entryConf = assessConfidence(def, entrySnap, forceDir);
+    const levInfo = selectLeverage(entryConf);
+    state.position = { dir:forceDir, entry:price, time:now, tp, sl, entryReason:forceReason, trailingActive:false, trailingTriggered:false, fingerprint:entryFP, lev:levInfo.lev, levLabel:levInfo.label };
+    state.status = 'holding';
+    state.readyDetail = null;
+    state.lastMsg = `${def.name}が${forceDir}で強制エントリー！ @ $${price.toLocaleString('en',{maximumFractionDigits:0})} [${levInfo.label}]`;
+    addBotTradeLog(def, 'entry', forceDir, price, forceReason);
+    sendBotNotification(def, 'entry', { dir:forceDir, price, reason:forceReason, lev:levInfo.lev });
+    console.log(`[TURBO-FORCE] ${def.name}: ${forceDir} @ $${price} (${forceReason})`);
+  }
+}
+
+function startTurboLoop(){
+  if(turboInterval) clearInterval(turboInterval);
+  // 30秒ごとにターボbot群を評価
+  turboInterval = setInterval(turboTick, 30000);
+  console.log('[TURBO] 30秒サイクル超高速ティックループ開始 (BLITZ/FLASH/TURBO)');
 }
 
 // ═══════════════════════════════════════════════

@@ -7842,6 +7842,12 @@ function renderLeaderboard(){
       <div id="catExpand_${catKey}" class="ba-cat-expand" style="display:none;"></div>
     </div>`;
   }).join('');
+  // カテゴリ展開状態を復元（コンテンツを再生成）
+  if(_expandedCat){
+    const savedCat = _expandedCat;
+    _expandedCat = null; // toggleが正しく動くようにリセット
+    toggleCategoryExpand(savedCat);
+  }
 }
 
 let _expandedCat = null;
@@ -7931,6 +7937,16 @@ function renderBotCards(){
   }
 
   el.innerHTML = html;
+  // 展開状態を復元（renderで再描画されるたびにDOMが置き換わるため）
+  if(_expandedBotId){
+    const detailEl = document.getElementById('botDetail-' + _expandedBotId);
+    const cardEl = document.getElementById('bot-card-' + _expandedBotId);
+    if(detailEl) detailEl.style.display = 'block';
+    if(cardEl){
+      const icon = cardEl.querySelector('.ba-bot-expand-icon');
+      if(icon) icon.style.transform = 'rotate(90deg)';
+    }
+  }
 }
 
 function renderSingleBotCard(def, bs, isFull){

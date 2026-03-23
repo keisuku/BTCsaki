@@ -6589,21 +6589,21 @@ function checkBotEntry(def, state, price, now){
   // Phase 7a: Ready状態の確認カウント強化
   // シグナルが同じ方向を持続する場合、confirmCount++して確認エントリー
   // ═══════════════════════════════════════════════
+  // 前回のready方向を記録（戦略switchでの再ready検出用）
+  const _prevReadyDir = (state.status === 'ready' && state.readyDetail) ? state.readyDetail.dir : null;
+
   if(state.status === 'ready' && state.readyDetail && state.readyDetail.confirmCount !== undefined) {
     const rd = state.readyDetail;
-    const currentDir = score >= 52 ? 'LONG' : score <= 48 ? 'SHORT' : null;
+    // 戦略の閾値に合わせた柔軟な方向判定（ハードコード52/48を廃止）
+    const currentDir = score >= (effectiveScoreEntry - 3) ? 'LONG' : score <= (103 - effectiveScoreEntry) ? 'SHORT' : null;
     if(currentDir === rd.dir) {
-      rd.confirmCount = (rd.confirmCount || 0) + 1;
-      if(rd.confirmCount >= 1) {
-        signal = rd.dir;
-        reason = rd.reason + ` (${rd.confirmTotal}回連続確認で自動エントリー)`;
-        state.readyDetail = null;
-        fromReadyConfirm = true; // ready確認済み → ポートフォリオ/確認ゲート再通過不要
-        // Phase 7a: 確認カウントによるエントリーはここで確定し、switch内のロジックをスキップ
-      }
+      // 同方向の確認 → 即エントリー（1tick確認で十分）
+      signal = rd.dir;
+      reason = rd.reason + ' (確認エントリー)';
+      state.readyDetail = null;
+      fromReadyConfirm = true;
     } else if(currentDir && currentDir !== rd.dir) {
       // シグナルが逆転 → ready解除
-      rd.confirmCount = 0;
       state.status = 'watching';
       state.readyDetail = null;
     }
@@ -6649,6 +6649,20 @@ function checkBotEntry(def, state, price, now){
     }
   }
 
+  // ヘルパー: 戦略がready設定しようとした時、既に同方向readyなら即シグナル化
+  function setReadyOrSignal(dir, target, reasonStr, confirmSource) {
+    if(_prevReadyDir === dir) {
+      // 前回と同じ方向 → 即エントリー（ready無限ループ防止）
+      signal = dir;
+      reason = reasonStr + ' (再確認エントリー)';
+      state.readyDetail = null;
+      fromReadyConfirm = true;
+    } else {
+      state.status = 'ready';
+      state.readyDetail = { dir, target, reason: reasonStr, confirmCount:0, confirmTotal:2, confirmSource: confirmSource||'pre' };
+    }
+  }
+
   const strategyKey = def.strategy || def.id;
   switch(strategyKey){
     case 'john': { // 5m trend follow — 攻撃的
@@ -6659,11 +6673,9 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `スコア${score}${inds.trend?' + '+inds.trend.val:''}` + (inds.delta?` + ${inds.delta.badge}`:'');
       } else if(score >= (effectiveScoreEntry-5)){
-        state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}で上昇準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('LONG', price, `スコア${score}で上昇準備中`);
       } else if(score <= (100-effectiveScoreEntry+5)){
-        state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}で下落準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('SHORT', price, `スコア${score}で下落準備中`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6680,11 +6692,9 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `RSI${rsi.toFixed(0)}${rsi>=p.rsiOB?'(買われすぎ)':''}${bb&&bb.cls==='bear'?' + BB上限':''}`;
       } else if(rsi <= p.rsiOS+8){
-        state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`RSI${rsi.toFixed(0)}が売られすぎに接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('LONG', price, `RSI${rsi.toFixed(0)}が売られすぎに接近`);
       } else if(rsi >= p.rsiOB-8){
-        state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`RSI${rsi.toFixed(0)}が買われすぎに接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('SHORT', price, `RSI${rsi.toFixed(0)}が買われすぎに接近`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6699,11 +6709,9 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `15分スコア${score}${inds.trend?' + '+inds.trend.val:''}` + (inds.vwap?` + VWAP${inds.vwap.cls}`:'');
       } else if(score >= (effectiveScoreEntry-8)){
-        state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`15分スコア${score}でLONG準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('LONG', price, `15分スコア${score}でLONG準備中`);
       } else if(score <= (100-effectiveScoreEntry+8)){
-        state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`15分スコア${score}でSHORT準備中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('SHORT', price, `15分スコア${score}でSHORT準備中`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6723,9 +6731,8 @@ function checkBotEntry(def, state, price, now){
         signal = frPct > 0 ? 'SHORT' : 'LONG';
         reason = `FR${frPct>=0?'+':''}${frPct.toFixed(3)}%の歪み + RSI${rsi.toFixed(0)}`;
       } else if(rsi <= p.rsiOS+10 || rsi >= p.rsiOB-10 || Math.abs(frPct) >= p.frThresh * 0.6){
-        state.status = 'ready';
         const dir = rsi <= 50 ? 'LONG' : 'SHORT';
-        state.readyDetail = { dir, target:price, reason:`RSI${rsi.toFixed(0)}/FR${frPct.toFixed(3)}%で接近中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(dir, price, `RSI${rsi.toFixed(0)}/FR${frPct.toFixed(3)}%で接近中`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6744,8 +6751,7 @@ function checkBotEntry(def, state, price, now){
         signal = r1h.signal;
         reason = `1Hスコア${r1h.score}で${signal}${r4h?` 4H:${r4h.signal}`:''}`;
       } else if(aligned){
-        state.status = 'ready';
-        state.readyDetail = { dir:r1h.signal, target:price, reason:`1H+4H方向一致(${r1h.signal}) スコア${r1h.score}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(r1h.signal, price, `1H+4H方向一致(${r1h.signal}) スコア${r1h.score}`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6763,8 +6769,7 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `F&G=${fg}(極強欲) + L/S${ls.toFixed(0)}%(ロング過多)` + (bb?` + ${bb.badge}`:'');
       } else if(fg <= p.fgExtreme+5 || fg >= p.fgGreed-5){
-        state.status = 'ready';
-        state.readyDetail = { dir: fg<=40?'LONG':'SHORT', target:price, reason:`F&G=${fg}で極値接近中`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(fg<=40?'LONG':'SHORT', price, `F&G=${fg}で極値接近中`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6780,11 +6785,9 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `スコア${score}${delta?' + Delta'+delta.badge:''}`;
       } else if(score >= (effectiveScoreEntry-8)){
-        state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:price, reason:`スコア${score}でLONG準備中${delta?' Delta:'+delta.cls:''}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('LONG', price, `スコア${score}でLONG準備中${delta?' Delta:'+delta.cls:''}`);
       } else if(score <= (100-effectiveScoreEntry+8)){
-        state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:price, reason:`スコア${score}でSHORT準備中${delta?' Delta:'+delta.cls:''}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('SHORT', price, `スコア${score}でSHORT準備中${delta?' Delta:'+delta.cls:''}`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6802,8 +6805,7 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `RSI${rsi.toFixed(0)}(買われすぎ) + ATR急拡大(${atrInd.badge})`;
       } else if(atrSpike && (rsi <= p.rsiOS+5 || rsi >= p.rsiOB-5)){
-        state.status = 'ready';
-        state.readyDetail = { dir: rsi<=50?'LONG':'SHORT', target:price, reason:`ATR急拡大+RSI${rsi.toFixed(0)}で極値接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(rsi<=50?'LONG':'SHORT', price, `ATR急拡大+RSI${rsi.toFixed(0)}で極値接近`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -6881,12 +6883,10 @@ function checkBotEntry(def, state, price, now){
       }
       // ── Ready状態（ゾーン接近中）──
       else if (rangePos <= entryZone + 10) {
-        state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:rangeLow, reason:`レンジ下限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('LONG', rangeLow, `レンジ下限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`);
       }
       else if (rangePos >= (100 - entryZone - 10)) {
-        state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:rangeHigh, reason:`レンジ上限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('SHORT', rangeHigh, `レンジ上限接近${rangePos.toFixed(0)}%(${rangeLow.toFixed(0)}〜${rangeHigh.toFixed(0)}) RSI${rsi.toFixed(0)}`);
       }
       else {
         // レンジ中央部 → 何もしない（壁に近づくまで待つ）
@@ -6955,12 +6955,10 @@ function checkBotEntry(def, state, price, now){
       }
       // ── 接近中 → Ready ──
       else if (bbPos <= 8) {
-        state.status = 'ready';
-        state.readyDetail = { dir:'LONG', target:bbLower2, reason:`BB下限接近 bbPos${bbPos.toFixed(0)}% RSI${rsi.toFixed(0)} 幅${bbWidth.toFixed(2)}%`, confirmCount:0, confirmTotal:3, confirmSource:'pre' };
+        setReadyOrSignal('LONG', bbLower2, `BB下限接近 bbPos${bbPos.toFixed(0)}% RSI${rsi.toFixed(0)} 幅${bbWidth.toFixed(2)}%`);
       }
       else if (bbPos >= 92) {
-        state.status = 'ready';
-        state.readyDetail = { dir:'SHORT', target:bbUpper2, reason:`BB上限接近 bbPos${bbPos.toFixed(0)}% RSI${rsi.toFixed(0)} 幅${bbWidth.toFixed(2)}%`, confirmCount:0, confirmTotal:3, confirmSource:'pre' };
+        setReadyOrSignal('SHORT', bbUpper2, `BB上限接近 bbPos${bbPos.toFixed(0)}% RSI${rsi.toFixed(0)} 幅${bbWidth.toFixed(2)}%`);
       }
       else {
         state.status = 'watching';
@@ -7036,20 +7034,17 @@ function checkBotEntry(def, state, price, now){
         // クロスやPOと同方向なら信頼度UP、逆方向はブロック
         if (crossDir && crossDir !== sigWall.dir) {
           // クロスと逆 → readyに格下げ
-          state.status = 'ready';
-          state.readyDetail = { dir:sigWall.dir, target:sigWall.val, reason:sigWall.reason + ' (MAクロス逆方向で待機)', confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+          setReadyOrSignal(sigWall.dir, sigWall.val, sigWall.reason + ' (MAクロス逆方向で待機)');
         } else {
           signal = sigWall.dir;
           reason = sigWall.reason + (crossDir===sigWall.dir ? ' + MAクロス一致🔥' : '') + (poDir===sigWall.dir ? ' + PO一致🔥' : '');
         }
       } else if (readyWall) {
         const approachDir = readyWall.dist < 0 ? 'LONG' : 'SHORT';
-        state.status = 'ready';
-        state.readyDetail = { dir:approachDir, target:readyWall.val, reason:`${readyWall.ma}($${readyWall.val.toFixed(0)})接近中 乖離${readyWall.dist.toFixed(3)}%`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(approachDir, readyWall.val, `${readyWall.ma}($${readyWall.val.toFixed(0)})接近中 乖離${readyWall.dist.toFixed(3)}%`);
       } else if (poDir && wallPO.score >= 4) {
         // MA壁タッチなくてもPO成立中ならreadyにする
-        state.status = 'ready';
-        state.readyDetail = { dir:poDir, target:price, reason:`PO成立(${wallPO.score}/5) — MA壁タッチ待ち`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(poDir, price, `PO成立(${wallPO.score}/5) — MA壁タッチ待ち`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7070,8 +7065,7 @@ function checkBotEntry(def, state, price, now){
       const atrExpanding = atrInd && atrInd.cls !== 'neutral';
       if (!bb || !atrExpanding) {
         if (bb && !atrExpanding) {
-          state.status = 'ready';
-          state.readyDetail = { dir: bb.cls === 'bull' ? 'LONG' : 'SHORT', target: price, reason: 'ATRボラ拡大待ち', confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+          setReadyOrSignal(bb.cls === 'bull' ? 'LONG' : 'SHORT', price, 'ATRボラ拡大待ち');
         } else {
           state.status = 'watching';
           state.readyDetail = null;
@@ -7097,8 +7091,7 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `スコア${score}ブレイクダウン + ATR拡大`;
       } else {
-        state.status = 'ready';
-        state.readyDetail = { dir: score > 50 ? 'LONG' : 'SHORT', target: price, reason: `ブレイク条件構築中(スコア${score})`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(score > 50 ? 'LONG' : 'SHORT', price, `ブレイク条件構築中(スコア${score})`);
       }
       break;
     }
@@ -7128,11 +7121,9 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `BB上限タッチ + RSI${rsi.toFixed(0)} → 平均回帰`;
       } else if (rsi <= (p.rsiOS||38) + 8) {
-        state.status = 'ready';
-        state.readyDetail = { dir: 'LONG', target: price, reason: `RSI${rsi.toFixed(0)}売られすぎ接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('LONG', price, `RSI${rsi.toFixed(0)}売られすぎ接近`);
       } else if (rsi >= (p.rsiOB||78) - 8) {
-        state.status = 'ready';
-        state.readyDetail = { dir: 'SHORT', target: price, reason: `RSI${rsi.toFixed(0)}買われすぎ接近`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal('SHORT', price, `RSI${rsi.toFixed(0)}買われすぎ接近`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7158,8 +7149,7 @@ function checkBotEntry(def, state, price, now){
         signal = 'SHORT';
         reason = `Delta売り優勢(${delta.badge}) + 出来高${volSurge.toFixed(1)}倍サージ`;
       } else if (delta && delta.cls !== 'neutral' && volSurge >= surgeThresh * 0.8) {
-        state.status = 'ready';
-        state.readyDetail = { dir: delta.cls === 'bull' ? 'LONG' : 'SHORT', target: price, reason: `Delta${delta.badge} + Vol${volSurge.toFixed(1)}x(サージ接近)`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(delta.cls === 'bull' ? 'LONG' : 'SHORT', price, `Delta${delta.badge} + Vol${volSurge.toFixed(1)}x(サージ接近)`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7195,8 +7185,7 @@ function checkBotEntry(def, state, price, now){
         reason = `${shortVotes}TF合意SHORT [${tfDetails.join(' ')}] 平均スコア${avgScore.toFixed(0)}`;
       } else if (longVotes >= 1 || shortVotes >= 1) {
         const pendingDir = longVotes > shortVotes ? 'LONG' : 'SHORT';
-        state.status = 'ready';
-        state.readyDetail = { dir: pendingDir, target: price, reason: `TF合意不足(${longVotes}L/${shortVotes}S/${totalVotes}TF)`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(pendingDir, price, `TF合意不足(${longVotes}L/${shortVotes}S/${totalVotes}TF)`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7232,8 +7221,7 @@ function checkBotEntry(def, state, price, now){
         signal = sentimentDir;
         reason = `センチメント逆張り: ${reasons.join(' + ')}`;
       } else if (sentimentScore >= 1 && sentimentDir) {
-        state.status = 'ready';
-        state.readyDetail = { dir: sentimentDir, target: price, reason: `センチメント構築中(${sentimentScore}/3): ${reasons.join('+')}`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+        setReadyOrSignal(sentimentDir, price, `センチメント構築中(${sentimentScore}/3): ${reasons.join('+')}`);
       } else {
         state.status = 'watching';
         state.readyDetail = null;
@@ -7256,8 +7244,7 @@ function checkBotEntry(def, state, price, now){
           // 条件の半分以上が一致 → ready
           const bullMatch = genes.bull.filter(g => INDICATOR_GENES[g] ? INDICATOR_GENES[g](r, p, inds) : false).length;
           if (bullMatch >= Math.ceil(genes.bull.length * 0.6)) {
-            state.status = 'ready';
-            state.readyDetail = { dir: 'LONG', target: price, reason: `🧬${bullMatch}/${genes.bull.length}条件一致`, confirmCount:0, confirmTotal:2, confirmSource:'pre' };
+            setReadyOrSignal('LONG', price, `🧬${bullMatch}/${genes.bull.length}条件一致`);
           } else {
             state.status = 'watching';
             state.readyDetail = null;

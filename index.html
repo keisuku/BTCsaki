@@ -5440,16 +5440,11 @@ function initBotArena(){
   // Purge anomalous trades caused by cross-coin price contamination (|pnlPct| > 50% is impossible for scalp/swing bots)
   Object.values(botStates).forEach(bs=>{
     if(!bs || !bs.trades) return;
-    const before = bs.trades.length;
     bs.trades = bs.trades.filter(t=> Math.abs(t.pnlPct) <= 50);
-    if(bs.trades.length < before){
-      // Recalculate totalPnlPct/wins/losses from clean trades
-      bs.totalWins = bs.trades.filter(t=>t.win).length;
-      bs.totalLosses = bs.trades.filter(t=>!t.win).length;
-      bs.totalPnlPct = +(bs.trades.reduce((s,t)=>s+t.pnlPct, 0)).toFixed(3);
-      // Rebuild dailyStats from clean trades
-      bs.dailyStats = [];
-    }
+    // 毎回起動時にtrades配列から累計P&L/勝敗を再計算（ゼロリセットバグ防止）
+    bs.totalWins = bs.trades.filter(t=>t.win).length;
+    bs.totalLosses = bs.trades.filter(t=>!t.win).length;
+    bs.totalPnlPct = +(bs.trades.reduce((s,t)=>s+(t.pnlPct||0), 0)).toFixed(3);
     // Also discard positions with suspicious entry prices (will be validated on next tick)
     if(bs.position && bs.position.entry <= 0) bs.position = null;
   });

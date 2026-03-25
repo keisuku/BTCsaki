@@ -5185,12 +5185,41 @@ function promoteChildToMother(childId){
 
 // ── Child variant definitions — 各バリアントは完全に独立した戦略 ──
 const CHILD_VARIANTS = [
-  { suffix:'_agg',  label:'ブレイクアウト型', variantStrategy:'breakout' },
-  { suffix:'_con',  label:'平均回帰型',       variantStrategy:'meanrev' },
-  { suffix:'_fast', label:'スキャルピング型', variantStrategy:'deltascalp' },
-  { suffix:'_slow', label:'マルチTF合成型',   variantStrategy:'multitf' },
-  { suffix:'_risk', label:'逆張りマクロ型',   variantStrategy:'sentiment' },
+  { suffix:'_agg',  label:'ブレイクアウト型', variantStrategy:'breakout',   tfShift:1 },
+  { suffix:'_con',  label:'平均回帰型',       variantStrategy:'meanrev',    tfShift:-1 },
+  { suffix:'_fast', label:'スキャルピング型', variantStrategy:'deltascalp', tfShift:0 },
+  { suffix:'_slow', label:'マルチTF合成型',   variantStrategy:'multitf',    tfShift:2 },
+  { suffix:'_risk', label:'逆張りマクロ型',   variantStrategy:'sentiment',  tfShift:1 },
 ];
+
+// ── 子botのTFを母とずらすためのTF階層 ──
+const TF_LADDER = ['1m', '3m', '5m', '15m', '1h', '4h'];
+function shiftTF(baseTF, shift) {
+  const idx = TF_LADDER.indexOf(baseTF);
+  if(idx < 0) return baseTF;
+  const newIdx = Math.max(0, Math.min(TF_LADDER.length - 1, idx + shift));
+  return TF_LADDER[newIdx];
+}
+
+// ── botIDからハッシュベースの決定的乱数を生成 ──
+function botIdHash(id) {
+  let h = 0;
+  for(let i = 0; i < id.length; i++) { h = ((h << 5) - h + id.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+
+// ── 子bot個別の多様性パラメータを生成 ──
+function generateDiversity(id) {
+  const h = botIdHash(id);
+  return {
+    scoreOffset: ((h % 17) - 8),          // -8 ~ +8のスコア閾値オフセット
+    rsiOffset: ((h >> 4) % 13) - 6,       // -6 ~ +6のRSIオフセット
+    tpMult: 0.7 + ((h >> 8) % 7) * 0.1,   // 0.7x ~ 1.3xのTP倍率
+    slMult: 0.7 + ((h >> 12) % 7) * 0.1,  // 0.7x ~ 1.3xのSL倍率
+    tickDelay: (h % 5),                    // 0~4 tickのエントリー遅延
+    cooldownMult: 0.6 + ((h >> 16) % 9) * 0.1, // 0.6x ~ 1.4xのクールダウン倍率
+  };
+}
 
 // ── 各バリアント戦略の独立パラメータ（母botから継承しない）──
 const VARIANT_BASE_PARAMS = {
@@ -5229,13 +5258,16 @@ function generateChildBots(){
   const children = [];
   BOT_DEFS.filter(d=>MOTHER_BOT_IDS.includes(d.id)).forEach(mother=>{
     CHILD_VARIANTS.forEach(v=>{
+      const childId = mother.id + v.suffix;
+      const childTF = shiftTF(mother.tf, v.tfShift); // 母とは異なるTFを使用
+      const diversity = generateDiversity(childId);
       children.push({
-        id: mother.id + v.suffix,
+        id: childId,
         name: mother.name + v.label,
         emoji: mother.emoji,
-        tf: mother.tf,
-        style: mother.style,
-        cat: mother.cat,
+        tf: childTF,
+        style: v.variantStrategy === 'meanrev' || v.variantStrategy === 'sentiment' ? 'counter' : mother.style,
+        cat: `${childTF} ${v.label}`,
         strategy: v.variantStrategy, // 母botの戦略ではなく独立戦略
         motherId: mother.id,
         isChild: true,
@@ -5243,7 +5275,8 @@ function generateChildBots(){
         variantSuffix: v.suffix,
         variantStrategy: v.variantStrategy,
         paramMod: v.paramMod || {},
-        desc: mother.desc + '(' + v.label + ')',
+        diversity, // 子bot固有の多様性パラメータ
+        desc: `${childTF}足${v.label}(${mother.name}系)`,
         philosophy: mother.philosophy,
         quotes: mother.quotes,
       });
@@ -5399,15 +5432,28 @@ const BOT_DEFAULT_PARAMS = {
   turbo: { rsiPeriod:7, rsiExtremeLow:22, rsiExtremeHigh:78, bbConfirm:true, tpPct:0.05, slPct:0.035, tpAtrMult:0.35, slAtrMult:0.18, trailAtrMult:0.3, timeoutMin:1.5, cooldownMin:0.1 },
 };
 
-// Generate child bot default params — バリアント戦略ベースの独立パラメータ
-function generateChildParams(motherId, paramMod, variantStrategy, motherTf){
+// Generate child bot default params — バリアント戦略ベースの独立パラメータ + 多様性
+function generateChildParams(motherId, paramMod, variantStrategy, motherTf, childDef){
   // バリアント戦略が指定されている場合は独立パラメータを使用
   if (variantStrategy && VARIANT_BASE_PARAMS[variantStrategy]) {
     const base = JSON.parse(JSON.stringify(VARIANT_BASE_PARAMS[variantStrategy]));
     // タイムフレームに応じてタイムアウト/クールダウンをスケール
-    const tfScale = TF_TIME_SCALE[motherTf] || 1;
-    if (base.timeoutMin) base.timeoutMin = Math.round(base.timeoutMin * tfScale);
-    if (base.cooldownMin) base.cooldownMin = Math.round(base.cooldownMin * tfScale);
+    const actualTf = (childDef && childDef.tf) || motherTf;
+    const tfScale = TF_TIME_SCALE[actualTf] || 1;
+    if (base.timeoutMin) base.timeoutMin = Math.max(1, Math.round(base.timeoutMin * tfScale));
+    if (base.cooldownMin) base.cooldownMin = Math.max(0.1, +(base.cooldownMin * tfScale).toFixed(1));
+    // 多様性パラメータを適用（子bot固有の個体差）
+    if (childDef && childDef.diversity) {
+      const div = childDef.diversity;
+      if (base.scoreEntry) base.scoreEntry = Math.max(35, Math.min(70, base.scoreEntry + div.scoreOffset));
+      if (base.rsiOB) base.rsiOB = Math.min(85, base.rsiOB + div.rsiOffset);
+      if (base.rsiOS) base.rsiOS = Math.max(15, base.rsiOS - div.rsiOffset);
+      if (base.tpPct) base.tpPct = +(base.tpPct * div.tpMult).toFixed(3);
+      if (base.slPct) base.slPct = +(base.slPct * div.slMult).toFixed(3);
+      if (base.tpAtrMult) base.tpAtrMult = +(base.tpAtrMult * div.tpMult).toFixed(2);
+      if (base.slAtrMult) base.slAtrMult = +(base.slAtrMult * div.slMult).toFixed(2);
+      if (base.cooldownMin) base.cooldownMin = Math.max(0.1, +(base.cooldownMin * div.cooldownMult).toFixed(1));
+    }
     return base;
   }
   // フォールバック: 旧方式（母botベース + modifier）
@@ -5449,7 +5495,7 @@ function initBotArena(){
     // Ensure params exist
     if(!botStates[def.id].params){
       if(def.isChild){
-        botStates[def.id].params = generateChildParams(def.motherId, def.paramMod, def.variantStrategy, def.tf);
+        botStates[def.id].params = generateChildParams(def.motherId, def.paramMod, def.variantStrategy, def.tf, def);
       } else if(def.isExperimental){
         botStates[def.id].params = getExperimentalDefaultParams();
       } else {
@@ -5464,10 +5510,19 @@ function initBotArena(){
   Object.values(botStates).forEach(bs=>{
     if(!bs || !bs.trades) return;
     bs.trades = bs.trades.filter(t=> Math.abs(t.pnlPct) <= 50);
-    // 毎回起動時にtrades配列から累計P&L/勝敗を再計算（ゼロリセットバグ防止）
-    bs.totalWins = bs.trades.filter(t=>t.win).length;
-    bs.totalLosses = bs.trades.filter(t=>!t.win).length;
-    bs.totalPnlPct = +(bs.trades.reduce((s,t)=>s+(t.pnlPct||0), 0)).toFixed(3);
+    // 累計P&Lはtrades配列トリムで消失するため、保存済みの累計値を信頼する
+    // _lifetimePnl/_lifetimeWins/_lifetimeLossesに生涯累計を保持（tradesトリムの影響を受けない）
+    if(bs._lifetimePnl === undefined) {
+      // 初回マイグレーション: 既存のtotalPnlPctが0でなければそれを採用、0ならtrades合計
+      const tradesPnl = +(bs.trades.reduce((s,t)=>s+(t.pnlPct||0), 0)).toFixed(3);
+      bs._lifetimePnl = (bs.totalPnlPct && bs.totalPnlPct !== 0) ? bs.totalPnlPct : tradesPnl;
+      bs._lifetimeWins = bs.totalWins || bs.trades.filter(t=>t.win).length;
+      bs._lifetimeLosses = bs.totalLosses || bs.trades.filter(t=>!t.win).length;
+    }
+    // 生涯累計値をtotalに反映（UIはtotalPnlPctを参照）
+    bs.totalPnlPct = bs._lifetimePnl;
+    bs.totalWins = bs._lifetimeWins;
+    bs.totalLosses = bs._lifetimeLosses;
     // Also discard positions with suspicious entry prices (will be validated on next tick)
     if(bs.position && bs.position.entry <= 0) bs.position = null;
   });
@@ -6593,12 +6648,22 @@ function checkBotEntry(def, state, price, now){
     return;
   }
 
-  const score = r.score;
+  // 子bot多様性: スコアにオフセットを加え、各botが市場を異なる視点で評価
+  const div = def.diversity || null;
+  const scoreRaw = r.score;
+  const score = div ? Math.max(0, Math.min(100, scoreRaw + div.scoreOffset)) : scoreRaw;
   const inds = r.inds;
   let signal = null; // 'LONG' | 'SHORT' | null
   let reason = '';
   let readyMsg = '';
   let fromReadyConfirm = false; // ready状態から復帰したシグナルは再ゲート不要
+
+  // 子bot多様性: tickDelayでエントリータイミングをずらす（同時発火防止）
+  if(div && div.tickDelay > 0) {
+    if(!state._tickCount) state._tickCount = 0;
+    state._tickCount++;
+    if(state._tickCount % (div.tickDelay + 1) !== 0 && state.status === 'watching') return;
+  }
 
   // レジームボーナスを加味した有効スコア閾値
   const regimeBonus = state._regimeBonus || 0;
@@ -7530,6 +7595,10 @@ function checkBotExit(def, state, price, now){
     if(state._tradeHistory.length > 100) state._tradeHistory = state._tradeHistory.slice(-100);
     if(win){ state.totalWins++; } else { state.totalLosses++; }
     state.totalPnlPct = +(state.totalPnlPct + pnlPct).toFixed(3);
+    // 生涯累計も同時更新（tradesトリムで消失しない永続値）
+    if(state._lifetimePnl === undefined) state._lifetimePnl = state.totalPnlPct; else state._lifetimePnl = +(state._lifetimePnl + pnlPct).toFixed(3);
+    if(state._lifetimeWins === undefined) state._lifetimeWins = state.totalWins; else if(win) state._lifetimeWins++;
+    if(state._lifetimeLosses === undefined) state._lifetimeLosses = state.totalLosses; else if(!win) state._lifetimeLosses++;
     const levTag = posLev > 1 ? ` [${posLev}x]` : '';
     state.lastMsg = win
       ? `${def.name}が利確！ +${pnlPct.toFixed(2)}%${levTag} @ $${price.toLocaleString('en',{maximumFractionDigits:0})}`
@@ -8925,7 +8994,7 @@ function showAdminBotDetail(botId){
   const paramKeys = Object.keys(p);
   const paramsHtml = paramKeys.map(k=>{
     const defaultP = def.isChild
-      ? generateChildParams(def.motherId, def.paramMod, def.variantStrategy, def.tf)
+      ? generateChildParams(def.motherId, def.paramMod, def.variantStrategy, def.tf, def)
       : BOT_DEFAULT_PARAMS[def.id];
     const defaultVal = defaultP ? defaultP[k] : '—';
     const changed = defaultVal !== undefined && p[k] !== defaultVal;

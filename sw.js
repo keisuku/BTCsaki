@@ -2,7 +2,7 @@
 // BTCsaki Service Worker — バックグラウンド通知
 // ═══════════════════════════════════════════════
 
-const CACHE_NAME = 'btcsaki-v1';
+const CACHE_NAME = 'btcsaki-v2-realtimeplus';
 
 // インストール時: キャッシュにコアファイルを保存
 self.addEventListener('install', event => {

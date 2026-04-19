@@ -1877,6 +1877,9 @@ async function switchCoin(key){
   const tfVal = activeTf ? ({'1分':'1','5分':'5','15分':'15','1時間':'60','4時間':'240','日足':'D','週足':'W','月足':'M'}[activeTf.textContent]||'5') : '5';
   initChart(tfVal);
 
+  // Refresh window bridge for enhancement modules
+  if(typeof window.__refreshBridge === 'function') window.__refreshBridge();
+
   // データ再取得
   await fullFetch();
 }
@@ -5883,6 +5886,8 @@ function ovSelectCoin(key){
     // コインボタンactive更新（総合内での選択なのでcoin-btnのactiveは外したまま）
     document.querySelectorAll('.coin-btn[data-coin]').forEach(b =>
       b.classList.remove('active'));
+    // Refresh window bridge for enhancement modules
+    if(typeof window.__refreshBridge === 'function') window.__refreshBridge();
   }
 
   // Re-fetch 5m/15m for new focus
@@ -9646,6 +9651,7 @@ let baChartTf = '15m';
 
 function switchBaChartTf(tf) {
   baChartTf = tf;
+  window.baChartTf = tf;
   document.querySelectorAll('#baChartTfBtns button').forEach(b =>
     b.classList.toggle('active', b.dataset.ctf === tf));
   drawBaChart();
@@ -10248,8 +10254,44 @@ setTimeout(renderReportSection, 2000);
 
 // Initialize Bot Arena
 initBotArena();
+
+// ═══════════════════════════════════════════════
+// Window bridge for enhancement modules (realtime-plus / evolution-plus / arena-plus)
+// ═══════════════════════════════════════════════
+try {
+  window.currentCoin = currentCoin;
+  window.COINS = COINS;
+  window.S = S;
+  window.KL = KL;
+  window.TFCFG = TFCFG;
+  window.BOT_DEFS = BOT_DEFS;
+  window.BOT_CHILDREN = BOT_CHILDREN;
+  window.ALL_BOTS = ALL_BOTS;
+  window.MOTHER_BOT_IDS = MOTHER_BOT_IDS;
+  window.promotedBots = promotedBots;
+  window.BOT_DEFAULT_PARAMS = BOT_DEFAULT_PARAMS;
+  window.botStates = botStates;
+  window.savePromotedBots = savePromotedBots;
+  window.saveBotArena = saveBotArena;
+  window.baChartTf = baChartTf;
+  // Re-sync references after coin switching
+  window.__refreshBridge = function(){
+    window.currentCoin = currentCoin;
+    window.ALL_BOTS = ALL_BOTS;
+    window.MOTHER_BOT_IDS = MOTHER_BOT_IDS;
+    window.promotedBots = promotedBots;
+    window.botStates = botStates;
+    window.baChartTf = baChartTf;
+    if (window.RealtimePlus) window.RealtimePlus.reconnectOnCoinChange();
+  };
+} catch(e){ console.warn('[bridge] export error', e); }
 </script>
 
+<!-- ═════ Enhancement Modules (additive, non-destructive) ═════ -->
+<script src="realtime-plus.js?v=1" defer></script>
+<script src="evolution-plus.js?v=1" defer></script>
+<script src="arena-plus.js?v=1" defer></script>
+<script src="metabot.js?v=1" defer></script>
 
 </body>
 </html>

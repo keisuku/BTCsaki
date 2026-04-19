@@ -498,8 +498,18 @@
       MetaBot.init();
       injectPanel();
 
+      // Track coin for reload on switch
+      MetaBot._lastCoin = window.currentCoin;
+
       // Tick every 1 second
       setInterval(() => {
+        // Coin switch detection → reload state
+        if(MetaBot._lastCoin !== window.currentCoin){
+          MetaBot._lastCoin = window.currentCoin;
+          MetaBot.state = MetaBot._load();
+          MetaBot._ensureShape();
+          console.log('[MetaBot] coin switched → state reloaded');
+        }
         try{ MetaBot.tick(); }catch(e){ console.warn('[MetaBot] tick err:', e); }
       }, 1000);
 

@@ -10274,6 +10274,14 @@ try {
   window.savePromotedBots = savePromotedBots;
   window.saveBotArena = saveBotArena;
   window.baChartTf = baChartTf;
+  // Explicit exposures (for cross-script access)
+  window.computeTF = computeTF;
+  window.botComputeTF = botComputeTF;
+  window.drawBaChart = drawBaChart;
+  window.saveBotArena = saveBotArena;
+  window.savePromotedBots = savePromotedBots;
+  window.calcATR = typeof calcATR === 'function' ? calcATR : undefined;
+  window.calcDelta = typeof calcDelta === 'function' ? calcDelta : undefined;
   // Re-sync references after coin switching
   window.__refreshBridge = function(){
     window.currentCoin = currentCoin;

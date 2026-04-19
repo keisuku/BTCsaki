@@ -183,8 +183,10 @@
         }
       }
 
-      // 新規エントリー
-      if(!s.position){
+      // 新規エントリー (5分cooldown)
+      const lastExitTime = s.trades.length > 0 ? new Date(s.trades[s.trades.length-1].exitTime).getTime() : 0;
+      const inCooldown = lastExitTime && (now - lastExitTime) < 5 * 60 * 1000;
+      if(!s.position && !inCooldown){
         const signal = this.checkEntry();
         if(signal){
           // 確信度からレバレッジ

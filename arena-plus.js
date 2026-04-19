@@ -374,6 +374,38 @@
     </div>
   `;
 
+  const EVO_STATUS_PANEL_HTML = `
+    <div class="ap-panel" id="apEvoStatus">
+      <div class="ap-panel-title">🧬 進化ステータス</div>
+      <div class="ap-evo-grid">
+        <div class="ap-evo-cell">
+          <div class="ap-evo-lbl">GA世代</div>
+          <div class="ap-evo-val" id="apEvoGen">--</div>
+        </div>
+        <div class="ap-evo-cell">
+          <div class="ap-evo-lbl">変異率</div>
+          <div class="ap-evo-val" id="apEvoMutRate">--</div>
+        </div>
+        <div class="ap-evo-cell">
+          <div class="ap-evo-lbl">自動昇格</div>
+          <div class="ap-evo-val" id="apEvoPromoted">--</div>
+        </div>
+        <div class="ap-evo-cell">
+          <div class="ap-evo-lbl">殿堂入り</div>
+          <div class="ap-evo-val" id="apEvoHof">--</div>
+        </div>
+        <div class="ap-evo-cell">
+          <div class="ap-evo-lbl">総トレード</div>
+          <div class="ap-evo-val" id="apEvoTotalTrades">--</div>
+        </div>
+        <div class="ap-evo-cell">
+          <div class="ap-evo-lbl">次のPDCA</div>
+          <div class="ap-evo-val" id="apEvoNextPdca">--</div>
+        </div>
+      </div>
+    </div>
+  `;
+
   const INSIGHTS_PANEL_HTML = `
     <div class="ap-panel" id="apInsights">
       <div class="ap-panel-title">🧠 本日のAI分析</div>
@@ -418,6 +450,12 @@
     .ap-insights-body{font-size:.85rem;color:var(--text);line-height:1.7;}
     .ap-insights-body .ap-ins-line{padding:4px 0;border-bottom:1px dashed rgba(255,255,255,.05);}
     .ap-insights-body .ap-ins-line:last-child{border-bottom:none;}
+
+    .ap-evo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+    @media(max-width:520px){.ap-evo-grid{grid-template-columns:repeat(2,1fr);}}
+    .ap-evo-cell{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;text-align:center;}
+    .ap-evo-lbl{font-family:'Share Tech Mono',monospace;font-size:.5rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase;margin-bottom:3px;}
+    .ap-evo-val{font-family:'Share Tech Mono',monospace;font-size:.95rem;font-weight:bold;color:#c4b5fd;line-height:1.1;}
   `;
 
   // ═══════════════════════════════════════════════
@@ -464,7 +502,69 @@
         host.insertAdjacentHTML('beforeend', HOF_PANEL_HTML);
       }
     }
+    if(!document.getElementById('apEvoStatus')){
+      // Evolution status: MetaBot panelの直後
+      const mb = document.getElementById('mbPanel');
+      if(mb){
+        mb.insertAdjacentHTML('afterend', EVO_STATUS_PANEL_HTML);
+      } else {
+        // Fallback: baChartWrapの直前
+        const chart = document.getElementById('baChartWrap');
+        if(chart){
+          chart.insertAdjacentHTML('beforebegin', EVO_STATUS_PANEL_HTML);
+        } else {
+          host.insertAdjacentHTML('afterbegin', EVO_STATUS_PANEL_HTML);
+        }
+      }
+    }
     return true;
+  }
+
+  function renderEvoStatus(){
+    const genEl = document.getElementById('apEvoGen');
+    const mutEl = document.getElementById('apEvoMutRate');
+    const promoEl = document.getElementById('apEvoPromoted');
+    const hofEl = document.getElementById('apEvoHof');
+    const tradesEl = document.getElementById('apEvoTotalTrades');
+    const nextEl = document.getElementById('apEvoNextPdca');
+    const coin = window.currentCoin || 'BTC';
+
+    if(genEl){
+      const gen = parseInt(localStorage.getItem(`gaGen_${coin}`) || '0');
+      genEl.textContent = `#${gen}`;
+    }
+    if(mutEl){
+      const mut = parseFloat(localStorage.getItem(`gaMutRate_${coin}`) || '0.05');
+      mutEl.textContent = `${(mut*100).toFixed(1)}%`;
+    }
+    if(promoEl){
+      const promoted = (window.promotedBots || []).length;
+      const autoPromoted = (window.promotedBots || []).filter(p => p.autoPromoted).length;
+      promoEl.textContent = promoted > 0 ? `${promoted}体 (自動${autoPromoted})` : '0体';
+    }
+    if(hofEl && window.EvolutionPlus){
+      const hof = window.EvolutionPlus.HallOfFame.load(coin);
+      hofEl.textContent = `${hof.length}件`;
+    }
+    if(tradesEl && window.botStates){
+      let total = 0;
+      Object.values(window.botStates).forEach(bs => {
+        total += (bs.totalWins||0) + (bs.totalLosses||0);
+      });
+      tradesEl.textContent = `${total}回`;
+    }
+    if(nextEl){
+      // Until next 23:59 JST
+      const now = new Date();
+      const jst = new Date(now.getTime() + 9*3600000);
+      const target = new Date(jst);
+      target.setHours(23, 59, 0, 0);
+      if(jst >= target) target.setDate(target.getDate() + 1);
+      const diffMs = target.getTime() - jst.getTime();
+      const hours = Math.floor(diffMs / 3600000);
+      const mins = Math.floor((diffMs % 3600000) / 60000);
+      nextEl.textContent = `${hours}h ${mins}m`;
+    }
   }
 
   // ═══════════════════════════════════════════════
@@ -629,6 +729,7 @@
     try{ renderRealtimePanel(); }catch(e){}
     try{ renderHallOfFame(); }catch(e){}
     try{ renderInsights(); }catch(e){}
+    try{ renderEvoStatus(); }catch(e){}
   }
 
   function startRenderLoop(){

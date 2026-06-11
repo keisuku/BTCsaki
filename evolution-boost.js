@@ -23,6 +23,7 @@
   const BT_CACHE_MAX = 600;
 
   let klineCache = {};   // tf -> raw Binance klines (current coin)
+  let extSeries = null;  // { fr, ls, fg } 履歴ポイント列 (window.BotHistory経由)
   let cacheCoin = null;
   let btCache = new Map(); // botId|paramsHash -> fitness result
   let liveFitPlus = null;  // オーバーライド前の calcFitnessPlus 原本
@@ -60,6 +61,14 @@
     klineCache = next;
     cacheCoin = coin;
     btCache.clear();
+    // 外部指標履歴(funding/L&S/F&G) — 失敗してもnullで続行(ゲート中立)
+    try {
+      if (window.BotHistory) {
+        const pair = (window.COINS && window.COINS[coin] && window.COINS[coin].pair) || 'BTCUSDT';
+        extSeries = await window.BotHistory.fetchAll(pair);
+        log(`外部指標履歴: FR ${extSeries.fr.length}点 / L&S ${extSeries.ls.length}点 / F&G ${extSeries.fg.length}点`);
+      }
+    } catch (e) { extSeries = null; }
     const loaded = Object.keys(next).length;
     log(`過去${KLINE_LIMIT}本キャッシュ完了: ${loaded}/${tfs.length} TF (${coin})`);
     emit('evoboost-klines', { coin, tfs: Object.keys(next) });
@@ -76,7 +85,7 @@
       if (!klines || klines.length < 100) return null;
       const key = bs.id + '|' + JSON.stringify(bs.params);
       if (btCache.has(key)) return btCache.get(key);
-      const r = window.BotBacktest.fitnessFor(def, bs.params, klines, liveFitPlus);
+      const r = window.BotBacktest.fitnessFor(def, bs.params, klines, liveFitPlus, buildCtx());
       if (btCache.size > BT_CACHE_MAX) btCache.clear();
       btCache.set(key, r);
       return r;
@@ -133,6 +142,119 @@
     log('即時進化完了 — botパラメータはバックテスト適応度で進化済み');
   }
 
+  // ── グリッド探索注入: GAのランダム変異を待たず、チャンピオン近傍の
+  //    パラメータをウォークフォワード探索して勝てる設定を直接注入する ──
+  const GRID_KEYS = ['scoreEntry', 'rsiOS', 'rsiOB', 'tpPct', 'slPct', 'timeoutMin',
+    'volSurgeMult', 'momThresh', 'entryZone', 'bbMult'];
+  const GRID_MULTS = [0.85, 1.0, 1.15];
+  const PARAM_BOUNDS = {
+    scoreEntry: [38, 75], rsiOS: [10, 45], rsiOB: [55, 90],
+    tpPct: [0.05, 2.5], slPct: [0.03, 1.2], timeoutMin: [1, 180],
+    volSurgeMult: [1.05, 4], momThresh: [0.01, 0.5], entryZone: [10, 45], bbMult: [1.2, 3.5],
+  };
+
+  function clampParam(key, v) {
+    const b = PARAM_BOUNDS[key];
+    if (!b) return v;
+    v = Math.max(b[0], Math.min(b[1], v));
+    return key === 'timeoutMin' ? Math.round(v) : +v.toFixed(4);
+  }
+
+  // テスト側(後半30%)のトレードだけでフィットネスを算出
+  function testFitness(def, params, klines, splitIdx) {
+    try {
+      const res = window.BotBacktest.runBot(def, params, klines, buildCtx());
+      if (!res) return null;
+      const testTrades = res.trades.filter(t => t.entryIndex >= splitIdx);
+      if (testTrades.length < 3) return null;
+      return liveFitPlus(window.BotBacktest.pseudoState(testTrades));
+    } catch (e) { return null; }
+  }
+
+  async function gridSearchInjection() {
+    const bots = window.ALL_BOTS || [];
+    const states = window.botStates || {};
+    const motherIds = window.MOTHER_BOT_IDS || [];
+    if (!bots.length || typeof liveFitPlus !== 'function') return;
+
+    // カテゴリ分け(GAと同じ tf×style)
+    const cats = {};
+    bots.forEach(d => {
+      const key = `${d.tf}_${d.style}`;
+      (cats[key] = cats[key] || []).push(d);
+    });
+
+    let injected = 0;
+    for (const [cat, members] of Object.entries(cats)) {
+      const ranked = members
+        .map(d => ({ d, bs: states[d.id] }))
+        .filter(x => x.bs && x.bs.params)
+        .sort((a, b) => (window.calcFitnessPlus(b.bs) || 0) - (window.calcFitnessPlus(a.bs) || 0));
+      if (ranked.length < 2) continue;
+      const champ = ranked[0];
+      const klines = klineCache[champ.d.tf];
+      if (!klines || klines.length < 300) continue;
+      const splitIdx = Math.floor(klines.length * 0.7);
+      const trainKl = klines.slice(0, splitIdx);
+
+      const keys = GRID_KEYS.filter(k => typeof champ.bs.params[k] === 'number').slice(0, 4);
+      if (!keys.length) continue;
+
+      // train側でグリッド全探索
+      const combos = [];
+      const rec = (i, cur) => {
+        if (i === keys.length) { combos.push(cur); return; }
+        for (const m of GRID_MULTS) {
+          rec(i + 1, { ...cur, [keys[i]]: clampParam(keys[i], champ.bs.params[keys[i]] * m) });
+        }
+      };
+      rec(0, {});
+      const scored = [];
+      for (const ov of combos) {
+        const params = { ...champ.bs.params, ...ov };
+        try {
+          const res = window.BotBacktest.runBot(champ.d, params, trainKl, buildCtx());
+          if (!res || res.trades.length < 3) continue;
+          scored.push({ ov, fit: liveFitPlus(window.BotBacktest.pseudoState(res.trades)) });
+        } catch (e) {}
+      }
+      if (!scored.length) { await sleep(0); continue; }
+      scored.sort((a, b) => b.fit - a.fit);
+
+      // 上位3をtest側(未知データ)で検証、ベースラインと比較
+      const baseline = testFitness(champ.d, champ.bs.params, klines, splitIdx);
+      let best = null;
+      for (const cand of scored.slice(0, 3)) {
+        const f = testFitness(champ.d, { ...champ.bs.params, ...cand.ov }, klines, splitIdx);
+        if (f != null && (!best || f > best.f)) best = { f, ov: cand.ov };
+      }
+      const margin = baseline == null ? 0 : Math.max(2, Math.abs(baseline) * 0.1);
+      if (best && (baseline == null || best.f > baseline + margin)) {
+        // カテゴリ最下位2体(非マザー)に注入
+        const targets = ranked.slice(-2).filter(x => !motherIds.includes(x.d.id));
+        for (const t of targets) {
+          Object.assign(t.bs.params, best.ov);
+          if (Array.isArray(t.bs.pdcaLog)) {
+            t.bs.pdcaLog.push({ time: Date.now(), msg: `⚡グリッド探索で最適化: ${Object.keys(best.ov).join(',')} (検証fit ${best.f.toFixed(1)})` });
+            if (t.bs.pdcaLog.length > 10) t.bs.pdcaLog.shift();
+          }
+          injected++;
+        }
+        btCache.clear();
+      }
+      await sleep(0); // UIを固めない
+    }
+    if (injected) {
+      log(`グリッド探索注入: ${injected}体のパラメータを検証済み最適値へ更新`);
+      try { if (typeof window.saveBotArena === 'function') window.saveBotArena(); } catch (e) {}
+      emit('evoboost-grid', { injected });
+    }
+  }
+
+  function buildCtx() {
+    return { series: extSeries, klinesByTf: klineCache };
+  }
+
   function snapshotFitness() {
     const out = {};
     try {
@@ -176,13 +298,16 @@
     const ok = await loadKlines();
     installFitnessOverride();
     ready = true;
-    if (ok) await instantEvolution();
+    if (ok) {
+      await instantEvolution();
+      await gridSearchInjection();
+    }
 
-    // コイン切替検知 + 毎時のkline更新
+    // コイン切替検知 + 毎時のkline更新+グリッド再探索
     setInterval(() => {
       if ((window.currentCoin || 'BTC') !== cacheCoin) loadKlines();
     }, 5000);
-    setInterval(loadKlines, 3600000);
+    setInterval(async () => { if (await loadKlines()) gridSearchInjection(); }, 3600000);
   }
 
   if (document.readyState === 'loading') {

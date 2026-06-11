@@ -3,6 +3,9 @@
 //   - SL/TP checked intra-candle vs high/low (SL first if both touch — conservative)
 //     levels from ATR multiples (slAtr/tpAtr) or percent of entry (slPct/tpPct)
 //   - optional opts.timeoutBars: close at candle close after N bars in position
+//   - optional opts.trail {atrMult, atrValues}: ATR trailing stop — activates once
+//     unrealized profit exceeds 1.5×ATR, then tightens SL toward price (mirrors
+//     the live checkBotExit trailing logic)
 //   - opposite signal closes/reverses at next open; 'exit' signal closes at next open
 // Fees deducted per side.
 
@@ -89,6 +92,18 @@ export function backtest(candles, signals, exitParams, opts = {}) {
     // 2b. Timeout exit at candle close after N bars in position.
     if (pos && timeoutBars != null && i - pos.entryIndex >= timeoutBars) {
       closePos(i, c.close, 'timeout');
+    }
+
+    // 2c. ATR trailing stop: activate at >1.5×ATR profit, tighten only.
+    if (pos && opts.trail && opts.trail.atrValues) {
+      const a = opts.trail.atrValues[i];
+      if (a != null && a > 0) {
+        if (pos.side === 'long' && c.close - pos.entryPrice > 1.5 * a) {
+          pos.sl = Math.max(pos.sl, c.close - opts.trail.atrMult * a);
+        } else if (pos.side === 'short' && pos.entryPrice - c.close > 1.5 * a) {
+          pos.sl = Math.min(pos.sl, c.close + opts.trail.atrMult * a);
+        }
+      }
     }
 
     // 3. Read signal at this candle close → act at next open.

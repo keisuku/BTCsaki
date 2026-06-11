@@ -1,6 +1,8 @@
 // Backtest engine. One position at a time, long+short, compounding equity.
 // Entry at the NEXT candle open after a signal (no lookahead). Exits:
-//   - ATR-based SL/TP checked intra-candle vs high/low (SL first if both touch — conservative)
+//   - SL/TP checked intra-candle vs high/low (SL first if both touch — conservative)
+//     levels from ATR multiples (slAtr/tpAtr) or percent of entry (slPct/tpPct)
+//   - optional opts.timeoutBars: close at candle close after N bars in position
 //   - opposite signal closes/reverses at next open; 'exit' signal closes at next open
 // Fees deducted per side.
 
@@ -8,9 +10,11 @@ import { atr as calcAtr } from './indicators.js';
 import { FEE_PER_SIDE, ATR_EXIT_PERIOD } from './config.js';
 
 export function backtest(candles, signals, exitParams, opts = {}) {
-  const { slAtr, tpAtr } = exitParams;
+  const { slAtr, tpAtr, slPct, tpPct } = exitParams;
+  const usePct = slPct != null && tpPct != null;
   const fee = opts.feePerSide ?? FEE_PER_SIDE;
-  const atrValues = opts.atrValues ?? calcAtr(candles, ATR_EXIT_PERIOD);
+  const timeoutBars = opts.timeoutBars ?? null;
+  const atrValues = opts.atrValues ?? (usePct ? null : calcAtr(candles, ATR_EXIT_PERIOD));
   const startIndex = opts.startIndex ?? 0;
 
   const sigAt = new Map();
@@ -46,15 +50,26 @@ export function backtest(candles, signals, exitParams, opts = {}) {
     if (pending) {
       if (pos) closePos(i, c.open, 'flip');
       if (pending.side === 'long' || pending.side === 'short') {
-        const a = pending.atr;
-        if (a != null && a > 0) {
+        const sign = pending.side === 'long' ? 1 : -1;
+        if (usePct) {
           pos = {
             side: pending.side,
             entryIndex: i,
             entryPrice: c.open,
-            sl: pending.side === 'long' ? c.open - slAtr * a : c.open + slAtr * a,
-            tp: pending.side === 'long' ? c.open + tpAtr * a : c.open - tpAtr * a,
+            sl: c.open * (1 - sign * slPct / 100),
+            tp: c.open * (1 + sign * tpPct / 100),
           };
+        } else {
+          const a = pending.atr;
+          if (a != null && a > 0) {
+            pos = {
+              side: pending.side,
+              entryIndex: i,
+              entryPrice: c.open,
+              sl: c.open - sign * slAtr * a,
+              tp: c.open + sign * tpAtr * a,
+            };
+          }
         }
       }
       pending = null;
@@ -71,13 +86,18 @@ export function backtest(candles, signals, exitParams, opts = {}) {
       }
     }
 
+    // 2b. Timeout exit at candle close after N bars in position.
+    if (pos && timeoutBars != null && i - pos.entryIndex >= timeoutBars) {
+      closePos(i, c.close, 'timeout');
+    }
+
     // 3. Read signal at this candle close → act at next open.
     const side = sigAt.get(i);
     if (side) {
       if (side === 'exit') {
         if (pos) pending = { side: 'exit' };
       } else if (!pos || pos.side !== side) {
-        pending = { side, atr: atrValues[i] };
+        pending = { side, atr: atrValues ? atrValues[i] : null };
       }
     }
 

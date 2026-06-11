@@ -4438,14 +4438,19 @@ function calcVWAP(klines) {
     const tp = (h + l + c) / 3;
     cumTP += tp * v; cumVol += v;
   }
-  // Fallback: if no candles today yet, use all available
+  // Fallback: if no candles today yet, use a rolling 24h window
+  // (all-time fallback made VWAP meaningless on 4h/1d klines spanning weeks)
   if (cumVol === 0) {
+    const dayAgo = Date.now() - 86400000;
     for (const k of klines) {
+      if (parseInt(k[0]) < dayAgo) continue;
       const h = parseFloat(k[2]), l = parseFloat(k[3]), c = parseFloat(k[4]), v = parseFloat(k[5]);
       cumTP += ((h+l+c)/3) * v; cumVol += v;
     }
   }
-  return cumVol > 0 ? cumTP / cumVol : 0;
+  // Last resort: latest close (never a stale multi-week average)
+  if (cumVol === 0) return parseFloat(klines[klines.length - 1][4]) || 0;
+  return cumTP / cumVol;
 }
 
 // ═══════════════════════════════════════════════
